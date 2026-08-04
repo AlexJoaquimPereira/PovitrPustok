@@ -1,0 +1,87 @@
+# Built application files
+*.apk
+*.aab
+*.ap_
+
+# ART/Dalvik VM files
+*.dex
+
+# Java/Kotlin compiled files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+build/
+*/build/
+
+# Gradle
+.gradle/
+local.properties
+.gradle-cache/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Keystore files
+*.jks
+*.keystore
+
+# Log files
+*.log
+
+# Navigation editor temp files
+.navigation/
+
+# Android captures
+captures/
+
+# External native build
+.externalNativeBuild/
+.cxx/
+
+# Google Services (if containing secrets)
+google-services.json
+
+# Firebase Crashlytics
+com_crashlytics_export_strings.xml
+
+# Kotlin
+.kotlin/
+
+# KSP
+.ksp/
+
+# Annotation processors
+generated/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# VS Code (if occasionally used)
+.vscode/
+
+# IntelliJ caches
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+
+# Test outputs
+test-output/
+
+# Profiling
+*.hprof
