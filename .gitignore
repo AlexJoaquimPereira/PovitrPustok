@@ -26,6 +26,7 @@ local.properties
 *.iml
 *.ipr
 *.iws
+.artifacts
 
 # Keystore files
 *.jks
