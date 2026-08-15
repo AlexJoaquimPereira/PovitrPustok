@@ -86,3 +86,7 @@ test-output/
 
 # Profiling
 *.hprof
+
+# SQLite databases
+*.sql
+*.sqlite
