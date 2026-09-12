@@ -1,0 +1,265 @@
+package com.biblia.povitrpustok.core.database
+
+import android.database.Cursor
+import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteException
+import com.biblia.povitrpustok.core.result.BibleDatabaseAccessException
+import com.biblia.povitrpustok.core.result.CorruptBibleDatabaseException
+import com.biblia.povitrpustok.domain.model.Chapter
+import com.biblia.povitrpustok.domain.model.Heading
+import com.biblia.povitrpustok.domain.model.IntroductionBlock
+import com.biblia.povitrpustok.domain.model.Verse
+
+/**
+ * Read-only handle to one imported Bible book database (plan §11, §34).
+ *
+ * Owns the canonical SQL for the imported schema. It never writes to the
+ * database and never mutates imported content; every query maps rows to
+ * the domain models. Raw [SQLiteException]s are translated into
+ * [BibleDatabaseAccessException] so they never reach UI code.
+ *
+ * Each book database contains exactly one `books` row; its id is the
+ * `book_id` referenced by chapters/verses/headings/introduction_blocks.
+ */
+class BibleDatabase internal constructor(
+    internal val sqliteDatabase: SQLiteDatabase
+) : AutoCloseable {
+
+    private val bookRowId: Long by lazy {
+        query(
+            "SELECT id FROM books LIMIT 1",
+            emptyArray()
+        ) { cursor ->
+            if (cursor.moveToFirst()) {
+                cursor.getLong(0)
+            } else {
+                throw CorruptBibleDatabaseException("unknown", null)
+            }
+        }
+    }
+
+    /** All chapters in source order (plan §34: WHERE book_id = ? ORDER BY position). */
+    fun getChapters(bookId: String): List<Chapter> =
+        query(
+            "SELECT id, number, position FROM chapters WHERE book_id = ? ORDER BY position",
+            arrayOf(bookRowId.toString())
+        ) { cursor ->
+            buildList {
+                while (cursor.moveToNext()) {
+                    add(
+                        Chapter(
+                            id = cursor.getLong(0),
+                            bookId = bookId,
+                            number = cursor.getInt(1),
+                            position = cursor.getInt(2)
+                        )
+                    )
+                }
+            }
+        }
+
+    /**
+     * The chapter identified by source-order [position] (plan §8).
+     * Never uses `chapter_number` for sequential lookup: source chapter
+     * numbers can repeat (e.g. Job).
+     */
+    fun getChapter(bookId: String, position: Int): Chapter? =
+        query(
+            "SELECT id, number, position FROM chapters WHERE book_id = ? AND position = ?",
+            arrayOf(bookRowId.toString(), position.toString())
+        ) { cursor ->
+            if (cursor.moveToFirst()) {
+                Chapter(
+                    id = cursor.getLong(0),
+                    bookId = bookId,
+                    number = cursor.getInt(1),
+                    position = cursor.getInt(2)
+                )
+            } else {
+                null
+            }
+        }
+
+    /** Headings of one chapter in source order (plan §34). */
+    fun getHeadings(chapterId: Long): List<Heading> =
+        query(
+            "SELECT id, chapter_id, position, before_verse, html FROM headings WHERE chapter_id = ? ORDER BY position",
+            arrayOf(chapterId.toString())
+        ) { cursor ->
+            buildList {
+                while (cursor.moveToNext()) {
+                    add(
+                        Heading(
+                            id = cursor.getLong(0),
+                            chapterId = cursor.getLong(1),
+                            position = cursor.getInt(2),
+                            beforeVerse = cursor.getInt(3),
+                            html = cursor.getString(4)
+                        )
+                    )
+                }
+            }
+        }
+
+    /** Verses of one chapter ordered by verse_start (plan §34). */
+    fun getVerses(chapterId: Long): List<Verse> =
+        query(
+            "SELECT id, chapter_id, chapter_number, verse_start, verse_end, text, text_plain FROM verses WHERE chapter_id = ? ORDER BY verse_start, id",
+            arrayOf(chapterId.toString())
+        ) { cursor ->
+            buildList {
+                while (cursor.moveToNext()) {
+                    add(cursor.toVerse())
+                }
+            }
+        }
+
+    /** One verse by internal chapter id and verse_start. */
+    fun getVerse(chapterId: Long, verseStart: Int): Verse? =
+        query(
+            "SELECT id, chapter_id, chapter_number, verse_start, verse_end, text, text_plain FROM verses WHERE chapter_id = ? AND verse_start = ?",
+            arrayOf(chapterId.toString(), verseStart.toString())
+        ) { cursor ->
+            if (cursor.moveToFirst()) cursor.toVerse() else null
+        }
+
+    /** Introduction blocks in source order; never flattened (plan §11, §34). */
+    fun getIntroductionBlocks(bookId: String): List<IntroductionBlock> =
+        query(
+            "SELECT id, book_id, position, type, html FROM introduction_blocks WHERE book_id = ? ORDER BY position",
+            arrayOf(bookRowId.toString())
+        ) { cursor ->
+            buildList {
+                while (cursor.moveToNext()) {
+                    add(
+                        IntroductionBlock(
+                            id = cursor.getLong(0),
+                            bookId = bookId,
+                            position = cursor.getInt(2),
+                            type = cursor.getString(3),
+                            html = cursor.getString(4)
+                        )
+                    )
+                }
+            }
+        }
+
+    /** Whether the FTS5 virtual table exists in this database. */
+    fun hasFtsTable(): Boolean =
+        query(
+            "SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = 'verses_fts'",
+            emptyArray()
+        ) { cursor ->
+            if (cursor.moveToFirst()) cursor.getLong(0) > 0 else false
+        }
+
+    /**
+     * Whether the running SQLite build compiled the FTS5 module
+     * (`ENABLE_FTS5` compile option). Desktop/Robolectric sqlite builds may
+     * lack FTS5 even though the imported databases define verses_fts.
+     */
+    fun isFts5Available(): Boolean =
+        query("PRAGMA compile_options", emptyArray()) { cursor ->
+            while (cursor.moveToNext()) {
+                if (cursor.getString(0).contains("ENABLE_FTS5")) {
+                    return@query true
+                }
+            }
+            false
+        }
+
+    /** Number of rows currently indexed by the FTS5 table. */
+    fun ftsRowCount(): Long =
+        query(
+            "SELECT count(*) FROM verses_fts",
+            emptyArray()
+        ) { cursor ->
+            if (cursor.moveToFirst()) cursor.getLong(0) else 0L
+        }
+
+    /**
+     * Minimal FTS5 access primitive: row ids of verses matching [query].
+     *
+     * This is the data-source capability the Phase 5 search feature builds
+     * on; it performs no query parsing, normalization, or UI logic and is
+     * not exposed as a search feature.
+     */
+    fun ftsMatchVerseIds(query: String, limit: Int = 50): List<Long> =
+        query(
+            "SELECT rowid FROM verses_fts WHERE verses_fts MATCH ? LIMIT ?",
+            arrayOf(query, limit.toString())
+        ) { cursor ->
+            buildList {
+                while (cursor.moveToNext()) {
+                    add(cursor.getLong(0))
+                }
+            }
+        }
+
+    /**
+     * Full-text search within this book (Phase 5; corrective Issue 1): a
+     * single FTS5 MATCH query joined to verses and chapters, ordered
+     * deterministically by chapter position, verse start, verse id. The
+     * raw `verses.text_plain` is returned so the repository can build a
+     * portable snippet; FTS5 `snippet()` is intentionally not used because
+     * `verses_fts` (one column, external content) does not match the
+     * `verses` content-table schema, which makes `snippet()` behavior
+     * implementation-dependent across SQLite builds (the device-side
+     * "SELECT query fails" source). No chapter is ever loaded to build a
+     * result.
+     */
+    fun searchVerses(query: String, limit: Int = 50): List<BibleVerseHit> =
+        query(
+            """
+            SELECT v.id, v.chapter_id, c.position, v.chapter_number,
+                   v.verse_start, v.verse_end, v.text_plain
+            FROM verses_fts f
+            JOIN verses v ON v.id = f.rowid
+            JOIN chapters c ON c.id = v.chapter_id
+            WHERE verses_fts MATCH ?
+            ORDER BY c.position, v.verse_start, v.id
+            LIMIT ?
+            """.trimIndent(),
+            arrayOf(query, limit.toString())
+        ) { cursor ->
+            buildList {
+                while (cursor.moveToNext()) {
+                    add(
+                        BibleVerseHit(
+                            verseId = cursor.getLong(0),
+                            chapterId = cursor.getLong(1),
+                            chapterPosition = cursor.getInt(2),
+                            chapterNumber = cursor.getInt(3),
+                            verseStart = cursor.getInt(4),
+                            verseEnd = cursor.getInt(5),
+                            plainText = cursor.getString(6)
+                        )
+                    )
+                }
+            }
+        }
+
+    private fun Cursor.toVerse(): Verse =
+        Verse(
+            id = getLong(0),
+            chapterId = getLong(1),
+            chapterNumber = getInt(2),
+            verseStart = getInt(3),
+            verseEnd = getInt(4),
+            html = getString(5),
+            plainText = getString(6)
+        )
+
+    private fun <T> query(sql: String, args: Array<String>, mapper: (Cursor) -> T): T =
+        try {
+            sqliteDatabase.rawQuery(sql, args).use { cursor -> mapper(cursor) }
+        } catch (e: SQLiteException) {
+            // Include the underlying SQLite error so the exact failing
+            // operation is identifiable from the UI/log (Issue 1).
+            throw BibleDatabaseAccessException("Query failed: $sql (${e.message})", e)
+        }
+
+    override fun close() {
+        sqliteDatabase.close()
+    }
+}
