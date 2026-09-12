@@ -1,0 +1,122 @@
+package com.biblia.povitrpustok.data.liturgy
+
+import com.biblia.povitrpustok.data.app.AppDatabase
+import com.biblia.povitrpustok.data.app.LiturgicalDayCacheDao
+import com.biblia.povitrpustok.domain.model.LiturgicalDayResult
+import com.biblia.povitrpustok.domain.model.LiturgicalErrorKind
+import com.biblia.povitrpustok.domain.repository.LiturgicalRepository
+import com.google.gson.JsonSyntaxException
+import java.io.IOException
+import java.time.LocalDate
+import javax.inject.Inject
+import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
+import retrofit2.HttpException
+
+/**
+ * [LiturgicalRepository] over the Catholic Readings API
+ * (implementation plan §8, §19, §16).
+ *
+ * The repository owns composition of the two external resources (readings
+ * endpoint + calendar endpoint) and maps failures to controlled
+ * [LiturgicalDayResult.Error] states — no HTTP/DTO/JSON types reach the
+ * domain. Both resources are required for a complete day (§19); either
+ * failure is a controlled error, never a crash.
+ */
+@Singleton
+class LiturgicalRepositoryImpl @Inject constructor(
+    private val api: CatholicReadingsApi,
+    private val appDatabase: AppDatabase
+) : LiturgicalRepository {
+
+    /**
+     * Date-keyed cache policy (corrective phase Issue 10):
+     *  - cached row for this date        -> return cached (no network);
+     *  - no cache                        -> fetch, save on success, return;
+     *  - fetch failed + cache appeared   -> return cached (robustness);
+     *  - fetch failed + no cache         -> the network error state.
+     *
+     * Only successful responses are ever stored, so a malformed response
+     * can never overwrite a valid cache entry. The key is the local
+     * calendar date, so yesterday's entry never satisfies today. No
+     * polling: the caller (Daily Reading screen) fetches at most once per
+     * day per app use.
+     */
+    override suspend fun getLiturgicalDay(date: LocalDate): LiturgicalDayResult =
+        withContext(Dispatchers.IO) {
+            val dateKey = date.toString()
+            cacheDao.getByDateWithReadings(dateKey)?.let { cached ->
+                return@withContext LiturgicalDayResult.Success(LiturgicalCacheMapper.toDomain(cached))
+            }
+
+            when (val network = fetchFromNetwork(date)) {
+                is LiturgicalDayResult.Success -> {
+                    val dayId = cacheDao.upsertDay(
+                        LiturgicalCacheMapper.toDayEntity(network.day, System.currentTimeMillis())
+                    )
+                    cacheDao.deleteReadings(dayId)
+                    cacheDao.insertReadings(
+                        LiturgicalCacheMapper.toReadingEntities(dayId, network.day.readings)
+                    )
+                    network
+                }
+                is LiturgicalDayResult.Error -> {
+                    val lateCache = cacheDao.getByDateWithReadings(dateKey)
+                    if (lateCache != null) {
+                        LiturgicalDayResult.Success(LiturgicalCacheMapper.toDomain(lateCache))
+                    } else {
+                        network
+                    }
+                }
+            }
+        }
+
+    private suspend fun fetchFromNetwork(date: LocalDate): LiturgicalDayResult =
+        try {
+            coroutineScope {
+                val readingsDeferred = async { api.getReadings(date.year, date.monthDayPath()) }
+                val calendarDeferred = async { api.getCalendar(date.year, date.monthDayPath()) }
+                val readingsDto = readingsDeferred.await()
+                val calendarDto = calendarDeferred.await()
+
+                val day = CatholicReadingsMapper.toLiturgicalDay(date, readingsDto, calendarDto)
+                if (day.readings.isEmpty() && day.celebrationName == null) {
+                    LiturgicalDayResult.Error(
+                        LiturgicalErrorKind.NO_DATA,
+                        "No liturgical data available for $date."
+                    )
+                } else {
+                    LiturgicalDayResult.Success(day)
+                }
+            }
+        } catch (e: HttpException) {
+            LiturgicalDayResult.Error(
+                LiturgicalErrorKind.HTTP,
+                "The liturgical service returned an error (${e.code()})."
+            )
+        } catch (e: IOException) {
+            LiturgicalDayResult.Error(
+                LiturgicalErrorKind.NETWORK,
+                "Unable to reach the liturgical service. Check your connection."
+            )
+        } catch (e: JsonSyntaxException) {
+            LiturgicalDayResult.Error(
+                LiturgicalErrorKind.MALFORMED_RESPONSE,
+                "The liturgical service returned malformed data."
+            )
+        } catch (e: IllegalArgumentException) {
+            LiturgicalDayResult.Error(
+                LiturgicalErrorKind.MALFORMED_RESPONSE,
+                "The liturgical service returned unreadable data."
+            )
+        }
+
+    private val cacheDao: LiturgicalDayCacheDao
+        get() = appDatabase.liturgicalDayCacheDao()
+
+    private fun LocalDate.monthDayPath(): String =
+        "%02d-%02d".format(monthValue, dayOfMonth)
+}
