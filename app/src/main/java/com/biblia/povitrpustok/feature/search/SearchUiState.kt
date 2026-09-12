@@ -1,0 +1,15 @@
+package com.biblia.povitrpustok.feature.search
+
+import com.biblia.povitrpustok.domain.model.SearchResult
+
+/**
+ * Immutable search state (implementation plan §23) exposed via StateFlow.
+ */
+data class SearchUiState(
+    val query: String = "",
+    val results: List<SearchResult> = emptyList(),
+    val isSearching: Boolean = false,
+    val error: String? = null,
+    val selectedBookId: String? = null,
+    val resultCount: Int? = null
+)
