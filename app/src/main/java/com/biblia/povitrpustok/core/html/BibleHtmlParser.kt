@@ -255,6 +255,12 @@ class BibleHtmlParser {
                     return ParsedTag(name, false, true, attributes, start, i + 2)
                 html[i] == '<' ->
                     return null
+                html[i] == '/' -> {
+                    // HTML-01: a lone '/' that is not part of '/>' cannot
+                    // start an attribute. Consume it so the tokenizer always
+                    // makes progress instead of looping forever.
+                    i++
+                }
                 else -> {
                     val attrNameStart = i
                     while (i < html.length &&

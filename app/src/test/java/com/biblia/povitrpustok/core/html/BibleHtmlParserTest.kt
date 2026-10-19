@@ -192,6 +192,35 @@ class BibleHtmlParserTest {
         assertEquals("a b c", text)
     }
 
+    // HTML-01: a stray '/' inside a tag used to produce an empty attribute
+    // name without advancing, hanging the parser.
+    @Test(timeout = 2_000)
+    fun malformed_tag_with_stray_slash_terminates_and_keeps_text() {
+        val inputs = listOf(
+            "<p /x>text",
+            "<p / >text",
+            "<p //>text",
+            "<p /x='y'>text",
+            "<h3 /x>text"
+        )
+        inputs.forEach { input ->
+            val doc = parser.parse(input)
+            val text = doc.children.joinToString("") { collectText(it) }
+            assertTrue("expected 'text' to survive '$input', got '$text'", text.contains("text"))
+        }
+    }
+
+    @Test(timeout = 2_000)
+    fun every_prefix_of_a_malformed_tag_terminates() {
+        val inputs = listOf(
+            "<", "</", "<p", "<p ", "<p /", "<p /x", "<p /x=", "<p /x='y'",
+            "&#;", "&unknown;"
+        )
+        inputs.forEach { input ->
+            parser.parse(input)
+        }
+    }
+
     private fun collectText(node: BibleHtmlNode): String = when (node) {
         is BibleHtmlNode.Text -> node.text
         is BibleHtmlNode.Break -> "\n"
