@@ -1,6 +1,7 @@
 package com.biblia.povitrpustok.data.bible
 
 import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.biblia.povitrpustok.core.database.AssetBibleDatabaseProvider
@@ -8,6 +9,7 @@ import com.biblia.povitrpustok.core.result.BibleDataException
 import com.biblia.povitrpustok.core.result.BibleDatabaseAccessException
 import com.biblia.povitrpustok.core.result.CorruptBibleDatabaseException
 import com.biblia.povitrpustok.domain.repository.BibleSearchRepository
+import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -111,6 +113,36 @@ class BibleSearchRepositoryInstrumentedTest {
         assertNotNull("expected the Genesis 17:11-12 range hit", ranged)
         assertEquals(11, ranged!!.verseStart)
         assertEquals(12, ranged.verseEnd)
+    }
+
+    @Test
+    fun plain_hits_coalesce_null_verse_end_to_verse_start() = runBlocking {
+        val results = repository.search("\"subhagi\"", bookIds = listOf("jakob"), limit = 50)
+        assertTrue(results.isNotEmpty())
+        // DB-02: a NULL verse_end must never surface as 0 or a broken range.
+        assertTrue(
+            "every hit must satisfy 1 <= verseStart <= verseEnd, got " +
+                results.map { "${it.chapterNumber}:${it.verseStart}-${it.verseEnd}" },
+            results.all { it.verseStart >= 1 && it.verseEnd >= it.verseStart }
+        )
+        assertTrue("plain hits must coalesce to verseEnd == verseStart", results.any { it.verseEnd == it.verseStart })
+
+        // Prove the NULL branch was actually exercised (not vacuous): at least
+        // one returned hit has a stored verse_end that is NULL in the corpus.
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val file = File(context.filesDir, "bible/jakob.sqlite")
+        val ids = results.map { it.verseId }.joinToString(",")
+        val raw = SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READONLY)
+        val nullEnded = raw.use { database ->
+            database.rawQuery(
+                "SELECT count(*) FROM verses WHERE id IN ($ids) AND verse_end IS NULL",
+                null
+            ).use { cursor ->
+                cursor.moveToFirst()
+                cursor.getInt(0)
+            }
+        }
+        assertTrue("expected at least one hit with a stored NULL verse_end", nullEnded > 0)
     }
 
     @Test

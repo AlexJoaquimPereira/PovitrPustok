@@ -231,14 +231,18 @@ class BibleDatabase internal constructor(
         ) { cursor ->
             buildList {
                 while (cursor.moveToNext()) {
+                    // DB-02: verse_end is NULL for ordinary single verses
+                    // (getInt would return 0). A single verse has
+                    // verseEnd == verseStart; real source ranges keep their end.
+                    val verseStart = cursor.getInt(4)
                     add(
                         BibleVerseHit(
                             verseId = cursor.getLong(0),
                             chapterId = cursor.getLong(1),
                             chapterPosition = cursor.getInt(2),
                             chapterNumber = cursor.getInt(3),
-                            verseStart = cursor.getInt(4),
-                            verseEnd = cursor.getInt(5),
+                            verseStart = verseStart,
+                            verseEnd = if (cursor.isNull(5)) verseStart else cursor.getInt(5),
                             plainText = cursor.getString(6)
                         )
                     )
@@ -246,16 +250,20 @@ class BibleDatabase internal constructor(
             }
         }
 
-    private fun Cursor.toVerse(): Verse =
-        Verse(
+    private fun Cursor.toVerse(): Verse {
+        // DB-02: coalesce a NULL verse_end (single verse) to its start so the
+        // domain invariant verseEnd == verseStart holds; never expose 0.
+        val verseStart = getInt(3)
+        return Verse(
             id = getLong(0),
             chapterId = getLong(1),
             chapterNumber = getInt(2),
-            verseStart = getInt(3),
-            verseEnd = getInt(4),
+            verseStart = verseStart,
+            verseEnd = if (isNull(4)) verseStart else getInt(4),
             html = getString(5),
             plainText = getString(6)
         )
+    }
 
     private fun <T> query(sql: String, args: Array<String>, mapper: (Cursor) -> T): T =
         try {
