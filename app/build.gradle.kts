@@ -31,10 +31,29 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                storeFile = file(
+                    keystoreProperties["storeFile"] as String
+                )
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+            }
+        }
+    }
+
     buildTypes {
         release {
             optimization {
                 enable = false
+            }
+            // Apply the configured release key only when credentials are
+            // present. Debug builds and credential-less release builds must
+            // keep working (they produce an unsigned artifact).
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
             }
         }
     }
@@ -57,18 +76,6 @@ android {
                 providers.environmentVariable("ROBOLECTRIC_USER_HOME").orNull?.let { home ->
                     test.systemProperty("user.home", home)
                 }
-            }
-        }
-    }
-    signingConfigs {
-        create("release") {
-            if (keystorePropertiesFile.exists()) {
-                storeFile = file(
-                    keystoreProperties["storeFile"] as String
-                )
-                storePassword = keystoreProperties["storePassword"] as String
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
             }
         }
     }
