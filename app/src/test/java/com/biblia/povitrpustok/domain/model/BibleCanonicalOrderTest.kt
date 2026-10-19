@@ -73,12 +73,13 @@ class BibleCanonicalOrderTest {
     }
 
     @Test
-    fun canonical_testament_differs_from_corpus_metadata_where_required() {
-        // tesalonikarank1/2 are canonically NT although the corpus marks them OT
+    fun canonical_and_catalog_testament_agree_for_thessalonians() {
+        // CATALOG-01: the catalog now matches the corpus/canonical NT metadata
+        // (the old catalog incorrectly marked both letters as OT).
         assertEquals(Testament.NEW_TESTAMENT, BibleCanonicalOrder.testament("tesalonikarank1"))
         assertEquals(Testament.NEW_TESTAMENT, BibleCanonicalOrder.testament("tesalonikarank2"))
-        // raw corpus metadata is preserved for database consumption
-        assertEquals(Testament.OLD_TESTAMENT, BibleCatalog.byId("tesalonikarank1")!!.testament)
+        assertEquals(Testament.NEW_TESTAMENT, BibleCatalog.byId("tesalonikarank1")!!.testament)
+        assertEquals(Testament.NEW_TESTAMENT, BibleCatalog.byId("tesalonikarank2")!!.testament)
     }
 
     @Test

@@ -182,8 +182,9 @@ class BibleRepositoryContractTest {
     @Test
     fun corpus_metadata_anomalies_are_preserved_verbatim() = runBlocking {
         val tesalonikarank1 = repository.getBook("tesalonikarank1")
-        assertEquals(Testament.OLD_TESTAMENT, tesalonikarank1.testament)
-        assertEquals("tesalonikarank1", tesalonikarank1.englishName)
+        // CATALOG-01: catalog metadata was corrected to match the corpus.
+        assertEquals(Testament.NEW_TESTAMENT, tesalonikarank1.testament)
+        assertEquals("1 Thessalonians", tesalonikarank1.englishName)
 
         val korintkarant1 = repository.getBook("korintkarant1")
         assertEquals("Poilem", korintkarant1.displayName)

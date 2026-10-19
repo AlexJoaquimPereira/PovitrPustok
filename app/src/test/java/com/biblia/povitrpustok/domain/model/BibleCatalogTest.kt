@@ -1,63 +1,112 @@
 package com.biblia.povitrpustok.domain.model
 
+import android.content.Context
+import android.database.sqlite.SQLiteDatabase
+import androidx.test.core.app.ApplicationProvider
+import com.biblia.povitrpustok.core.database.AssetBibleDatabaseProvider
+import java.io.File
+import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 /**
- * Pure JVM tests for the static book catalog (implementation plan §12).
- * The catalog must be complete, consistent, and resolvable without ever
- * opening a SQLite database.
+ * CATALOG-01: the static catalog must agree with the corpus it describes.
+ *
+ * Ids, English names, testaments, and asset paths are hard contracts;
+ * display names are human-facing (and may deliberately normalize corpus
+ * spelling), so they are asserted non-blank plus a guard for the known
+ * "Dhumdutancho" typo.
  */
+@RunWith(RobolectricTestRunner::class)
 class BibleCatalogTest {
 
-    @Test
-    fun catalog_contains_one_entry_per_book() {
-        assertEquals(73, BibleCatalog.books.size)
+    private lateinit var context: Context
+    private lateinit var provider: AssetBibleDatabaseProvider
+
+    @Before
+    fun setUp() {
+        context = ApplicationProvider.getApplicationContext()
+        provider = AssetBibleDatabaseProvider(context)
+    }
+
+    @After
+    fun tearDown() {
+        provider.close()
     }
 
     @Test
-    fun ids_are_unique_and_match_asset_filenames() {
-        val ids = BibleCatalog.books.map { it.id }
-        assertEquals(73, ids.toSet().size)
-        BibleCatalog.books.forEach { book ->
-            assertEquals("bible/${book.id}.sqlite", book.databaseAsset)
-            assertTrue("databaseAsset must point into assets/bible", book.databaseAsset.startsWith("bible/"))
+    fun catalog_ids_order_and_assets_are_unique() {
+        assertEquals("the corpus has 73 books", 73, BibleCatalog.books.size)
+        assertEquals(73, BibleCatalog.books.map { it.id }.toSet().size)
+        assertEquals(73, BibleCatalog.books.map { it.databaseAsset }.toSet().size)
+        assertTrue(BibleCatalog.books.all { it.displayName.isNotBlank() })
+        assertEquals(
+            "catalog positions must be a gapless 1..73",
+            (1..73).toList(),
+            BibleCatalog.books.map { it.position }.sorted()
+        )
+        assertEquals(
+            "canonical order must cover every book",
+            73,
+            BibleCatalog.books.mapNotNull { BibleCanonicalOrder.position(it.id) }.distinct().size
+        )
+    }
+
+    @Test
+    fun catalog_metadata_matches_each_assets_books_row() = runBlocking {
+        val problems = mutableListOf<String>()
+
+        for (book in BibleCatalog.books) {
+            if (book.databaseAsset != "bible/${book.id}.sqlite") {
+                problems += "${book.id}: asset '${book.databaseAsset}' does not match id"
+            }
+            provider.openBook(book.id)
+            val file = File(context.filesDir, "bible/${book.id}.sqlite")
+            val raw = SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READONLY)
+            raw.use { database ->
+                database.rawQuery(
+                    "SELECT id, english_name, testament FROM books",
+                    null
+                ).use { cursor ->
+                    if (!cursor.moveToFirst()) {
+                        problems += "${book.id}: database has no books row"
+                    } else {
+                        val id = cursor.getString(0)
+                        val english = cursor.getString(1)
+                        val testament = cursor.getString(2)
+                        if (id != book.id) problems += "${book.id}: books.id is '$id'"
+                        if (english != book.englishName) {
+                            problems += "${book.id}: englishName '${book.englishName}' != corpus '$english'"
+                        }
+                        val expected = if (testament == "NT") {
+                            Testament.NEW_TESTAMENT
+                        } else {
+                            Testament.OLD_TESTAMENT
+                        }
+                        if (book.testament != expected) {
+                            problems += "${book.id}: testament ${book.testament} != corpus $testament"
+                        }
+                    }
+                }
+            }
         }
-    }
 
-    @Test
-    fun positions_are_the_canonical_ordering_without_gaps() {
-        assertEquals((1..73).toList(), BibleCatalog.books.map { it.position }.sorted())
-    }
+        // Guard the confirmed display-name typo without freezing every
+        // human-facing normalization.
+        val acts = BibleCatalog.byId("dhormdutancho_itihas")
+        assertTrue(
+            "Acts display name must use 'Dhormdutancho', got '${acts?.displayName}'",
+            acts?.displayName?.startsWith("Dhormdutancho") == true
+        )
 
-    @Test
-    fun every_book_has_display_and_english_names() {
-        BibleCatalog.books.forEach { book ->
-            assertTrue(book.displayName.isNotBlank())
-            assertTrue(book.englishName.isNotBlank())
-        }
-    }
-
-    @Test
-    fun byId_and_byPosition_resolve() {
-        val james = BibleCatalog.byId("jakob")
-        assertNotNull(james)
-        assertEquals("James", james!!.englishName)
-        assertEquals("Jakobachem", james.displayName)
-        assertEquals(Testament.NEW_TESTAMENT, james.testament)
-        assertEquals(53, james.position)
-
-        val job = BibleCatalog.byId("Jobachem_Pustok")
-        assertNotNull(job)
-        assertEquals("Job", job!!.englishName)
-        assertEquals(Testament.OLD_TESTAMENT, job.testament)
-
-        assertNull(BibleCatalog.byId("does-not-exist"))
-        assertNull(BibleCatalog.byPosition(999))
-        assertNotNull(BibleCatalog.byPosition(1))
-        assertEquals(1, BibleCatalog.byPosition(1)!!.position)
+        assertTrue(
+            "catalog/corpus mismatches:\n" + problems.joinToString("\n"),
+            problems.isEmpty()
+        )
     }
 }

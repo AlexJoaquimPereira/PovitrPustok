@@ -51,12 +51,11 @@ class BooksGroupingTest {
         val sections = BooksGrouping.groupByTestament(BibleCatalog.books).toMap()
         val newTestament = sections.getValue(Testament.NEW_TESTAMENT)
 
-        // canonically Thessalonians belong to the NT even though the corpus
-        // metadata marks them OT
+        // CATALOG-01: Thessalonians are NT in both the canonical order and
+        // the (corrected) catalog metadata.
         assertTrue(newTestament.any { it.id == "tesalonikarank1" })
         assertTrue(newTestament.any { it.id == "tesalonikarank2" })
-        // the raw corpus metadata is preserved for database consumption
-        assertEquals(Testament.OLD_TESTAMENT, BibleCatalog.byId("tesalonikarank1")!!.testament)
+        assertEquals(Testament.NEW_TESTAMENT, BibleCatalog.byId("tesalonikarank1")!!.testament)
         // short display names preserved
         assertEquals("Poilem", BibleCatalog.byId("korintkarant1")!!.displayName)
     }
