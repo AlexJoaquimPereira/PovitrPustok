@@ -237,16 +237,16 @@ class BibleDatabase internal constructor(
         }
 
     /**
-     * Full-text search within this book (Phase 5; corrective Issue 1): a
-     * single FTS5 MATCH query joined to verses and chapters, ordered
-     * deterministically by chapter position, verse start, verse id. The
-     * raw `verses.text_plain` is returned so the repository can build a
-     * portable snippet; FTS5 `snippet()` is intentionally not used because
-     * `verses_fts` (one column, external content) does not match the
-     * `verses` content-table schema, which makes `snippet()` behavior
-     * implementation-dependent across SQLite builds (the device-side
-     * "SELECT query fails" source). No chapter is ever loaded to build a
-     * result.
+     * Full-text search within this book (Phase 5; corrective Issue 1; SEARCH-01):
+     * a single FTS5 MATCH query joined to verses and chapters, ordered by
+     * relevance (`rank`/BM25) then deterministically by chapter position,
+     * verse start, verse id. The raw `verses.text_plain` is returned so the
+     * repository can build a portable snippet; FTS5 `snippet()` is
+     * intentionally not used because `verses_fts` (one column, external
+     * content) does not match the `verses` content-table schema, which makes
+     * `snippet()` behavior implementation-dependent across SQLite builds
+     * (the device-side "SELECT query fails" source). No chapter is ever
+     * loaded to build a result.
      */
     fun searchVerses(query: String, limit: Int = 50): List<BibleVerseHit> =
         query(
@@ -257,7 +257,7 @@ class BibleDatabase internal constructor(
             JOIN verses v ON v.id = f.rowid
             JOIN chapters c ON c.id = v.chapter_id
             WHERE verses_fts MATCH ?
-            ORDER BY c.position, v.verse_start, v.id
+            ORDER BY f.rank, c.position, v.verse_start, v.id
             LIMIT ?
             """.trimIndent(),
             arrayOf(query, limit.toString())

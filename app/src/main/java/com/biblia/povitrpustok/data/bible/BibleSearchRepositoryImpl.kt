@@ -1,7 +1,9 @@
 package com.biblia.povitrpustok.data.bible
 
 import com.biblia.povitrpustok.core.database.BibleDatabaseProvider
+import com.biblia.povitrpustok.core.database.BibleVerseHit
 import com.biblia.povitrpustok.domain.model.BibleBook
+import com.biblia.povitrpustok.domain.model.BibleCanonicalOrder
 import com.biblia.povitrpustok.domain.model.BibleCatalog
 import com.biblia.povitrpustok.domain.model.SearchResult
 import com.biblia.povitrpustok.domain.repository.BibleSearchRepository
@@ -19,9 +21,16 @@ import kotlinx.coroutines.withContext
  * search runs one FTS5 MATCH query per book through the existing lazy
  * [BibleDatabaseProvider] (handles are cached; nothing is opened at
  * startup, and verses are never loaded into Kotlin for string matching).
- * Results are merged and ordered deterministically: BibleCatalog position,
- * then chapter.position, then verseStart, then verseId, then a global
- * limit is applied.
+ *
+ * Ranking contract (SEARCH-01):
+ *  - within a book, hits are ordered by FTS5 relevance (`rank`/BM25), then
+ *    deterministically by chapter position, verse start, verse id;
+ *  - per-book scores are not comparable across independent indexes, so the
+ *    books are merged by *rank position*: all rank-1 hits first, then all
+ *    rank-2 hits, and so on, with books in canonical order;
+ *  - the global limit is applied after that merge, so the alphabetically
+ *    first book can no longer monopolize the result set;
+ *  - snippets are built only for the returned rows.
  *
  * Cancellation is checked before each book (DB-05), so a superseded search
  * stops opening/querying the remaining databases promptly.
@@ -37,49 +46,35 @@ class BibleSearchRepositoryImpl @Inject constructor(
         limit: Int
     ): List<SearchResult> = withContext(Dispatchers.IO) {
         val trimmed = query.trim()
-        if (trimmed.isEmpty()) {
+        if (trimmed.isEmpty() || limit <= 0) {
             return@withContext emptyList()
         }
 
-        val books = if (bookIds == null) {
+        val requested = if (bookIds == null) {
             BibleCatalog.books
         } else {
             val wanted = bookIds.toSet()
             BibleCatalog.books.filter { it.id in wanted }
         }
+        // Canonical book order is the deterministic tie-breaker for equal ranks.
+        val books = requested.sortedBy { BibleCanonicalOrder.position(it.id) ?: Int.MAX_VALUE }
 
-        val results = ArrayList<SearchResult>(limit * 2)
         val perBook = forEachBook(books) { book ->
             provider.openBook(book.id).searchVerses(trimmed, limit)
         }
-        for ((book, hits) in perBook) {
-            for (hit in hits) {
-                results.add(
-                    SearchResult(
-                        bookId = book.id,
-                        chapterId = hit.chapterId,
-                        chapterNumber = hit.chapterNumber,
-                        chapterPosition = hit.chapterPosition,
-                        verseId = hit.verseId,
-                        verseStart = hit.verseStart,
-                        verseEnd = hit.verseEnd,
-                        snippet = SnippetBuilder.build(hit.plainText, trimmed)
-                    )
-                )
-            }
-        }
 
-        val bookOrder = books.associate { it.id to it.position }
-        results
-            .sortedWith(
-                compareBy(
-                    { bookOrder[it.bookId] ?: Int.MAX_VALUE },
-                    { it.chapterPosition },
-                    { it.verseStart },
-                    { it.verseId }
-                )
+        mergeByRank(perBook, limit).map { (book, hit) ->
+            SearchResult(
+                bookId = book.id,
+                chapterId = hit.chapterId,
+                chapterNumber = hit.chapterNumber,
+                chapterPosition = hit.chapterPosition,
+                verseId = hit.verseId,
+                verseStart = hit.verseStart,
+                verseEnd = hit.verseEnd,
+                snippet = SnippetBuilder.build(hit.plainText, trimmed)
             )
-            .take(limit)
+        }
     }
 
     /**
@@ -96,4 +91,26 @@ class BibleSearchRepositoryImpl @Inject constructor(
             add(book to block(book))
         }
     }
+}
+
+/**
+ * Merges per-book hits (each already relevance-ordered) by rank position
+ * (SEARCH-01). [perBook] must be in canonical book order; the merged list is
+ * bounded by [limit]. Pure and FTS-independent so it is unit-testable.
+ */
+internal fun mergeByRank(
+    perBook: List<Pair<BibleBook, List<BibleVerseHit>>>,
+    limit: Int
+): List<Pair<BibleBook, BibleVerseHit>> {
+    if (limit <= 0) return emptyList()
+    val merged = ArrayList<Pair<BibleBook, BibleVerseHit>>(limit)
+    val maxRank = perBook.maxOfOrNull { it.second.size } ?: 0
+    for (rank in 0 until maxRank) {
+        for ((book, hits) in perBook) {
+            val hit = hits.getOrNull(rank) ?: continue
+            merged += book to hit
+            if (merged.size == limit) return merged
+        }
+    }
+    return merged
 }

@@ -5,10 +5,12 @@ import androidx.test.core.app.ApplicationProvider
 import com.biblia.povitrpustok.core.database.AssetBibleDatabaseProvider
 import com.biblia.povitrpustok.core.database.BibleDatabase
 import com.biblia.povitrpustok.core.database.BibleDatabaseProvider
+import com.biblia.povitrpustok.core.database.BibleVerseHit
 import com.biblia.povitrpustok.core.result.BibleDataException
 import com.biblia.povitrpustok.core.result.BibleDatabaseAccessException
 import com.biblia.povitrpustok.domain.model.BibleBook
 import com.biblia.povitrpustok.domain.model.BibleCatalog
+import com.biblia.povitrpustok.domain.model.Testament
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -117,4 +119,44 @@ class BibleSearchRepositoryTest {
             processed
         )
     }
+
+    /** SEARCH-01: fair rank interleaving and the global limit. */
+    @Test
+    fun merge_interleaves_books_by_rank_and_applies_the_global_limit() {
+        val a = book("a")
+        val b = book("b")
+        val c = book("c")
+        val perBook = listOf(
+            a to listOf(hit(1), hit(2), hit(3)),
+            b to listOf(hit(4)),
+            c to listOf(hit(5), hit(6))
+        )
+
+        assertEquals(
+            "rank 1 from each book first, then rank 2, in canonical order",
+            listOf("a:1", "b:4", "c:5", "a:2", "c:6"),
+            mergeByRank(perBook, limit = 5).map { (book, hit) -> "${book.id}:${hit.verseId}" }
+        )
+        assertEquals("the global limit applies after merging", 3, mergeByRank(perBook, limit = 3).size)
+        assertTrue("no books means no results", mergeByRank(emptyList(), limit = 10).isEmpty())
+    }
+
+    private fun book(id: String) = BibleBook(
+        id = id,
+        displayName = id,
+        englishName = id,
+        testament = Testament.OLD_TESTAMENT,
+        position = 1,
+        databaseAsset = "bible/$id.sqlite"
+    )
+
+    private fun hit(id: Long) = BibleVerseHit(
+        verseId = id,
+        chapterId = 1L,
+        chapterPosition = 1,
+        chapterNumber = 1,
+        verseStart = id.toInt(),
+        verseEnd = id.toInt(),
+        plainText = "verse $id"
+    )
 }

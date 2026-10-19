@@ -10,8 +10,10 @@ import com.biblia.povitrpustok.domain.model.SearchResult
  * BibleSearchQueryParser; the implementation guards blank input and never
  * concatenates raw user input into MATCH expressions itself.
  *
- * Results are ordered deterministically: canonical book order (BibleCatalog
- * position), then chapter.position, then verseStart, then verseId.
+ * Results follow the SEARCH-01 contract: within each book hits are ordered
+ * by FTS5 relevance (`rank`/BM25); books are then merged by rank position in
+ * canonical book order, and the global [search] limit is applied after the
+ * merge. Ties use chapter.position, verseStart, verseId.
  */
 interface BibleSearchRepository {
 

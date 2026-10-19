@@ -76,10 +76,14 @@ class BibleSearchRepositoryInstrumentedTest {
     }
 
     @Test
-    fun common_term_returns_results_from_many_books() = runBlocking {
-        val results = repository.search("\"sorvespor\"", limit = 300)
+    fun common_term_returns_results_from_many_books_at_the_default_limit() = runBlocking {
+        // SEARCH-01: the default UI limit (50) must not be monopolized by the
+        // alphabetically first book.
+        val results = repository.search("\"sorvespor\"")
+        assertEquals(50, results.size)
         val books = results.map { it.bookId }.toSet()
         assertTrue("expected hits from many books, got ${books.size}", books.size >= 10)
+        assertTrue("results must not all come from one book", books.size > 1)
     }
 
     @Test
@@ -169,13 +173,15 @@ class BibleSearchRepositoryInstrumentedTest {
 
     @Test
     fun results_are_ordered_deterministically() = runBlocking {
-        val results = repository.search("\"dev\"", bookIds = listOf("jakob"), limit = 200)
-        assertTrue(results.isNotEmpty())
-        val pairs = results.map { it.chapterPosition to it.verseStart }
+        // SEARCH-01: the same query must produce the same ordered ids on every
+        // run (rank interleaving is deterministic; canonical ties).
+        val first = repository.search("\"dev\"", bookIds = listOf("jakob"), limit = 200)
+        val second = repository.search("\"dev\"", bookIds = listOf("jakob"), limit = 200)
+        assertTrue(first.isNotEmpty())
         assertEquals(
-            "results must be ordered by chapter.position then verseStart",
-            pairs.sortedWith(compareBy({ it.first }, { it.second })),
-            pairs
+            "repeated searches must return the same order",
+            first.map { it.verseId },
+            second.map { it.verseId }
         )
     }
 }
