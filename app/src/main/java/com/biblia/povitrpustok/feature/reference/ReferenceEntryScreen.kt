@@ -52,7 +52,7 @@ import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
 @Composable
 fun ReferenceEntryScreen(
     onOpenResolved: (ReaderDestination) -> Unit,
-    onBack: () -> Unit = {},
+    onBack: () -> Unit,
     viewModel: ReferenceEntryViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()

@@ -58,7 +58,8 @@ fun PovitrPustokNavHost() {
                             destination.verseEnd
                         )
                     )
-                }
+                },
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -74,7 +75,8 @@ fun PovitrPustokNavHost() {
                             destination.verseEnd
                         )
                     )
-                }
+                },
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -163,7 +165,8 @@ fun PovitrPustokNavHost() {
                             destination.verseEnd
                         )
                     )
-                }
+                },
+                onBack = { navController.popBackStack() }
             )
         }
     }

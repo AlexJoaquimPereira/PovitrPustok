@@ -48,7 +48,7 @@ import com.biblia.povitrpustok.domain.model.ReaderDestination
 @Composable
 fun BookmarksScreen(
     onOpenBookmark: (ReaderDestination) -> Unit,
-    onBack: () -> Unit = {},
+    onBack: () -> Unit,
     viewModel: BookmarksViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()

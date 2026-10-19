@@ -54,7 +54,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun DailyReadingScreen(
     onOpenReading: (ReaderDestination) -> Unit,
-    onBack: () -> Unit = {},
+    onBack: () -> Unit,
     viewModel: DailyReadingViewModel = hiltViewModel()
 ) {
     LaunchedEffect(Unit) { viewModel.refreshIfDateChanged() }
