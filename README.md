@@ -12,10 +12,10 @@ the app never re-imports, rewrites or "fixes" it.
 | **Application ID / namespace** | `com.biblia.povitrpustok` |
 | **Version** | 1.0 (versionCode 1) |
 | **Min SDK** | 30 (Android 11) — required for the framework's FTS5 SQLite module |
-| **Compile SDK / Target SDK** | 35 / 37 |
+| **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 298 JVM unit tests (Robolectric 4.16.1) · 15 instrumented tests |
+| **Tests** | 380 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 15 instrumented tests |
 
 ---
 
@@ -340,7 +340,7 @@ PovitrPustok/
 │       │   │   ├── feature/{books,reader,search,reference,bookmarks,dailyreading}
 │       │   │   └── ui/{theme, HomeScreen, HomeViewModel}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
-│       ├── test/                        # 379 JVM unit tests + HTML fixtures
+│       ├── test/                        # 380 JVM unit tests + HTML fixtures
 │       └── androidTest/                 # 15 instrumented tests
 ├── gradle/libs.versions.toml            # version catalog
 ├── build.gradle.kts, settings.gradle.kts, gradle.properties
@@ -361,20 +361,36 @@ Because git does not track empty directories, a fresh clone will not contain the
 * **Android Studio** (recent stable) or a command-line Android SDK.
 * **JDK 25** for the Gradle daemon (declared in `gradle/gradle-daemon-jvm.properties`; provisioned
   automatically by the Foojay toolchain resolver).
-* **Android SDK Platform 35** (compileSdk) and platform tools.
+* **Android SDK Platform 36** (compileSdk/targetSdk) and platform tools.
 * Network access on first build (Gradle downloads dependencies and the wrapper).
 
 ### Obtaining the corpus
 
-The 73 SQLite databases are **not** in this repository. Place them here:
+The Konkani Bible text is **copyrighted** and is **not** distributed with this repository. Every
+checkout must supply it locally, or CI must fetch it from a private artifact store. The tooling and
+a checksum manifest live in [`tools/corpus/`](tools/corpus/README.md); the manifest contains only
+hashes and counts, never scripture.
 
-```text
-app/src/main/assets/bible/<BookId>.sqlite
+If you have lawful access to the source XML:
+
+```bash
+python3 tools/corpus/import_corpus.py --source /path/to/private/xml \
+  --out app/src/main/assets/bible
+python3 tools/corpus/generate_manifest.py
+python3 tools/corpus/generate_manifest.py --check
 ```
+
+Otherwise place a verified copy at `app/src/main/assets/bible/<BookId>.sqlite` and run the manifest
+check. Without the corpus, unit tests can be run with `-PskipCorpusTests`; the 137 real-corpus
+tests are then reported as skipped. CI uses the same switch when the private-artifact secrets are
+absent. See `tools/corpus/README.md` for the `CORPUS_ARCHIVE_*` secrets.
 
 The file names must match `databaseAsset` in
 [`BibleCatalog.kt`](app/src/main/java/com/biblia/povitrpustok/domain/model/BibleCatalog.kt)
 exactly. The catalog is the single source of truth for book id ⇄ asset mapping.
+
+Note that a built APK embeds the corpus in readable form; the private artifact store protects the
+source, not the installed app. Ensure you have distribution permission before publishing an APK.
 
 <details>
 <summary>Required asset names (73)</summary>

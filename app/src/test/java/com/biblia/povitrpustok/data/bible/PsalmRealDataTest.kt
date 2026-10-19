@@ -1,5 +1,7 @@
 package com.biblia.povitrpustok.data.bible
 
+import com.biblia.povitrpustok.testutil.CorpusAvailabilityRule
+
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.biblia.povitrpustok.core.database.AssetBibleDatabaseProvider
@@ -8,6 +10,7 @@ import com.biblia.povitrpustok.feature.reader.PsalmPoetry
 import com.biblia.povitrpustok.feature.reader.ReaderContentBuilder
 import com.biblia.povitrpustok.feature.reader.ReaderContentItem
 import kotlinx.coroutines.runBlocking
+import org.junit.Rule
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -25,6 +28,9 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class PsalmRealDataTest {
+
+    @get:Rule
+    val corpusAvailabilityRule = CorpusAvailabilityRule()
 
     private lateinit var provider: AssetBibleDatabaseProvider
     private val parser = BibleHtmlParser()

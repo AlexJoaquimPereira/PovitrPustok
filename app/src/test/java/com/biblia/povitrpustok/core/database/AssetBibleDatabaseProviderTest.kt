@@ -1,5 +1,7 @@
 package com.biblia.povitrpustok.core.database
 
+import com.biblia.povitrpustok.testutil.CorpusAvailabilityRule
+
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import androidx.test.core.app.ApplicationProvider
@@ -7,6 +9,7 @@ import com.biblia.povitrpustok.core.result.CorruptBibleDatabaseException
 import java.io.ByteArrayInputStream
 import java.io.File
 import kotlinx.coroutines.runBlocking
+import org.junit.Rule
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -25,6 +28,9 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class AssetBibleDatabaseProviderTest {
+
+    @get:Rule
+    val corpusAvailabilityRule = CorpusAvailabilityRule()
 
     private lateinit var context: Context
 

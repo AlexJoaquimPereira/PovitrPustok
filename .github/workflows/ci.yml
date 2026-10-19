@@ -18,6 +18,15 @@ jobs:
       contents: read
       actions: write
 
+    env:
+      # Private corpus artifact (copyrighted; never committed). Configure these
+      # repository secrets to run the full real-corpus suite in CI. Without
+      # them, corpus tests are skipped explicitly and the release build is not
+      # produced.
+      CORPUS_ARCHIVE_URL: ${{ secrets.CORPUS_ARCHIVE_URL }}
+      CORPUS_ARCHIVE_SHA256: ${{ secrets.CORPUS_ARCHIVE_SHA256 }}
+      CORPUS_ARCHIVE_TOKEN: ${{ secrets.CORPUS_ARCHIVE_TOKEN }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,8 +50,21 @@ jobs:
           key: robolectric-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
           restore-keys: robolectric-${{ runner.os }}-
 
-      - name: Unit tests (JVM + Robolectric)
+      - name: Fetch private corpus (when configured)
+        if: env.CORPUS_ARCHIVE_URL != ''
+        run: tools/corpus/fetch_corpus.sh
+
+      - name: Verify corpus manifest
+        if: env.CORPUS_ARCHIVE_URL != ''
+        run: python3 tools/corpus/generate_manifest.py --check
+
+      - name: Unit tests (full private corpus)
+        if: env.CORPUS_ARCHIVE_URL != ''
         run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+      - name: Unit tests (no private corpus; corpus tests skipped)
+        if: env.CORPUS_ARCHIVE_URL == ''
+        run: ./gradlew :app:testDebugUnitTest -PskipCorpusTests --stacktrace
 
       - name: Assemble debug APK
         run: ./gradlew :app:assembleDebug
@@ -56,7 +78,8 @@ jobs:
       # Device-only: FTS5 MATCH must run on an API 30+ device/emulator.
       # Until CI provisions one, this is a documented pre-release manual gate
       # (README §10). It is never masked with continue-on-error.
-      - name: Assemble release APK (unsigned without local credentials)
+      - name: Assemble release APK (requires private corpus)
+        if: env.CORPUS_ARCHIVE_URL != ''
         run: ./gradlew :app:assembleRelease
 
       - name: Upload test reports

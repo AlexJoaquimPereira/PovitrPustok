@@ -1,5 +1,7 @@
 package com.biblia.povitrpustok.data.bible
 
+import com.biblia.povitrpustok.testutil.CorpusAvailabilityRule
+
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.biblia.povitrpustok.core.database.AssetBibleDatabaseProvider
@@ -10,6 +12,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
+import org.junit.Rule
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -25,6 +28,9 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class BookTitleRepositoryCacheTest {
+
+    @get:Rule
+    val corpusAvailabilityRule = CorpusAvailabilityRule()
 
     private lateinit var context: Context
     private lateinit var delegate: AssetBibleDatabaseProvider

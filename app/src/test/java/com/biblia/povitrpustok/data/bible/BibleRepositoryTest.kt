@@ -1,5 +1,7 @@
 package com.biblia.povitrpustok.data.bible
 
+import com.biblia.povitrpustok.testutil.CorpusAvailabilityRule
+
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.biblia.povitrpustok.core.database.AssetBibleDatabaseProvider
@@ -8,6 +10,7 @@ import com.biblia.povitrpustok.core.result.BibleChapterNotFoundException
 import com.biblia.povitrpustok.domain.model.Testament
 import com.biblia.povitrpustok.domain.repository.BibleRepository
 import kotlinx.coroutines.runBlocking
+import org.junit.Rule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -23,6 +26,9 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class BibleRepositoryTest {
+
+    @get:Rule
+    val corpusAvailabilityRule = CorpusAvailabilityRule()
 
     private lateinit var repository: BibleRepository
 

@@ -1,5 +1,7 @@
 package com.biblia.povitrpustok.feature.reader
 
+import com.biblia.povitrpustok.testutil.CorpusAvailabilityRule
+
 import android.content.Context
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
@@ -11,6 +13,7 @@ import com.biblia.povitrpustok.domain.repository.BibleRepository
 import com.biblia.povitrpustok.domain.repository.BookmarkRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import org.junit.Rule
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -31,6 +34,9 @@ import org.robolectric.Shadows.shadowOf
  */
 @RunWith(RobolectricTestRunner::class)
 class ReaderBookmarkIntegrationTest {
+
+    @get:Rule
+    val corpusAvailabilityRule = CorpusAvailabilityRule()
 
     private lateinit var context: Context
     private lateinit var bibleProvider: AssetBibleDatabaseProvider

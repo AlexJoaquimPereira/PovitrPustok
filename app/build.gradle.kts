@@ -117,3 +117,13 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
 }
+
+// The Bible corpus is copyrighted and is not committed. CI runs without it by
+// default and passes -PskipCorpusTests; the real-corpus tests are then reported
+// as skipped instead of failing on missing assets. A local checkout without
+// assets still fails unless this property is explicitly set.
+tasks.withType<Test>().configureEach {
+    if (project.hasProperty("skipCorpusTests")) {
+        systemProperty("corpus.skip", "true")
+    }
+}

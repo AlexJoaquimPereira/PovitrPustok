@@ -1,5 +1,7 @@
 package com.biblia.povitrpustok.feature.reader
 
+import com.biblia.povitrpustok.testutil.CorpusAvailabilityRule
+
 import android.content.Context
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
@@ -9,6 +11,7 @@ import com.biblia.povitrpustok.core.html.BibleHtmlRenderer
 import com.biblia.povitrpustok.data.bible.BibleRepositoryImpl
 import com.biblia.povitrpustok.domain.repository.BibleRepository
 import kotlinx.coroutines.runBlocking
+import org.junit.Rule
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -28,6 +31,9 @@ import org.robolectric.Shadows.shadowOf
  */
 @RunWith(RobolectricTestRunner::class)
 class ReaderViewModelRealDataTest {
+
+    @get:Rule
+    val corpusAvailabilityRule = CorpusAvailabilityRule()
 
     private lateinit var provider: AssetBibleDatabaseProvider
     private lateinit var repository: BibleRepository

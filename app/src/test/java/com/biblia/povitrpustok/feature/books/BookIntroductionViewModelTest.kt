@@ -1,11 +1,14 @@
 package com.biblia.povitrpustok.feature.books
 
+import com.biblia.povitrpustok.testutil.CorpusAvailabilityRule
+
 import android.content.Context
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import com.biblia.povitrpustok.core.database.AssetBibleDatabaseProvider
 import com.biblia.povitrpustok.data.bible.BibleRepositoryImpl
 import com.biblia.povitrpustok.domain.repository.BibleRepository
+import org.junit.Rule
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -21,6 +24,9 @@ import org.robolectric.Shadows.shadowOf
  */
 @RunWith(RobolectricTestRunner::class)
 class BookIntroductionViewModelTest {
+
+    @get:Rule
+    val corpusAvailabilityRule = CorpusAvailabilityRule()
 
     private lateinit var provider: AssetBibleDatabaseProvider
     private lateinit var repository: BibleRepository
