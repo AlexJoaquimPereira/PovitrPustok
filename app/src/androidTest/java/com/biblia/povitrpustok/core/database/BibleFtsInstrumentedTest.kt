@@ -7,6 +7,7 @@ import com.biblia.povitrpustok.data.bible.BibleSearchRepositoryImpl
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -14,9 +15,10 @@ import org.junit.runner.RunWith
 /**
  * On-device FTS5 verification (Phase 2 test 8).
  *
- * The Android framework SQLite (API 30+) compiles the FTS5 module, unlike
- * Robolectric's desktop nativeruntime, so the full "exists AND queryable"
- * check runs here on a real device/emulator.
+ * FTS5 availability is a property of the device's SQLite build, not the API
+ * level: some OEM builds (observed on an API 31 MIUI device) omit it. These
+ * tests therefore skip when the module is absent; the scan fallback is covered
+ * by BibleDatabaseSearchFallbackTest and the repository instrumented tests.
  */
 @RunWith(AndroidJUnit4::class)
 class BibleFtsInstrumentedTest {
@@ -33,6 +35,7 @@ class BibleFtsInstrumentedTest {
     fun verses_fts_exists_is_populated_and_queryable() = runBlocking {
         val db = provider.openBook("jakob")
         try {
+            Assume.assumeTrue("FTS5 is not compiled into this device's SQLite", db.isFts5Available())
             assertTrue("verses_fts table must exist", db.hasFtsTable())
             assertTrue("FTS5 module must be compiled into framework sqlite", db.isFts5Available())
 
@@ -63,6 +66,7 @@ class BibleFtsInstrumentedTest {
     fun james_verse_count_matches_fts_index_count() = runBlocking {
         val db = provider.openBook("jakob")
         try {
+            Assume.assumeTrue("FTS5 is not compiled into this device's SQLite", db.isFts5Available())
             val totalVerses = db.getChapters("jakob")
                 .sumOf { db.getVerses(it.id).size }
             assertEquals(totalVerses.toLong(), db.ftsRowCount())
@@ -80,6 +84,11 @@ class BibleFtsInstrumentedTest {
      */
     @Test
     fun full_search_path_works_on_device_sqlite() = runBlocking {
+        val probe = provider.openBook("jakob")
+        Assume.assumeTrue(
+            "FTS5 is not compiled into this device's SQLite",
+            probe.isFts5Available()
+        )
         val repository = BibleSearchRepositoryImpl(provider)
 
         // common word

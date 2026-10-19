@@ -20,13 +20,15 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * On-device full-text search tests against the real corpus (Phase 5 §21).
- * The Android framework SQLite has FTS5 (unlike Robolectric), so MATCH
- * queries run here. Terms were verified against the real databases:
+ * On-device search tests against the real corpus (Phase 5 §21).
+ *
+ * Search uses FTS5 when the device's SQLite build provides it, and the
+ * normalization-aware scan fallback otherwise (SEARCH-04; observed on an API 31
+ * MIUI build without FTS5). Terms were verified against the real databases:
  *  - "subhagi" / "sõsnnikaiechi" in James
  *  - "sorvespor" across 55 books, "dev" across 66 books
  *  - "mhonn" in both Job chapter records with number 26 (positions 26, 27)
- *  - "sunôt" in the Genesis 17:11-12 range verse
+ *  - "gorbhest" in the Genesis 16:11-12 range verse
  */
 @RunWith(AndroidJUnit4::class)
 class BibleSearchRepositoryInstrumentedTest {
@@ -52,6 +54,17 @@ class BibleSearchRepositoryInstrumentedTest {
         assertTrue(results.isNotEmpty())
         assertTrue("expected a James hit", results.any { it.bookId == "jakob" })
         results.forEach { assertTrue(it.snippet.isNotBlank()) }
+    }
+
+    @Test
+    fun punctuation_and_apostrophe_queries_match() = runBlocking {
+        // Runs on both FTS5 and scan-fallback devices; pins token-edge
+        // punctuation and curly/ASCII apostrophe equivalence.
+        val punctuation = repository.search("\"subhagi,\"", bookIds = listOf("jakob"), limit = 10)
+        assertTrue("trailing punctuation must not defeat search", punctuation.isNotEmpty())
+
+        val apostrophe = repository.search("\"dil'lo\"", bookIds = listOf("jakob"), limit = 10)
+        assertTrue("ASCII apostrophe must match the corpus curly form", apostrophe.isNotEmpty())
     }
 
     @Test

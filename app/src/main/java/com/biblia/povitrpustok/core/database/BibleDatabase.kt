@@ -9,6 +9,8 @@ import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.Heading
 import com.biblia.povitrpustok.domain.model.IntroductionBlock
 import com.biblia.povitrpustok.domain.model.Verse
+import java.text.Normalizer
+import java.util.Locale
 
 /**
  * Read-only handle to one imported Bible book database (plan §11, §34).
@@ -237,18 +239,29 @@ class BibleDatabase internal constructor(
         }
 
     /**
-     * Full-text search within this book (Phase 5; corrective Issue 1; SEARCH-01):
-     * a single FTS5 MATCH query joined to verses and chapters, ordered by
-     * relevance (`rank`/BM25) then deterministically by chapter position,
-     * verse start, verse id. The raw `verses.text_plain` is returned so the
-     * repository can build a portable snippet; FTS5 `snippet()` is
-     * intentionally not used because `verses_fts` (one column, external
-     * content) does not match the `verses` content-table schema, which makes
-     * `snippet()` behavior implementation-dependent across SQLite builds
-     * (the device-side "SELECT query fails" source). No chapter is ever
-     * loaded to build a result.
+     * Full-text search within this book (Phase 5; corrective Issue 1; SEARCH-01).
+     *
+     * On SQLite builds with FTS5 this uses a single MATCH query joined to
+     * verses/chapters, ordered by relevance (`rank`/BM25) then deterministically
+     * by chapter position, verse start, verse id. The raw `verses.text_plain`
+     * is returned so the repository can build a portable snippet; FTS5
+     * `snippet()` is intentionally not used because `verses_fts` (one column,
+     * external content) does not match the `verses` content-table schema, which
+     * makes `snippet()` behavior implementation-dependent across SQLite builds.
+     *
+     * Not every device SQLite build includes FTS5 (observed on an API 31
+     * MIUI device: `no such module: fts5`). In that case search falls back to
+     * a normalization-aware scan of this book's verses: all query tokens must
+     * occur in `text_plain`, ignoring case and diacritics. Results are ordered
+     * by source position rather than BM25, but search remains functional
+     * offline and never returns a misleading empty result.
      */
-    fun searchVerses(query: String, limit: Int = 50): List<BibleVerseHit> =
+    fun searchVerses(query: String, limit: Int = 50): List<BibleVerseHit> {
+        if (limit <= 0) return emptyList()
+        return if (fts5Available) searchWithFts(query, limit) else searchWithScan(query, limit)
+    }
+
+    private fun searchWithFts(query: String, limit: Int): List<BibleVerseHit> =
         query(
             """
             SELECT v.id, v.chapter_id, c.position, v.chapter_number,
@@ -264,24 +277,100 @@ class BibleDatabase internal constructor(
         ) { cursor ->
             buildList {
                 while (cursor.moveToNext()) {
-                    // DB-02: verse_end is NULL for ordinary single verses
-                    // (getInt would return 0). A single verse has
-                    // verseEnd == verseStart; real source ranges keep their end.
-                    val verseStart = cursor.getInt(4)
-                    add(
-                        BibleVerseHit(
-                            verseId = cursor.getLong(0),
-                            chapterId = cursor.getLong(1),
-                            chapterPosition = cursor.getInt(2),
-                            chapterNumber = cursor.getInt(3),
-                            verseStart = verseStart,
-                            verseEnd = if (cursor.isNull(5)) verseStart else cursor.getInt(5),
-                            plainText = cursor.getString(6)
-                        )
-                    )
+                    add(cursor.toBibleVerseHit())
                 }
             }
         }
+
+    private fun searchWithScan(query: String, limit: Int): List<BibleVerseHit> {
+        val tokens = searchTokens(query)
+        if (tokens.isEmpty()) return emptyList()
+        return query(
+            """
+            SELECT v.id, v.chapter_id, c.position, v.chapter_number,
+                   v.verse_start, v.verse_end, v.text_plain
+            FROM verses v
+            JOIN chapters c ON c.id = v.chapter_id
+            ORDER BY c.position, v.verse_start, v.id
+            """.trimIndent(),
+            emptyArray()
+        ) { cursor ->
+            val hits = ArrayList<BibleVerseHit>(minOf(limit, 64))
+            while (hits.size < limit && cursor.moveToNext()) {
+                val normalized = normalizeForSearch(cursor.getString(6).orEmpty())
+                if (tokens.all { normalized.contains(it) }) {
+                    hits += cursor.toBibleVerseHit()
+                }
+            }
+            hits
+        }
+    }
+
+    private fun Cursor.toBibleVerseHit(): BibleVerseHit {
+        // DB-02: verse_end is NULL for ordinary single verses (getInt would
+        // return 0). A single verse has verseEnd == verseStart; real source
+        // ranges keep their end.
+        val verseStart = getInt(4)
+        return BibleVerseHit(
+            verseId = getLong(0),
+            chapterId = getLong(1),
+            chapterPosition = getInt(2),
+            chapterNumber = getInt(3),
+            verseStart = verseStart,
+            verseEnd = if (isNull(5)) verseStart else getInt(5),
+            plainText = getString(6)
+        )
+    }
+
+    /**
+     * Lazily probes whether this database's SQLite build can query the FTS5
+     * virtual table. Only the "no such module" error is treated as an absent
+     * module; anything else is a genuine data failure and is wrapped.
+     */
+    private val fts5Available: Boolean by lazy {
+        try {
+            sqliteDatabase.rawQuery("SELECT 1 FROM verses_fts LIMIT 1", null).use { true }
+        } catch (e: SQLiteException) {
+            if (e.message?.contains("no such module", ignoreCase = true) == true) {
+                false
+            } else {
+                throw BibleDatabaseAccessException(
+                    "FTS availability check failed: ${e.message}", e
+                )
+            }
+        }
+    }
+
+    private fun searchTokens(raw: String): List<String> =
+        raw.split(WHITESPACE)
+            // FTS tokenizers discard edge punctuation; the scan fallback must
+            // do the same or "dev,"/"tuka?" silently return nothing.
+            .map { it.trim { char -> !char.isLetterOrDigit() } }
+            .map(::normalizeForSearch)
+            .filter { it.isNotEmpty() && it !in FTS_OPERATORS }
+
+    companion object {
+        private val WHITESPACE = Regex("\\s+")
+        private val COMBINING_MARKS = Regex("\\p{M}+")
+        private val FTS_OPERATORS = setOf("or", "and", "not")
+
+        /**
+         * Case- and diacritic-insensitive form used by the scan fallback.
+         * Curly apostrophes are folded to ASCII so `dil’lo` and `dil'lo`
+         * match (the corpus uses U+2019; keyboards emit U+0027).
+         */
+        private fun normalizeForSearch(value: String): String =
+            Normalizer.normalize(
+                value
+                    .replace('\u2018', '\'')
+                    .replace('\u2019', '\'')
+                    .replace('\u201A', '\'')
+                    .replace('\u02BC', '\''),
+                Normalizer.Form.NFD
+            )
+                .replace(COMBINING_MARKS, "")
+                .lowercase(Locale.ROOT)
+    }
 
     private fun Cursor.toVerse(): Verse {
         // DB-02: coalesce a NULL verse_end (single verse) to its start so the

@@ -62,24 +62,20 @@ class BibleSearchRepositoryTest {
     }
 
     @Test
-    fun fts_failure_is_isolated_and_reported_without_throwing() = runBlocking {
+    fun search_works_without_fts5_and_returns_real_hits() = runBlocking {
         val provider = AssetBibleDatabaseProvider(context)
         try {
             val repository = BibleSearchRepositoryImpl(provider)
             val outcome = repository.searchWithDiagnostics(
-                "\"subhagi\"",
+                "subhagi",
                 bookIds = listOf("jakob"),
                 limit = 10
             )
-            if (outcome.failures.isNotEmpty()) {
-                // Robolectric's SQLite has no FTS5: the book is reported as a
-                // diagnostic and the corpus search still returns (no hits).
-                assertEquals(listOf("jakob"), outcome.failures.map { it.bookId })
-                assertTrue("a failed book must not fabricate hits", outcome.results.isEmpty())
-            } else {
-                // FTS5-capable runtime: real hits, no failure recorded.
-                assertTrue("FTS5-capable runtime must return hits", outcome.results.isNotEmpty())
-            }
+            // Robolectric's SQLite has no FTS5. The scan fallback must still
+            // find the (possibly accented) source text instead of reporting a
+            // per-book failure or an empty result.
+            assertTrue("no book may fail when the fallback is available", outcome.failures.isEmpty())
+            assertTrue("the scan fallback must return real hits", outcome.results.isNotEmpty())
         } finally {
             provider.close()
         }
