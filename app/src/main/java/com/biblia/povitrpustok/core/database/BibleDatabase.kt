@@ -108,10 +108,17 @@ class BibleDatabase internal constructor(
             }
         }
 
-    /** Verses of one chapter ordered by verse_start (plan §34). */
+    /**
+     * Verses of one chapter in source order (plan §34).
+     *
+     * DB-03: `verses.position` is the source/XML order. Ordering by
+     * `verse_start` silently reordered 77 chapters whose source order is not
+     * monotonic in the verse number (e.g. Job 33, Esther 3, Daniel 6's
+     * preface). `id` is the stable tie-breaker if a position ever repeats.
+     */
     fun getVerses(chapterId: Long): List<Verse> =
         query(
-            "SELECT id, chapter_id, chapter_number, verse_start, verse_end, text, text_plain FROM verses WHERE chapter_id = ? ORDER BY verse_start, id",
+            "SELECT id, chapter_id, chapter_number, verse_start, verse_end, text, text_plain FROM verses WHERE chapter_id = ? ORDER BY position, id",
             arrayOf(chapterId.toString())
         ) { cursor ->
             buildList {
