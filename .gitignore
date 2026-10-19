@@ -98,3 +98,6 @@ test-output/
 
 # Inert duplicate corpus tree (only app/src/main/assets is packaged)
 /app/src/assets/
+
+# Legacy prebuilt artifacts (build outputs live under app/build/outputs)
+/dist/

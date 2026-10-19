@@ -340,12 +340,11 @@ PovitrPustok/
 │       │   │   ├── feature/{books,reader,search,reference,bookmarks,dailyreading}
 │       │   │   └── ui/{theme, HomeScreen, HomeViewModel}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
-│       ├── test/                        # 298 JVM unit tests + HTML fixtures
+│       ├── test/                        # 379 JVM unit tests + HTML fixtures
 │       └── androidTest/                 # 15 instrumented tests
 ├── gradle/libs.versions.toml            # version catalog
 ├── build.gradle.kts, settings.gradle.kts, gradle.properties
 ├── gradlew, gradlew.bat, gradle/wrapper/
-├── dist/                                # prebuilt APKs (git-ignored)
 └── README.md
 ```
 
@@ -489,13 +488,16 @@ corpus (James, Job, Esther, Leviticus, Psalms, Jeremias, 1 Kings, Genesis).
 
 ## 11. Build outputs
 
-`dist/` holds prebuilt artifacts (git-ignored via `*.apk`):
+Artifacts are produced by Gradle under `app/build/outputs/` (never committed):
 
-| File | Description |
+| Task | Output |
 |---|---|
-| `app-debug.apk` | Debug build |
-| `app-release-signed.apk` | Signed release build |
-| `app-release-unsigned.apk` | Unsigned release build |
+| `:app:assembleDebug` | `app/build/outputs/apk/debug/app-debug.apk` |
+| `:app:assembleRelease` | `app/build/outputs/apk/release/app-release.apk` (signed only when `keystore.properties` exists; otherwise `app-release-unsigned.apk`) |
+| `:app:bundleRelease` | `app/build/outputs/bundle/release/app-release.aab` |
+
+The old `dist/` folder was removed in REPO-01: it held stale, divergent APKs that did not match the
+current corpus. Build the artifact you need from source instead.
 
 ---
 
