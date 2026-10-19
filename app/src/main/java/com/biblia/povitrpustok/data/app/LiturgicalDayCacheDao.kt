@@ -36,6 +36,25 @@ interface LiturgicalDayCacheDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertReadings(readings: List<LiturgicalReadingEntity>)
 
+    /**
+     * Atomically replaces the cached day and its readings (LITURGY-01).
+     *
+     * The day upsert (REPLACE) and the reading delete/insert run in one
+     * transaction, so a crash/process death can never expose a cached day
+     * with missing or mixed readings. Reading rows are re-pointed at the
+     * (possibly new) day id returned by the upsert.
+     */
+    @Transaction
+    suspend fun replaceDay(
+        day: LiturgicalDayCacheEntity,
+        readings: List<LiturgicalReadingEntity>
+    ): Long {
+        val dayId = upsertDay(day)
+        deleteReadings(dayId)
+        insertReadings(readings.map { it.copy(dayId = dayId) })
+        return dayId
+    }
+
     @Query("DELETE FROM liturgical_day_cache")
     suspend fun clearAll()
 }

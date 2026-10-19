@@ -54,12 +54,16 @@ class LiturgicalRepositoryImpl @Inject constructor(
 
             when (val network = fetchFromNetwork(date)) {
                 is LiturgicalDayResult.Success -> {
-                    val dayId = cacheDao.upsertDay(
-                        LiturgicalCacheMapper.toDayEntity(network.day, System.currentTimeMillis())
-                    )
-                    cacheDao.deleteReadings(dayId)
-                    cacheDao.insertReadings(
-                        LiturgicalCacheMapper.toReadingEntities(dayId, network.day.readings)
+                    // LITURGY-01: one transaction — day + readings are
+                    // replaced atomically, so process death can never leave a
+                    // cached day with missing/mixed readings.
+                    cacheDao.replaceDay(
+                        day = LiturgicalCacheMapper.toDayEntity(network.day, System.currentTimeMillis()),
+                        readings = LiturgicalCacheMapper.toReadingEntities(
+                            // The DAO re-points rows at the real day id.
+                            dayId = 0L,
+                            readings = network.day.readings
+                        )
                     )
                     network
                 }
