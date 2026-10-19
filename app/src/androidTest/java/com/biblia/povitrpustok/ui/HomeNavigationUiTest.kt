@@ -1,10 +1,13 @@
 package com.biblia.povitrpustok.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.biblia.povitrpustok.MainActivity
 import org.junit.Rule
@@ -33,6 +36,19 @@ class HomeNavigationUiTest {
         composeRule.onNodeWithContentDescription("Back").assertIsDisplayed().performClick()
 
         composeRule.onNodeWithText(notice).assertIsDisplayed()
+    }
+
+    @Test
+    fun search_returns_james_results() {
+        composeRule.onNodeWithText("Search").performClick()
+        composeRule.onNode(hasSetTextAction()).performTextInput("subhagi")
+
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            // The query field plus at least one rendered result snippet.
+            composeRule.onAllNodesWithText("subhagi", substring = true)
+                .fetchSemanticsNodes().size > 1
+        }
+        composeRule.onNodeWithText("No results found.").assertDoesNotExist()
     }
 
     @Test
