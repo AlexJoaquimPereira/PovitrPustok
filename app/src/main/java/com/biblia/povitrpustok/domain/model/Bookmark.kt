@@ -3,10 +3,11 @@ package com.biblia.povitrpustok.domain.model
 /**
  * A bookmark identifying an exact Bible location (implementation plan §3–§5).
  *
- * Identity is the stable internal location: [bookId] + [chapterId] +
- * [verseId]; [chapterPosition] supports Reader navigation. Display values
- * ([chapterNumber], [verseStart], [verseEnd]) are convenience copies for
- * the bookmark list and are never used for identity.
+ * Stable navigation identity: [bookId] + [chapterPosition] + [verseStart]/
+ * [verseEnd]. [chapterId]/[verseId] are corpus row ids captured when the
+ * bookmark was created; the prepared assets are regenerated on app update,
+ * so row ids must never be used to reopen a bookmark (BOOKMARK-01).
+ * [chapterNumber] is a display copy only.
  */
 data class Bookmark(
     val id: Long,
@@ -20,12 +21,15 @@ data class Bookmark(
     val createdAt: Long
 ) {
 
-    /** Reader navigation destination for this bookmark. */
+    /**
+     * Reader navigation destination for this bookmark, using only stable
+     * location fields. The passage range identifies the verse even if the
+     * corpus row ids changed since the bookmark was saved.
+     */
     fun toReaderDestination(): ReaderDestination =
         ReaderDestination(
             bookId = bookId,
             chapterPosition = chapterPosition,
-            verseId = verseId,
             verseStart = verseStart,
             verseEnd = verseEnd
         )
