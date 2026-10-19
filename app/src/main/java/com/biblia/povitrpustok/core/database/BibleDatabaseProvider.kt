@@ -22,6 +22,13 @@ interface BibleDatabaseProvider {
      */
     suspend fun openBook(bookId: String): BibleDatabase
 
-    /** Closes all cached handles. */
+    /**
+     * Closes all cached handles and permanently closes this provider
+     * (PROVIDER-01): repeated calls are no-ops, and any later [openBook]
+     * throws [IllegalStateException]. Handles returned before close remain
+     * references but fail fast if used (closed SQLite connection).
+     * Production keeps the provider for the process lifetime; this exists
+     * for tests/lifecycle teardown.
+     */
     fun close()
 }

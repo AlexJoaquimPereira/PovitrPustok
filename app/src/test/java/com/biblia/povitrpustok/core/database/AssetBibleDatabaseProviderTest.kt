@@ -244,6 +244,27 @@ class AssetBibleDatabaseProviderTest {
         }
     }
 
+    @Test
+    fun open_after_close_is_rejected() = runBlocking {
+        val provider = freshProvider()
+        provider.openBook("jakob")
+        provider.close()
+
+        try {
+            provider.openBook("jakob")
+            fail("expected IllegalStateException after close")
+        } catch (expected: IllegalStateException) {
+            // terminal provider: no use-after-close path
+        }
+    }
+
+    @Test
+    fun close_is_idempotent() {
+        val provider = freshProvider()
+        provider.close()
+        provider.close()
+    }
+
     private fun appVersion(): String {
         @Suppress("DEPRECATION")
         val code = context.packageManager.getPackageInfo(context.packageName, 0).versionCode

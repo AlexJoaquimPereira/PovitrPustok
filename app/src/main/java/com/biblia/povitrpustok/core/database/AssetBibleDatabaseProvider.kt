@@ -18,6 +18,7 @@ import java.nio.file.StandardCopyOption
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -73,10 +74,12 @@ class AssetBibleDatabaseProvider @Inject constructor(
 
     private val mutex = Mutex()
     private val openDatabases = mutableMapOf<String, BibleDatabase>()
+    private var closed = false
 
     override suspend fun openBook(bookId: String): BibleDatabase =
         withContext(Dispatchers.IO) {
             mutex.withLock {
+                check(!closed) { "BibleDatabaseProvider is closed." }
                 openDatabases[bookId]?.let { return@withLock it }
                 val book = BibleCatalog.byId(bookId)
                     ?: throw BibleBookNotFoundException(bookId)
@@ -87,8 +90,17 @@ class AssetBibleDatabaseProvider @Inject constructor(
         }
 
     override fun close() {
-        openDatabases.values.forEach { it.close() }
-        openDatabases.clear()
+        // Synchronized with openBook and terminal (PROVIDER-01). runBlocking
+        // is safe here: production never closes the singleton; tests call it
+        // from teardown, outside any provider lock.
+        runBlocking {
+            mutex.withLock {
+                if (closed) return@withLock
+                closed = true
+                openDatabases.values.forEach { it.close() }
+                openDatabases.clear()
+            }
+        }
     }
 
     private fun prepare(book: BibleBook): BibleDatabase {
