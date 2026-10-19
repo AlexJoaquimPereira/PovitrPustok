@@ -1,6 +1,7 @@
 package com.biblia.povitrpustok.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,46 +46,59 @@ fun HomeScreen(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 32.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(28.dp))
-            Button(onClick = onOpenBooks, modifier = Modifier.fillMaxWidth()) {
-                Text(text = stringResource(R.string.home_bible))
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = onOpenSearch, modifier = Modifier.fillMaxWidth()) {
-                Text(text = stringResource(R.string.home_search))
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = onOpenBookmarks, modifier = Modifier.fillMaxWidth()) {
-                Text(text = stringResource(R.string.home_bookmarks))
-            }
-            val current = readingState
-            if (current != null) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 32.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(28.dp))
+                Button(onClick = onOpenBooks, modifier = Modifier.fillMaxWidth()) {
+                    Text(text = stringResource(R.string.home_bible))
+                }
                 Spacer(modifier = Modifier.height(8.dp))
-                Button(onClick = { onContinueReading(current) }, modifier = Modifier.fillMaxWidth()) {
-                    Text(text = stringResource(R.string.home_continue_reading))
+                Button(onClick = onOpenSearch, modifier = Modifier.fillMaxWidth()) {
+                    Text(text = stringResource(R.string.home_search))
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = onOpenBookmarks, modifier = Modifier.fillMaxWidth()) {
+                    Text(text = stringResource(R.string.home_bookmarks))
+                }
+                val current = readingState
+                if (current != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = { onContinueReading(current) }, modifier = Modifier.fillMaxWidth()) {
+                        Text(text = stringResource(R.string.home_continue_reading))
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = onOpenReference, modifier = Modifier.fillMaxWidth()) {
+                    Text(text = stringResource(R.string.home_reference))
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = onOpenDailyReading, modifier = Modifier.fillMaxWidth()) {
+                    Text(text = stringResource(R.string.home_daily_reading))
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = onOpenReference, modifier = Modifier.fillMaxWidth()) {
-                Text(text = stringResource(R.string.home_reference))
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = onOpenDailyReading, modifier = Modifier.fillMaxWidth()) {
-                Text(text = stringResource(R.string.home_daily_reading))
-            }
+
+            Text(
+                text = stringResource(R.string.corpus_copyright_notice),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
+            )
         }
     }
 }

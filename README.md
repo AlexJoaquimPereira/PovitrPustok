@@ -21,9 +21,10 @@ the app never re-imports, rewrites or "fixes" it.
 
 > [!IMPORTANT]
 > **The Bible corpus is not committed to this repository.**
-> The 73 `*.sqlite` files (≈25 MB) under `app/src/main/assets/bible/` are excluded by
-> `.gitignore` (`*.sqlite`, `*.sql`). A fresh clone therefore **builds but cannot display
-> Bible text** until the corpus is supplied — see [Obtaining the corpus](#obtaining-the-corpus).
+> The Konkani text is © **Archdiocese of Goa and Daman**. The 73 `*.sqlite` files (≈25 MB) under
+> `app/src/main/assets/bible/` are excluded by `.gitignore` (`*.sqlite`, `*.sql`). A fresh clone
+> therefore **builds but cannot display Bible text** until the corpus is supplied — see
+> [Obtaining the corpus](#obtaining-the-corpus).
 
 ---
 
@@ -567,7 +568,12 @@ Bible corpus from inside the app.
 
 ---
 
-## 15. License
+## 15. License and corpus attribution
 
 No license file is included in this repository. All rights are reserved by the repository owner
 unless a license is added.
+
+**Bible corpus:** the Konkani Bible text, the source XML, and the derived SQLite databases are
+© **Archdiocese of Goa and Daman**. All rights reserved by the rights holder. They are not
+distributed with this repository; see [Obtaining the corpus](#obtaining-the-corpus). Any use or
+distribution of the text — including inside a built APK — requires the Archdiocese's permission.

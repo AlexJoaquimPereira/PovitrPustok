@@ -1,7 +1,7 @@
 # Private Bible corpus (copyrighted)
 
-The Konkani Bible text is copyrighted and is **not** committed to this
-repository. This directory contains only tooling and metadata (SHA-256 hashes,
+The Konkani Bible text is copyrighted by the **Archdiocese of Goa and Daman** and is **not**
+committed to this repository. This directory contains only tooling and metadata (SHA-256 hashes,
 counts, schema fingerprint); it contains no scripture.
 
 ## Layout
