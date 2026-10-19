@@ -73,6 +73,13 @@ class BookNameMatcherTest {
     }
 
     @Test
+    fun ecclesiastes_alias_resolves() {
+        // REF-03: the catalog uses "Qoheleth"; lectionaries use Ecclesiastes.
+        assertEquals("Upodexok", BookNameMatcher.match("Ecclesiastes")?.id)
+        assertEquals("Upodexok", BookNameMatcher.match("Eccl")?.id)
+    }
+
+    @Test
     fun no_silent_abbreviation_guessing() {
         // an unknown abbreviation must not resolve to a similar book
         assertNull(BookNameMatcher.match("Jer"))

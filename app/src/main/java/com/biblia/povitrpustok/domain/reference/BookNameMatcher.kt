@@ -25,6 +25,12 @@ object BookNameMatcher {
         "gen" to "Utpoti", // Genesis
         "psalm" to "Stotranchem_Pustok", // Psalms (lectionary singular form)
         "psalms" to "Stotranchem_Pustok",
+        // REF-03: the catalog uses the Hebrew name "Qoheleth"; the common
+        // lectionary form is Ecclesiastes.
+        "ecclesiastes" to "Upodexok",
+        "eccles" to "Upodexok",
+        "eccl" to "Upodexok",
+        "ecc" to "Upodexok",
         // Corpus metadata for these books lacks proper English names, so the
         // lectionary forms are provided as aliases (catalog data untouched).
         "1 thessalonians" to "tesalonikarank1",

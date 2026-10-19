@@ -1,6 +1,7 @@
 package com.biblia.povitrpustok.data.bible
 
 import com.biblia.povitrpustok.domain.model.BibleCatalog
+import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.ResolvedScriptureReference
 import com.biblia.povitrpustok.domain.model.ScriptureResolution
 import com.biblia.povitrpustok.domain.reference.BookNameMatcher
@@ -65,6 +66,16 @@ class ScriptureReferenceResolverImpl @Inject constructor(
         val chapters = bibleRepository.getChapters(bookId)
         val chapterMatches = chapters.filter { it.number == parsed.chapter }
         if (chapterMatches.isEmpty()) {
+            // REF-03: in a single-chapter book a bare number is a verse
+            // ("Jude 5"), not a chapter locator.
+            if (chapters.size == 1 && parsed.verseStart == null) {
+                return resolveVerse(
+                    bookId = bookId,
+                    chapter = chapters.single(),
+                    requestedStart = parsed.chapter,
+                    requestedEnd = null
+                )
+            }
             return ScriptureResolution.NotFound(
                 "No chapter numbered ${parsed.chapter} in book '$bookId'."
             )
@@ -91,10 +102,20 @@ class ScriptureReferenceResolverImpl @Inject constructor(
             )
         }
 
+        return resolveVerse(bookId, chapter, requestedStart, parsed.verseEnd)
+    }
+
+    /** Resolves a verse/range within one known chapter (REF-01/02, REF-03). */
+    private suspend fun resolveVerse(
+        bookId: String,
+        chapter: Chapter,
+        requestedStart: Int,
+        requestedEnd: Int?
+    ): ScriptureResolution {
         val verse = bibleRepository.getVersesCovering(bookId, chapter.id, requestedStart)
         if (verse.isEmpty()) {
             return ScriptureResolution.NotFound(
-                "No verse covering $requestedStart in chapter ${parsed.chapter} of '$bookId'."
+                "No verse covering $requestedStart in chapter ${chapter.number} of '$bookId'."
             )
         }
         if (verse.size > 1) {
@@ -110,12 +131,11 @@ class ScriptureReferenceResolverImpl @Inject constructor(
         val sourceVerse = verse.single()
 
         // REF-02: a requested range end must be supported by chapter data.
-        val requestedEnd = parsed.verseEnd
         if (requestedEnd != null && requestedEnd != requestedStart) {
             val endCoverage = bibleRepository.getVersesCovering(bookId, chapter.id, requestedEnd)
             if (endCoverage.isEmpty()) {
                 return ScriptureResolution.NotFound(
-                    "No verse covering range end $requestedEnd in chapter ${parsed.chapter} of '$bookId'."
+                    "No verse covering range end $requestedEnd in chapter ${chapter.number} of '$bookId'."
                 )
             }
         }
@@ -131,7 +151,7 @@ class ScriptureReferenceResolverImpl @Inject constructor(
                 // The resolved extent covers the source verse's own range and
                 // any explicitly requested range end (a range is never split
                 // into artificial verses; source verses are never invented).
-                verseEnd = max(parsed.verseEnd ?: sourceVerse.verseEnd, sourceVerse.verseEnd)
+                verseEnd = max(requestedEnd ?: sourceVerse.verseEnd, sourceVerse.verseEnd)
             )
         )
     }

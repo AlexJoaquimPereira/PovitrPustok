@@ -164,6 +164,15 @@ class ScriptureReferenceParserTest {
     }
 
     @Test
+    fun en_and_em_dashes_are_range_separators() {
+        // REF-03: lectionary feeds use typographic dashes.
+        assertEquals(ScriptureReference("James", 1, 5, 8), valid("James 1:5\u20138"))
+        assertEquals(ScriptureReference("James", 1, 5, 8), valid("James 1:5\u20148"))
+        assertEquals(ScriptureReference("James", 1, 5, 8), valid("James 1:5\u20108"))
+        assertEquals(ScriptureReference("James", 1, 5, 8), valid("James 1:5\u20118"))
+    }
+
+    @Test
     fun cross_chapter_reference_is_unsupported() {
         invalid("John 3:16-4:2")
     }

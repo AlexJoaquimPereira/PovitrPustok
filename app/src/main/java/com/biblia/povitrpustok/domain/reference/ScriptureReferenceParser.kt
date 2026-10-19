@@ -32,7 +32,14 @@ object ScriptureReferenceParser {
     private val AND_WORD = Regex("\\band\\b", RegexOption.IGNORE_CASE)
 
     fun parse(rawInput: String): Result {
-        val collapsed = WHITESPACE.replace(rawInput.trim(), " ").trim()
+        // REF-03: lectionary feeds often use en/em/minus dashes for ranges.
+        val normalizedDashes = rawInput
+            .replace('\u2010', '-') // hyphen
+            .replace('\u2011', '-') // non-breaking hyphen
+            .replace('\u2013', '-') // en dash
+            .replace('\u2014', '-') // em dash
+            .replace('\u2212', '-') // minus sign
+        val collapsed = WHITESPACE.replace(normalizedDashes.trim(), " ").trim()
         if (collapsed.isEmpty()) {
             return Result.Invalid("Reference is empty.")
         }

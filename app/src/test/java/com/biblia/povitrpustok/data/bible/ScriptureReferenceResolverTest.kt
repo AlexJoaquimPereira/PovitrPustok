@@ -186,6 +186,38 @@ class ScriptureReferenceResolverTest {
     }
 
     @Test
+    fun single_chapter_book_bare_number_is_a_verse() = runBlocking {
+        val jude = resolved("Jude 5")
+        assertEquals("judas", jude.bookId)
+        assertEquals(1, jude.chapterNumber)
+        assertEquals(5, jude.verseStart)
+
+        val philemon = resolved("Philemon 9")
+        assertEquals("filemonak", philemon.bookId)
+        assertEquals(1, philemon.chapterNumber)
+        assertEquals(9, philemon.verseStart)
+
+        val secondJohn = resolved("2 John 5")
+        assertEquals("juanv2", secondJohn.bookId)
+        assertEquals(1, secondJohn.chapterNumber)
+        assertEquals(5, secondJohn.verseStart)
+
+        // An explicit chapter 1 remains chapter-only (no invented verse).
+        val judeChapter = resolved("Jude 1")
+        assertEquals("judas", judeChapter.bookId)
+        assertEquals(1, judeChapter.chapterNumber)
+        assertNull(judeChapter.verseStart)
+    }
+
+    @Test
+    fun ecclesiastes_alias_resolves() = runBlocking {
+        val reference = resolved("Ecclesiastes 1:2")
+        assertEquals("Upodexok", reference.bookId)
+        assertEquals(1, reference.chapterNumber)
+        assertEquals(2, reference.verseStart)
+    }
+
+    @Test
     fun reader_destination_generation() = runBlocking {
         val r = resolved("James 1:5")
         val destination = r.toReaderDestination()
