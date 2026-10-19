@@ -585,6 +585,8 @@ Bible corpus from inside the app.
 * Section references of the form "implementation plan §N" in source KDoc point into that document.
 * Release notes for this version: [`RELEASE_NOTES_1.1.0.md`](RELEASE_NOTES_1.1.0.md). Earlier
   releases are tagged in git (`v1.0.0`, `v1.1.0`).
+* UI/UX research and prioritized, non-breaking improvement proposals:
+  [`UI_UX_RESEARCH.md`](UI_UX_RESEARCH.md).
 
 ---
 
