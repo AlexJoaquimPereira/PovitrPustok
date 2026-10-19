@@ -8,6 +8,8 @@ import com.biblia.povitrpustok.domain.repository.LiturgicalRepository
 import com.google.gson.JsonSyntaxException
 import java.io.IOException
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
@@ -122,5 +124,13 @@ class LiturgicalRepositoryImpl @Inject constructor(
         get() = appDatabase.liturgicalDayCacheDao()
 
     private fun LocalDate.monthDayPath(): String =
-        "%02d-%02d".format(monthValue, dayOfMonth)
+        // LITURGY-03: API paths require ASCII digits; the default locale can
+        // produce non-Latin numerals (e.g. Arabic-Indic) and cause 404s.
+        format(MONTH_DAY_FORMAT)
+
+    private companion object {
+        /** Immutable/thread-safe; pins ASCII digits and MM-DD order. */
+        val MONTH_DAY_FORMAT: DateTimeFormatter =
+            DateTimeFormatter.ofPattern("MM-dd", Locale.ROOT)
+    }
 }

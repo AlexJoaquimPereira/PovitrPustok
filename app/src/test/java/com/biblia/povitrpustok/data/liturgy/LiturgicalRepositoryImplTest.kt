@@ -6,6 +6,7 @@ import com.biblia.povitrpustok.domain.model.LiturgicalErrorKind
 import com.google.gson.JsonSyntaxException
 import java.io.IOException
 import java.time.LocalDate
+import java.util.Locale
 import kotlinx.coroutines.runBlocking
 import okhttp3.ResponseBody
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -57,15 +58,21 @@ class LiturgicalRepositoryImplTest {
     ) : CatholicReadingsApi {
         var readingsCalls = 0
         var calendarCalls = 0
+        var lastYear: Int? = null
+        var lastMonthDay: String? = null
 
         override suspend fun getReadings(year: Int, monthDay: String): ReadingsDto {
             readingsCalls++
+            lastYear = year
+            lastMonthDay = monthDay
             readingsFailure?.let { throw it }
             return readings
         }
 
         override suspend fun getCalendar(year: Int, monthDay: String): CalendarDto {
             calendarCalls++
+            lastYear = year
+            lastMonthDay = monthDay
             calendarFailure?.let { throw it }
             return calendar
         }
@@ -98,6 +105,23 @@ class LiturgicalRepositoryImplTest {
         assertEquals(3, day.readings.size)
         assertEquals(1, api.readingsCalls)
         assertEquals(1, api.calendarCalls)
+    }
+
+    @Test
+    fun api_date_path_uses_ascii_digits_in_a_non_latin_locale() = runBlocking {
+        val previous = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.forLanguageTag("ar-EG"))
+            val api = FakeApi()
+            val repository = newRepository(api)
+
+            repository.getLiturgicalDay(LocalDate.of(2026, 1, 5))
+
+            assertEquals(2026, api.lastYear)
+            assertEquals("01-05", api.lastMonthDay)
+        } finally {
+            Locale.setDefault(previous)
+        }
     }
 
     @Test
