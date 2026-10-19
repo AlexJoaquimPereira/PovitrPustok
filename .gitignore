@@ -91,3 +91,7 @@ test-output/
 # SQLite databases
 *.sql
 *.sqlite
+
+# Audit / remediation working documents (kept local; deliberately not versioned)
+/AUDIT_REPORT.md
+/TODO.md
