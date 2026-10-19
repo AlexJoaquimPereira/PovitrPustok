@@ -73,6 +73,8 @@ class ReaderViewModelTest {
         private val contents: Map<String, Map<Int, ChapterContent>> = emptyMap(),
         val gate: CompletableDeferred<Unit>? = null
     ) : BibleRepository {
+        var failure: Exception? = null
+
         override suspend fun getBook(bookId: String): BibleBook =
             books[bookId] ?: throw BibleBookNotFoundException(bookId)
 
@@ -81,6 +83,7 @@ class ReaderViewModelTest {
 
         override suspend fun getChapter(bookId: String, chapterPosition: Int): ChapterContent {
             gate?.await()
+            failure?.let { throw it }
             return contents[bookId]?.get(chapterPosition)
                 ?: throw BibleChapterNotFoundException(bookId, chapterPosition)
         }
@@ -164,6 +167,49 @@ class ReaderViewModelTest {
         val state = viewModel.uiState.value
         assertNotNull("expected an error message", state.errorMessage)
         assertFalse(state.isLoading)
+    }
+
+    @Test
+    fun superseded_load_never_publishes_an_error() = runTest(dispatcher.scheduler) {
+        val gate = CompletableDeferred<Unit>()
+        val bookId = "jakob"
+        val ch1 = chapter(bookId, number = 1, position = 1)
+        val ch2 = chapter(bookId, number = 2, position = 2)
+        val repository = FakeRepository(
+            chapterLists = mapOf(bookId to listOf(ch1, ch2)),
+            contents = mapOf(bookId to mapOf(1 to content(bookId, ch1), 2 to content(bookId, ch2))),
+            gate = gate
+        )
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository())
+
+        viewModel.load(bookId, 1)
+        runCurrent() // first load is suspended on the gate
+        viewModel.load(bookId, 2) // cancels the first load
+        runCurrent()
+
+        assertNull(
+            "a cancelled load must never surface an error",
+            viewModel.uiState.value.errorMessage
+        )
+
+        gate.complete(Unit)
+        advanceUntilIdle()
+        assertEquals(2, viewModel.uiState.value.chapter?.position)
+        assertNull(viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
+    fun unexpected_runtime_failure_is_a_controlled_error() = runTest(dispatcher.scheduler) {
+        val repository = FakeRepository().apply { failure = IllegalStateException("boom") }
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository())
+
+        viewModel.load("jakob", 1)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse("the Reader must not stay loading", state.isLoading)
+        assertNotNull("unexpected failures must surface a controlled error", state.errorMessage)
+        assertNull("no chapter may be published", state.chapter)
     }
 
     @Test

@@ -94,9 +94,18 @@ class ReaderViewModel @Inject constructor(
                 // Reading state: persist the last opened location once per
                 // meaningful navigation — never on scroll.
                 bookmarkRepository.updateReadingState(bookId, chapterPosition)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                // A newer load superseded this one; never publish an error.
+                throw e
             } catch (e: BibleDataException) {
                 _uiState.update {
                     it.copy(isLoading = false, errorMessage = e.message ?: "Failed to load chapter.")
+                }
+            } catch (e: Exception) {
+                // READER-04: unexpected runtime failures must not crash the
+                // app or leave the Reader stuck in a loading state.
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = "Failed to load chapter.")
                 }
             }
         }
