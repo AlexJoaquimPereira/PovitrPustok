@@ -14,7 +14,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -112,11 +111,15 @@ class BibleSearchRepositoryInstrumentedTest {
 
     @Test
     fun verse_range_preserves_start_and_end() = runBlocking {
-        val results = repository.search("\"sunôt\"", bookIds = listOf("Utpoti"), limit = 100)
-        val ranged = results.firstOrNull { it.verseStart != it.verseEnd }
-        assertNotNull("expected the Genesis 17:11-12 range hit", ranged)
-        assertEquals(11, ranged!!.verseStart)
-        assertEquals(12, ranged.verseEnd)
+        // "gorbhest" yields 15 Utpoti hits including exactly one ranged record:
+        // Genesis 16:11-12. This is independent of ranking/order.
+        val results = repository.search("\"gorbhest\"", bookIds = listOf("Utpoti"), limit = 100)
+        assertTrue(results.isNotEmpty())
+        val ranged = results.filter { it.verseStart != it.verseEnd }
+        assertEquals("expected exactly one ranged hit", 1, ranged.size)
+        assertEquals(16, ranged.single().chapterNumber)
+        assertEquals(11, ranged.single().verseStart)
+        assertEquals(12, ranged.single().verseEnd)
     }
 
     @Test
@@ -158,11 +161,12 @@ class BibleSearchRepositoryInstrumentedTest {
     }
 
     @Test
-    fun malformed_fts_expression_is_a_controlled_error() = runBlocking {
+    fun malformed_fts_expression_is_controlled_or_empty() = runBlocking {
         try {
-            repository.search("\"", bookIds = listOf("jakob"), limit = 10)
-            // Tolerated by some SQLite builds -> still controlled.
-            assertTrue(true)
+            val results = repository.search("\"", bookIds = listOf("jakob"), limit = 10)
+            // Tolerated by some SQLite builds: it must not crash and must not
+            // fabricate hits from a malformed expression.
+            assertTrue("malformed expression must not return hits", results.isEmpty())
         } catch (e: BibleDataException) {
             assertTrue(
                 "must be a controlled data exception, got $e",

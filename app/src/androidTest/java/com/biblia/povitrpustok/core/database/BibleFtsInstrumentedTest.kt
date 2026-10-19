@@ -108,7 +108,16 @@ class BibleFtsInstrumentedTest {
         // all-book search (limited to the small corpus for speed)
         val allBooks = repository.search("\"subhagi\"", bookIds = null, limit = 20)
         assertTrue("all-book search must work", allBooks.isNotEmpty())
-        assertTrue("all results must be ordered by catalog position", allBooks.zipWithNext().all { (a, b) -> a.bookId != b.bookId || a.chapterPosition <= b.chapterPosition })
+        assertTrue(
+            "all-book search must not be monopolized by one book",
+            allBooks.map { it.bookId }.toSet().size > 1
+        )
+        val repeated = repository.search("\"subhagi\"", bookIds = null, limit = 20)
+        assertEquals(
+            "search must be deterministic across identical queries",
+            allBooks.map { it.verseId },
+            repeated.map { it.verseId }
+        )
 
         // rare term -> empty, no exception
         val rare = repository.search("\"zzzqqqxxx\"", bookIds = listOf("jakob"), limit = 10)

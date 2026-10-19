@@ -442,8 +442,8 @@ If the file is absent, the release signing config is simply left unset and the p
 
 | Suite | Count | Runner | Notes |
 |---|---|---|---|
-| JVM unit tests | **298** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
-| Instrumented tests | **15** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device |
+| JVM unit tests | **335** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
+| Instrumented tests | **16** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device |
 
 19 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
 assets or Room.
@@ -470,6 +470,17 @@ same FTS5 build). The on-device equivalent is covered by the instrumented tests.
 
 **Instrumented coverage.** `BibleFtsInstrumentedTest` verifies FTS5 on device, including a
 full-path `MATCH` test that must run on an API 30+ device to close the device-side proof.
+
+**Device gate (required).** The on-device FTS5 suite is not part of the JVM suite and cannot be
+replaced by Robolectric:
+
+```bash
+./gradlew :app:assembleDebugAndroidTest
+./gradlew :app:connectedDebugAndroidTest   # API 30+ device/emulator required
+```
+
+CI must either provision such a device/emulator or require a documented pre-release device run.
+Robolectric's `Assume` skip for FTS5 must never be counted as a passed `MATCH` test.
 
 HTML regression fixtures under `app/src/test/resources/html/` are extracted verbatim from the real
 corpus (James, Job, Esther, Leviticus, Psalms, Jeremias, 1 Kings, Genesis).

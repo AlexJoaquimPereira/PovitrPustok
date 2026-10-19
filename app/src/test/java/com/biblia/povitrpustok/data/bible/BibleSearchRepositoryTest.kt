@@ -6,7 +6,6 @@ import com.biblia.povitrpustok.core.database.AssetBibleDatabaseProvider
 import com.biblia.povitrpustok.core.database.BibleDatabase
 import com.biblia.povitrpustok.core.database.BibleDatabaseProvider
 import com.biblia.povitrpustok.core.database.BibleVerseHit
-import com.biblia.povitrpustok.core.result.BibleDataException
 import com.biblia.povitrpustok.core.result.BibleDatabaseAccessException
 import com.biblia.povitrpustok.domain.model.BibleBook
 import com.biblia.povitrpustok.domain.model.BibleCatalog
@@ -63,20 +62,23 @@ class BibleSearchRepositoryTest {
     }
 
     @Test
-    fun fts_failures_surface_as_controlled_data_errors() = runBlocking {
+    fun fts_failure_is_isolated_and_reported_without_throwing() = runBlocking {
         val provider = AssetBibleDatabaseProvider(context)
         try {
             val repository = BibleSearchRepositoryImpl(provider)
-            try {
-                repository.search("\"subhagi\"", bookIds = listOf("jakob"), limit = 10)
-                // If the runtime SQLite supports FTS5 (e.g. a future Robolectric
-                // build), results are simply returned.
-                assertTrue(true)
-            } catch (e: BibleDataException) {
-                assertTrue(
-                    "expected a controlled BibleDataException, got $e",
-                    e is BibleDatabaseAccessException
-                )
+            val outcome = repository.searchWithDiagnostics(
+                "\"subhagi\"",
+                bookIds = listOf("jakob"),
+                limit = 10
+            )
+            if (outcome.failures.isNotEmpty()) {
+                // Robolectric's SQLite has no FTS5: the book is reported as a
+                // diagnostic and the corpus search still returns (no hits).
+                assertEquals(listOf("jakob"), outcome.failures.map { it.bookId })
+                assertTrue("a failed book must not fabricate hits", outcome.results.isEmpty())
+            } else {
+                // FTS5-capable runtime: real hits, no failure recorded.
+                assertTrue("FTS5-capable runtime must return hits", outcome.results.isNotEmpty())
             }
         } finally {
             provider.close()
