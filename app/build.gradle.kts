@@ -47,7 +47,7 @@ android {
     buildTypes {
         release {
             optimization {
-                enable = false
+                enable = true
             }
             // Apply the configured release key only when credentials are
             // present. Debug builds and credential-less release builds must
