@@ -7,7 +7,14 @@ import com.biblia.povitrpustok.core.database.BibleDatabase
 import com.biblia.povitrpustok.core.database.BibleDatabaseProvider
 import com.biblia.povitrpustok.core.result.BibleDataException
 import com.biblia.povitrpustok.core.result.BibleDatabaseAccessException
+import com.biblia.povitrpustok.domain.model.BibleBook
+import com.biblia.povitrpustok.domain.model.BibleCatalog
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -72,5 +79,42 @@ class BibleSearchRepositoryTest {
         } finally {
             provider.close()
         }
+    }
+
+    /**
+     * DB-05: the corpus loop must stop at the next book after its caller is
+     * cancelled. Deterministic (no FTS/SQLite, no timing): without the
+     * ensureActive checkpoint the loop would process all 73 books because the
+     * fake block never suspends.
+     */
+    @Test
+    fun cancellation_stops_iterating_books_before_the_next_book() = runBlocking {
+        val repository = BibleSearchRepositoryImpl(
+            object : BibleDatabaseProvider {
+                override suspend fun openBook(bookId: String): BibleDatabase =
+                    error("the cancellation test must not open a database")
+
+                override fun close() = Unit
+            }
+        )
+
+        var processed = 0
+        lateinit var job: Job
+        job = launch(Dispatchers.Default, start = CoroutineStart.LAZY) {
+            repository.forEachBook(BibleCatalog.books) { book ->
+                processed++
+                if (processed == 2) job.cancel()
+                book.id
+            }
+        }
+        job.start()
+        job.join()
+
+        assertTrue("the cancelled search must terminate as cancelled", job.isCancelled)
+        assertEquals(
+            "no further book may be processed after cancellation",
+            2,
+            processed
+        )
     }
 }

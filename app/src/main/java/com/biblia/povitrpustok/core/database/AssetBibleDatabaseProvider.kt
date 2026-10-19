@@ -47,6 +47,14 @@ import kotlinx.coroutines.withContext
  * resolve book -> asset, a deliberate small core->domain dependency
  * required by the provider contract (task §5 assigns book->asset
  * resolution to the provider).
+ *
+ * Handle policy (DB-05): at most one cached handle per book — a fixed,
+ * corpus-sized bound of 73 descriptors, all released by [close]. No
+ * eviction is justified: the bound is small and fixed, and eviction would
+ * add use-after-close risk for negligible benefit. Measured costs and
+ * methodology live in the remediation ledger. `close()` remains a
+ * test/lifecycle operation (see PROVIDER-01); production keeps the cache
+ * for the process lifetime.
  */
 @Singleton
 class AssetBibleDatabaseProvider @Inject constructor(

@@ -1,12 +1,15 @@
 package com.biblia.povitrpustok.data.bible
 
 import com.biblia.povitrpustok.core.database.BibleDatabaseProvider
+import com.biblia.povitrpustok.domain.model.BibleBook
 import com.biblia.povitrpustok.domain.model.BibleCatalog
 import com.biblia.povitrpustok.domain.model.SearchResult
 import com.biblia.povitrpustok.domain.repository.BibleSearchRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
 /**
@@ -19,6 +22,9 @@ import kotlinx.coroutines.withContext
  * Results are merged and ordered deterministically: BibleCatalog position,
  * then chapter.position, then verseStart, then verseId, then a global
  * limit is applied.
+ *
+ * Cancellation is checked before each book (DB-05), so a superseded search
+ * stops opening/querying the remaining databases promptly.
  */
 @Singleton
 class BibleSearchRepositoryImpl @Inject constructor(
@@ -43,8 +49,10 @@ class BibleSearchRepositoryImpl @Inject constructor(
         }
 
         val results = ArrayList<SearchResult>(limit * 2)
-        for (book in books) {
-            val hits = provider.openBook(book.id).searchVerses(trimmed, limit)
+        val perBook = forEachBook(books) { book ->
+            provider.openBook(book.id).searchVerses(trimmed, limit)
+        }
+        for ((book, hits) in perBook) {
             for (hit in hits) {
                 results.add(
                     SearchResult(
@@ -72,5 +80,20 @@ class BibleSearchRepositoryImpl @Inject constructor(
                 )
             )
             .take(limit)
+    }
+
+    /**
+     * Runs [block] for each book with a cancellation checkpoint before every
+     * iteration (DB-05). Extracted so the cancellation contract is testable
+     * deterministically without an FTS-capable SQLite build.
+     */
+    internal suspend fun <T> forEachBook(
+        books: List<BibleBook>,
+        block: suspend (BibleBook) -> T
+    ): List<Pair<BibleBook, T>> = buildList {
+        for (book in books) {
+            currentCoroutineContext().ensureActive()
+            add(book to block(book))
+        }
     }
 }
