@@ -3,16 +3,16 @@ package com.biblia.povitrpustok.feature.reader
 import com.biblia.povitrpustok.domain.model.BibleBook
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.Heading
-import com.biblia.povitrpustok.domain.model.IntroductionBlock
 import com.biblia.povitrpustok.domain.model.Verse
 
 /**
  * Immutable reader state (implementation plan §17, §48).
  *
  * Holds only what the reader needs to render: the selected book, the
- * current chapter plus its headings/verses, the book's chapter list (used
- * by the chapter selector and previous/next boundaries), optional
- * introduction blocks, and loading/error signals.
+ * current chapter plus its headings/verses, and the book's chapter list
+ * (used by the chapter selector and previous/next boundaries). Book
+ * introductions are shown by the separate book-introduction screen, not
+ * the Reader (READER-03).
  *
  * Chapter identity is preserved exactly as the repository returns it:
  *  - [Chapter.id] internal identity
@@ -25,7 +25,6 @@ data class ReaderUiState(
     val chapters: List<Chapter> = emptyList(),
     val headings: List<Heading> = emptyList(),
     val verses: List<Verse> = emptyList(),
-    val introductions: List<IntroductionBlock> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     /**

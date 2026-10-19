@@ -80,7 +80,6 @@ class BibleVerseOrderTest {
         val content = repository.getChapter("Razanchem_Poilem_Pustok", chapter.position)
         val items = ReaderContentBuilder.build(
             chapter = chapter,
-            introductions = emptyList(),
             headings = content.headings,
             verses = content.verses
         )

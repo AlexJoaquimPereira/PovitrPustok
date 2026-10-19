@@ -2,7 +2,6 @@ package com.biblia.povitrpustok.feature.reader
 
 import com.biblia.povitrpustok.domain.model.Chapter as DomainChapter
 import com.biblia.povitrpustok.domain.model.Heading as DomainHeading
-import com.biblia.povitrpustok.domain.model.IntroductionBlock as DomainIntroductionBlock
 import com.biblia.povitrpustok.domain.model.Verse as DomainVerse
 
 /**
@@ -19,10 +18,6 @@ sealed interface ReaderContentItem {
 
     data class Header(val chapter: DomainChapter) : ReaderContentItem {
         override val key: String = "chapter-header"
-    }
-
-    data class Introduction(val block: DomainIntroductionBlock) : ReaderContentItem {
-        override val key: String = "intro-${block.id}"
     }
 
     data class Heading(val heading: DomainHeading) : ReaderContentItem {

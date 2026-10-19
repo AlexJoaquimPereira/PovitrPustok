@@ -2,35 +2,36 @@ package com.biblia.povitrpustok.feature.reader
 
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.Heading
-import com.biblia.povitrpustok.domain.model.IntroductionBlock
 import com.biblia.povitrpustok.domain.model.Verse
 
 /**
  * Builds the authoritative Reader display sequence (corrective phase
- * Issues 3 & 5).
+ * Issues 3 & 5; READER-03).
  *
- * Normal mode: ChapterHeader, introductions (source order), then headings
- * interleaved by `before_verse` — a heading with before_verse=N appears
- * immediately before the first verse with verse_start >= N; headings with
- * the same before_verse keep their source order; headings with no usable
- * before_verse are placed deterministically (before the first verse /
- * appended at the end) and never discarded.
+ * Normal mode: ChapterHeader, then headings interleaved by `before_verse` —
+ * a heading with before_verse=N appears immediately before the first verse
+ * with verse_start >= N; headings with the same before_verse keep their
+ * source order; headings with no usable before_verse are placed
+ * deterministically (before the first verse / appended at the end) and never
+ * discarded.
+ *
+ * Introductions are intentionally **not** part of the Reader: they are
+ * shown by the separate book-introduction screen (`BookIntroductionScreen`),
+ * which is the sole entry point (implementation plan §11).
  *
  * Targeted mode: the same sequence filtered to the requested passage —
- * only verses whose verse_start lies in the inclusive range, headings that
- * immediately precede a kept verse (section titles for the passage), and
- * no introductions.
+ * only verses whose verse_start lies in the inclusive range, plus headings
+ * that immediately precede a kept verse (section titles for the passage).
  */
 object ReaderContentBuilder {
 
     fun build(
         chapter: Chapter,
-        introductions: List<IntroductionBlock>,
         headings: List<Heading>,
         verses: List<Verse>,
         passage: ReaderPassage? = null
     ): List<ReaderContentItem> {
-        val full = buildNormal(chapter, introductions, headings, verses)
+        val full = buildNormal(chapter, headings, verses)
         val requested = passage ?: return full
 
         val keptVerseIds = verses
@@ -42,7 +43,6 @@ object ReaderContentBuilder {
             for ((index, item) in full.withIndex()) {
                 when (item) {
                     is ReaderContentItem.Header -> add(item)
-                    is ReaderContentItem.Introduction -> Unit // no introductions in targeted mode
                     is ReaderContentItem.Verse ->
                         if (item.verse.id in keptVerseIds) add(item)
                     is ReaderContentItem.Heading -> {
@@ -56,13 +56,11 @@ object ReaderContentBuilder {
 
     private fun buildNormal(
         chapter: Chapter,
-        introductions: List<IntroductionBlock>,
         headings: List<Heading>,
         verses: List<Verse>
     ): List<ReaderContentItem> {
-        val items = ArrayList<ReaderContentItem>(1 + introductions.size + headings.size + verses.size)
+        val items = ArrayList<ReaderContentItem>(1 + headings.size + verses.size)
         items.add(ReaderContentItem.Header(chapter))
-        introductions.forEach { items.add(ReaderContentItem.Introduction(it)) }
 
         val sortedHeadings = headings.sortedWith(compareBy({ it.beforeVerse }, { it.position }))
         var headingIndex = 0

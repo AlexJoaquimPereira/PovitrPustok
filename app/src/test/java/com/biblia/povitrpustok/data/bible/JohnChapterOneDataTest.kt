@@ -49,7 +49,6 @@ class JohnChapterOneDataTest {
 
         val verses = db.getVerses(chapter.id)
         val headings = db.getHeadings(chapter.id)
-        val introductions = db.getIntroductionBlocks("juanv")
 
         // the complete database content for chapter 1
         assertTrue("chapter content must be non-empty", verses.isNotEmpty())
@@ -62,7 +61,6 @@ class JohnChapterOneDataTest {
         // normal mode: no passage -> the full chapter renders, unfiltered
         val items = ReaderContentBuilder.build(
             chapter = chapter,
-            introductions = introductions,
             headings = headings,
             verses = verses,
             passage = null

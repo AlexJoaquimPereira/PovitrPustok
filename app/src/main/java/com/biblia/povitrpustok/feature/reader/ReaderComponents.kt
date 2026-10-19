@@ -46,7 +46,6 @@ import com.biblia.povitrpustok.core.html.BibleHtmlText
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
 import com.biblia.povitrpustok.domain.model.Heading
-import com.biblia.povitrpustok.domain.model.IntroductionBlock
 import com.biblia.povitrpustok.domain.model.Verse
 import com.biblia.povitrpustok.ui.theme.BibleTextStyle
 import kotlinx.coroutines.delay
@@ -162,7 +161,7 @@ fun VerseNumber(
     )
 }
 
-/** Scrollable chapter surface: header, introductions, headings, verses. */
+/** Scrollable chapter surface: header, interleaved headings and verses. */
 @Composable
 fun ReaderContent(
     state: ReaderUiState,
@@ -179,13 +178,12 @@ fun ReaderContent(
     // scroll position (Track A §E).
     val listState = remember(state.chapter?.id) { LazyListState() }
 
-    // One authoritative display sequence (corrective phase Issues 3 & 5):
-    // normal mode = header + introductions + interleaved headings/verses;
-    // targeted mode = the passage-filtered sequence.
-    val items = remember(chapter.id, state.introductions, state.headings, state.verses, state.passage) {
+    // One authoritative display sequence (corrective phase Issues 3 & 5;
+    // READER-03): normal mode = interleaved headings/verses; targeted mode =
+    // the passage-filtered sequence. Introductions live on their own screen.
+    val items = remember(chapter.id, state.headings, state.verses, state.passage) {
         ReaderContentBuilder.build(
             chapter = chapter,
-            introductions = state.introductions,
             headings = state.headings,
             verses = state.verses,
             passage = state.passage
@@ -247,7 +245,6 @@ fun ReaderContent(
         items(items, key = { it.key }) { item ->
             when (item) {
                 is ReaderContentItem.Header -> ChapterHeader(item.chapter)
-                is ReaderContentItem.Introduction -> IntroductionBlockView(item.block)
                 is ReaderContentItem.Heading -> HeadingBlock(item.heading)
                 is ReaderContentItem.Verse -> VerseBlock(
                     verse = item.verse,
@@ -267,16 +264,6 @@ private val SWIPE_THRESHOLD_DP = 96.dp
 
 /** Highlight duration for a targeted verse (Phase 8, modest and local). */
 private const val HIGHLIGHT_DURATION_MILLIS = 2_000L
-
-/** Introduction block rendered in source order via the HTML pipeline. */
-@Composable
-private fun IntroductionBlockView(block: IntroductionBlock, modifier: Modifier = Modifier) {
-    BibleHtmlText(
-        document = rememberDocument(block.html),
-        modifier = modifier.fillMaxWidth(),
-        style = BibleTextStyle
-    )
-}
 
 /** Centered loading indicator. */
 @Composable
