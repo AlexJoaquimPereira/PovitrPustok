@@ -171,6 +171,38 @@ class ReaderViewModelTest {
     }
 
     @Test
+    fun failed_navigation_clears_stale_target_selection_and_passage() = runTest(dispatcher.scheduler) {
+        val bookId = "jakob"
+        val ch1 = chapter(bookId, number = 1, position = 1)
+        val ch2 = chapter(bookId, number = 2, position = 2)
+        val content1 = content(bookId, ch1)
+        val repository = FakeRepository(
+            chapterLists = mapOf(bookId to listOf(ch1, ch2)),
+            contents = mapOf(bookId to mapOf(1 to content1))
+        )
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository())
+
+        viewModel.load(bookId, 1, passageStart = 1, passageEnd = 1)
+        advanceUntilIdle()
+        val verseId = content1.verses.first().id
+        viewModel.onVerseSelected(verseId)
+        assertEquals(verseId, viewModel.uiState.value.selectedVerseId)
+
+        repository.failure = IllegalStateException("boom")
+        viewModel.load(bookId, 2, targetVerseId = verseId, passageStart = 1, passageEnd = 2)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertNotNull(state.errorMessage)
+        assertEquals("the last good chapter is retained", 1, state.chapter?.position)
+        assertNull("selection must not leak across a failed navigation", state.selectedVerseId)
+        assertNull(state.highlightedVerseId)
+        assertNull(state.targetVerseId)
+        assertNull("a stale passage must not keep filtering the old content", state.passage)
+        assertFalse(state.targetMissing)
+    }
+
+    @Test
     fun retry_replays_target_and_passage_after_an_error() = runTest(dispatcher.scheduler) {
         val bookId = "jakob"
         val ch1 = chapter(bookId, number = 1, position = 1)

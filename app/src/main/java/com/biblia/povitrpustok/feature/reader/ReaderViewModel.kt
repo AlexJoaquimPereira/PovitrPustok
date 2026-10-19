@@ -114,16 +114,30 @@ class ReaderViewModel @Inject constructor(
                 // A newer load superseded this one; never publish an error.
                 throw e
             } catch (e: BibleDataException) {
-                _uiState.update {
-                    it.copy(isLoading = false, errorMessage = e.message ?: "Failed to load chapter.")
-                }
+                setLoadError(e.message ?: "Failed to load chapter.")
             } catch (e: Exception) {
                 // READER-04: unexpected runtime failures must not crash the
                 // app or leave the Reader stuck in a loading state.
-                _uiState.update {
-                    it.copy(isLoading = false, errorMessage = "Failed to load chapter.")
-                }
+                setLoadError("Failed to load chapter.")
             }
+        }
+    }
+
+    /**
+     * READER-06: a failed navigation must not leave a target, highlight, or
+     * passage from the previous chapter active over the retained content.
+     */
+    private fun setLoadError(message: String) {
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                errorMessage = message,
+                targetVerseId = null,
+                targetMissing = false,
+                selectedVerseId = null,
+                highlightedVerseId = null,
+                passage = null
+            )
         }
     }
 
