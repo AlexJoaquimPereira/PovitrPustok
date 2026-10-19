@@ -2,6 +2,7 @@ package com.biblia.povitrpustok.data.di
 
 import android.content.Context
 import com.biblia.povitrpustok.core.database.AssetBibleDatabaseProvider
+import com.biblia.povitrpustok.core.database.BibleAssetSource
 import com.biblia.povitrpustok.core.database.BibleDatabaseProvider
 import com.biblia.povitrpustok.data.app.AppDatabase
 import com.biblia.povitrpustok.data.app.BookmarkRepositoryImpl
@@ -48,9 +49,16 @@ object DataModule {
 
     @Provides
     @Singleton
-    fun provideBibleDatabaseProvider(
+    fun provideBibleAssetSource(
         @ApplicationContext context: Context
-    ): BibleDatabaseProvider = AssetBibleDatabaseProvider(context)
+    ): BibleAssetSource = BibleAssetSource { assetPath -> context.assets.open(assetPath) }
+
+    @Provides
+    @Singleton
+    fun provideBibleDatabaseProvider(
+        @ApplicationContext context: Context,
+        assetSource: BibleAssetSource
+    ): BibleDatabaseProvider = AssetBibleDatabaseProvider(context, assetSource)
 
     @Provides
     @Singleton

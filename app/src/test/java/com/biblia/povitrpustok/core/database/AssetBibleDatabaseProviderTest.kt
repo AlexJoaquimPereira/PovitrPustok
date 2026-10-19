@@ -3,9 +3,12 @@ package com.biblia.povitrpustok.core.database
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import androidx.test.core.app.ApplicationProvider
+import com.biblia.povitrpustok.core.result.CorruptBibleDatabaseException
+import java.io.ByteArrayInputStream
 import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.junit.After
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -112,12 +115,31 @@ class AssetBibleDatabaseProviderTest {
     }
 
     @Test
-    fun valid_marker_means_no_recopy() = runBlocking {
+    fun corrupt_internal_copy_with_valid_marker_is_replaced() = runBlocking {
         freshProvider().openBook("jakob").close()
+        assertTrue("precondition: the prepared copy and marker exist", databaseFile().exists() && markerFile().exists())
 
-        // Tamper with the file but keep the valid marker: a valid marker
-        // must NOT trigger a recopy (the file is trusted per the marker).
-        databaseFile().writeBytes(ByteArray(32) { 0x42 })
+        // Corrupt the prepared copy but keep the version marker: the copy is
+        // not trustworthy and must be re-published from the packaged asset.
+        databaseFile().writeBytes(ByteArray(64) { 0x7F })
+        assertEquals(appVersion(), markerFile().readText())
+
+        val provider = freshProvider()
+        try {
+            val db = provider.openBook("jakob")
+            assertTrue("recovered copy must be a valid database", db.hasFtsTable())
+            assertTrue("recovered copy must expose chapters", db.getChapters("jakob").isNotEmpty())
+            assertTrue("the corrupt bytes must have been replaced", databaseFile().length() > 64)
+            assertEquals(appVersion(), markerFile().readText())
+        } finally {
+            provider.close()
+        }
+    }
+
+    @Test
+    fun valid_copy_with_valid_marker_is_not_recopied() = runBlocking {
+        freshProvider().openBook("jakob").close()
+        val before = databaseFile().readBytes()
 
         val provider = freshProvider()
         try {
@@ -125,10 +147,72 @@ class AssetBibleDatabaseProviderTest {
         } finally {
             provider.close()
         }
-        // no recopy happened: the tampered file is untouched and the marker
-        // still matches
-        assertEquals(32, databaseFile().length())
-        assertEquals(appVersion(), markerFile().readText())
+        assertArrayEquals("a valid prepared copy must not be rewritten", before, databaseFile().readBytes())
+    }
+
+    @Test
+    fun unreadable_packaged_asset_maps_to_database_not_found() = runBlocking {
+        val provider = AssetBibleDatabaseProvider(
+            context,
+            BibleAssetSource { _ -> throw java.io.FileNotFoundException("missing packaged asset") }
+        )
+        try {
+            try {
+                provider.openBook("jakob")
+                fail("expected BibleDatabaseNotFoundException")
+            } catch (expected: com.biblia.povitrpustok.core.result.BibleDatabaseNotFoundException) {
+                // expected: asset IO is a missing-database condition, not corruption
+            }
+        } finally {
+            provider.close()
+        }
+        assertFalse(databaseFile().exists())
+        assertFalse(markerFile().exists())
+    }
+
+    @Test
+    fun corrupt_packaged_asset_fails_clearly_without_partial_state() = runBlocking {
+        val provider = AssetBibleDatabaseProvider(
+            context,
+            BibleAssetSource { _ -> ByteArrayInputStream(ByteArray(64) { 0x7F }) }
+        )
+        try {
+            try {
+                provider.openBook("jakob")
+                fail("expected CorruptBibleDatabaseException for a corrupt packaged asset")
+            } catch (expected: CorruptBibleDatabaseException) {
+                // expected: fail clearly, never trust the asset
+            }
+        } finally {
+            provider.close()
+        }
+        assertFalse("a corrupt asset must not be published", databaseFile().exists())
+        assertFalse("a corrupt asset must not get a version marker", markerFile().exists())
+    }
+
+    @Test
+    fun asset_with_valid_header_but_missing_bible_schema_is_rejected() = runBlocking {
+        val emptyDatabase = File(context.cacheDir, "empty-schema.sqlite")
+        SQLiteDatabase.openOrCreateDatabase(emptyDatabase, null).close()
+        val bytes = emptyDatabase.readBytes()
+        emptyDatabase.delete()
+
+        val provider = AssetBibleDatabaseProvider(
+            context,
+            BibleAssetSource { _ -> ByteArrayInputStream(bytes) }
+        )
+        try {
+            try {
+                provider.openBook("jakob")
+                fail("expected CorruptBibleDatabaseException for a database without the Bible schema")
+            } catch (expected: CorruptBibleDatabaseException) {
+                // expected
+            }
+        } finally {
+            provider.close()
+        }
+        assertFalse(databaseFile().exists())
+        assertFalse(markerFile().exists())
     }
 
     @Test
