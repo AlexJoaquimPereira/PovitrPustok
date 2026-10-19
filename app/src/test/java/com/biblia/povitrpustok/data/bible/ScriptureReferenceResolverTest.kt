@@ -78,15 +78,15 @@ class ScriptureReferenceResolverTest {
     }
 
     @Test
-    fun genesis_17_11_12_is_one_source_range_verse() = runBlocking {
-        val r = resolved("Genesis 17:11-12")
+    fun genesis_16_11_12_is_one_source_range_verse() = runBlocking {
+        val r = resolved("Genesis 16:11-12")
         assertEquals("Utpoti", r.bookId)
-        assertEquals(17, r.chapterNumber)
+        assertEquals(16, r.chapterNumber)
         assertEquals(11, r.verseStart)
         assertEquals(12, r.verseEnd)
         assertNotNull("must reference the single source verse", r.verseId)
 
-        // the corpus really has one Verse record 11-12
+        // the corpus really has one Verse record 11-12 (in chapter 16)
         val verse = repository.getVerse("Utpoti", r.chapterId, 11)
         assertNotNull(verse)
         assertEquals(12, verse!!.verseEnd)
@@ -94,8 +94,8 @@ class ScriptureReferenceResolverTest {
     }
 
     @Test
-    fun genesis_17_11_single_request_keeps_source_range() = runBlocking {
-        val r = resolved("Genesis 17:11")
+    fun genesis_16_11_single_request_keeps_source_range() = runBlocking {
+        val r = resolved("Genesis 16:11")
         assertEquals(11, r.verseStart)
         assertEquals("source verse 11-12 keeps its extent", 12, r.verseEnd)
     }
@@ -140,7 +140,7 @@ class ScriptureReferenceResolverTest {
         val viaFullName = resolved("JAMES 1:5")
         assertEquals("jakob", viaAbbreviation.bookId)
         assertEquals(viaAbbreviation.chapterId, viaFullName.chapterId)
-        assertEquals("Utpoti", resolved("Gen 17:11-12").bookId)
+        assertEquals("Utpoti", resolved("Gen 16:11-12").bookId)
     }
 
     @Test

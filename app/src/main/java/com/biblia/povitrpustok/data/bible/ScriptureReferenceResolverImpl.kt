@@ -86,10 +86,23 @@ class ScriptureReferenceResolverImpl @Inject constructor(
             )
         }
 
-        val verse = bibleRepository.getVerse(bookId, chapter.id, requestedStart)
-            ?: return ScriptureResolution.NotFound(
-                "No verse starting at $requestedStart in chapter ${parsed.chapter} of '$bookId'."
+        val verse = bibleRepository.getVersesCovering(bookId, chapter.id, requestedStart)
+        if (verse.isEmpty()) {
+            return ScriptureResolution.NotFound(
+                "No verse covering $requestedStart in chapter ${parsed.chapter} of '$bookId'."
             )
+        }
+        if (verse.size > 1) {
+            return ScriptureResolution.AmbiguousVerse(
+                bookId = bookId,
+                chapterId = chapter.id,
+                chapterNumber = chapter.number,
+                chapterPosition = chapter.position,
+                verseNumber = requestedStart,
+                candidates = verse
+            )
+        }
+        val sourceVerse = verse.single()
 
         return ScriptureResolution.Resolved(
             ResolvedScriptureReference(
@@ -97,12 +110,12 @@ class ScriptureReferenceResolverImpl @Inject constructor(
                 chapterId = chapter.id,
                 chapterNumber = chapter.number,
                 chapterPosition = chapter.position,
-                verseId = verse.id,
-                verseStart = verse.verseStart,
+                verseId = sourceVerse.id,
+                verseStart = sourceVerse.verseStart,
                 // The resolved extent covers the source verse's own range and
                 // any explicitly requested range end (a range is never split
                 // into artificial verses; source verses are never invented).
-                verseEnd = max(parsed.verseEnd ?: verse.verseEnd, verse.verseEnd)
+                verseEnd = max(parsed.verseEnd ?: sourceVerse.verseEnd, sourceVerse.verseEnd)
             )
         )
     }

@@ -35,4 +35,17 @@ interface BibleRepository {
         chapterId: Long,
         verseStart: Int
     ): Verse?
+
+    /**
+     * Source records whose effective verse range covers [verse] (REF-01).
+     *
+     * Production resolves combined source ranges (e.g. a record starting at
+     * 11 covering verse 12). More than one result means duplicate source
+     * verse numbers: callers must surface ambiguity rather than pick one.
+     */
+    suspend fun getVersesCovering(
+        bookId: String,
+        chapterId: Long,
+        verse: Int
+    ): List<Verse>
 }

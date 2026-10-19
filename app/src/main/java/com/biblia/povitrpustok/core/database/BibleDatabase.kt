@@ -137,6 +137,32 @@ class BibleDatabase internal constructor(
             if (cursor.moveToFirst()) cursor.toVerse() else null
         }
 
+    /**
+     * Source records whose effective range covers [verse] (REF-01).
+     *
+     * A plain verse is covered only by itself; a combined source verse
+     * (e.g. 11-12, `verse_end` non-NULL) is covered by its single record.
+     * Duplicate source verse numbers can yield more than one record — the
+     * caller must surface that ambiguity rather than pick arbitrarily.
+     * Records are returned in source position order.
+     */
+    fun getVersesCovering(chapterId: Long, verse: Int): List<Verse> =
+        query(
+            """
+            SELECT id, chapter_id, chapter_number, verse_start, verse_end, text, text_plain
+            FROM verses
+            WHERE chapter_id = ?
+              AND verse_start <= CAST(? AS INTEGER)
+              AND (CASE WHEN verse_end IS NULL THEN verse_start ELSE verse_end END) >= CAST(? AS INTEGER)
+            ORDER BY position, id
+            """.trimIndent(),
+            arrayOf(chapterId.toString(), verse.toString(), verse.toString())
+        ) { cursor ->
+            buildList {
+                while (cursor.moveToNext()) add(cursor.toVerse())
+            }
+        }
+
     /** Introduction blocks in source order; never flattened (plan §11, §34). */
     fun getIntroductionBlocks(bookId: String): List<IntroductionBlock> =
         query(

@@ -26,6 +26,21 @@ sealed interface ScriptureResolution {
         val candidates: List<Chapter>
     ) : ScriptureResolution
 
+    /**
+     * Multiple source records cover the requested verse number (duplicate
+     * source verse numbering, e.g. Esther's Hebrew and Greek-addition
+     * blocks). [candidates] lists every covering record so callers can
+     * disambiguate — never a silent arbitrary pick.
+     */
+    data class AmbiguousVerse(
+        val bookId: String,
+        val chapterId: Long,
+        val chapterNumber: Int,
+        val chapterPosition: Int,
+        val verseNumber: Int,
+        val candidates: List<Verse>
+    ) : ScriptureResolution
+
     /** Well-formed reference that does not match the corpus. */
     data class NotFound(
         val reason: String

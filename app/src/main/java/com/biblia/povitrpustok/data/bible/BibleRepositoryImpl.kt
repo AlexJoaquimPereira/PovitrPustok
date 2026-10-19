@@ -62,4 +62,12 @@ class BibleRepositoryImpl @Inject constructor(
     ): Verse? = withContext(Dispatchers.IO) {
         provider.openBook(bookId).getVerse(chapterId, verseStart)
     }
+
+    override suspend fun getVersesCovering(
+        bookId: String,
+        chapterId: Long,
+        verse: Int
+    ): List<Verse> = withContext(Dispatchers.IO) {
+        provider.openBook(bookId).getVersesCovering(chapterId, verse)
+    }
 }

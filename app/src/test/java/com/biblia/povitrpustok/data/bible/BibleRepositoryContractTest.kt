@@ -157,12 +157,12 @@ class BibleRepositoryContractTest {
     @Test
     fun verse_ranges_preserve_start_and_end() = runBlocking {
         val chapters = repository.getChapters("Utpoti")
-        val chapter17 = chapters.first { it.number == 17 }
-        val ranged = repository.getChapter("Utpoti", chapter17.position).verses.filter { it.verseStart != it.verseEnd }
+        val chapter16 = chapters.first { it.number == 16 }
+        val ranged = repository.getChapter("Utpoti", chapter16.position).verses.filter { it.verseStart != it.verseEnd }
         assertTrue("Genesis must contain range verses", ranged.isNotEmpty())
         assertTrue(ranged.all { it.verseEnd > it.verseStart })
 
-        val rangedVerse = repository.getVerse("Utpoti", chapter17.id, ranged.first().verseStart)
+        val rangedVerse = repository.getVerse("Utpoti", chapter16.id, ranged.first().verseStart)
         assertNotNull(rangedVerse)
         assertEquals(ranged.first().verseStart, rangedVerse!!.verseStart)
         assertEquals(ranged.first().verseEnd, rangedVerse.verseEnd)

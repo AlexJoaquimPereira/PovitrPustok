@@ -63,6 +63,9 @@ class ReaderTargetingViewModelTest {
         override suspend fun getIntroduction(bookId: String): List<IntroductionBlock> = emptyList()
 
         override suspend fun getVerse(bookId: String, chapterId: Long, verseStart: Int): Verse? = null
+
+        override suspend fun getVersesCovering(bookId: String, chapterId: Long, verse: Int): List<Verse> =
+            listOfNotNull(getVerse(bookId, chapterId, verse))
     }
 
     /** Repository whose getChapter can be held in flight per position. */
@@ -84,6 +87,9 @@ class ReaderTargetingViewModelTest {
         override suspend fun getIntroduction(bookId: String): List<IntroductionBlock> = emptyList()
 
         override suspend fun getVerse(bookId: String, chapterId: Long, verseStart: Int): Verse? = null
+
+        override suspend fun getVersesCovering(bookId: String, chapterId: Long, verse: Int): List<Verse> =
+            listOfNotNull(getVerse(bookId, chapterId, verse))
     }
 
     private fun content(verses: List<Verse>) = ChapterContent(

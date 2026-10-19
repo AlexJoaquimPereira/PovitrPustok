@@ -141,23 +141,23 @@ class ReaderBookmarkIntegrationTest {
 
     @Test
     fun genesis_range_verse_can_be_bookmarked_as_one_record() {
-        val chapter17 = runBlocking { bibleRepository.getChapters("Utpoti").first { it.number == 17 } }
+        val chapter16 = runBlocking { bibleRepository.getChapters("Utpoti").first { it.number == 16 } }
         val rangeVerse = runBlocking {
-            bibleRepository.getChapter("Utpoti", chapter17.position).verses.first { it.verseStart != it.verseEnd }
+            bibleRepository.getChapter("Utpoti", chapter16.position).verses.first { it.verseStart != it.verseEnd }
         }
         val viewModel = ReaderViewModel(bibleRepository, bookmarkRepository)
 
-        viewModel.load("Utpoti", chapter17.position, targetVerseId = rangeVerse.id)
+        viewModel.load("Utpoti", chapter16.position, targetVerseId = rangeVerse.id)
         awaitLoaded(viewModel)
         viewModel.onTargetApplied()
         viewModel.toggleBookmark()
         awaitCondition { viewModel.uiState.value.bookmarkedVerseIds.contains(rangeVerse.id) }
 
         val bookmarks = runBlocking { bookmarkRepository.observeBookmarks().first() }
-        val saved = bookmarks.first { it.chapterId == chapter17.id }
+        val saved = bookmarks.first { it.chapterId == chapter16.id }
         assertEquals(11, saved.verseStart)
         assertEquals(12, saved.verseEnd)
-        assertEquals("one source record", 1, bookmarks.count { it.chapterId == chapter17.id && it.verseId == rangeVerse.id })
+        assertEquals("one source record", 1, bookmarks.count { it.chapterId == chapter16.id && it.verseId == rangeVerse.id })
     }
 
     @Test

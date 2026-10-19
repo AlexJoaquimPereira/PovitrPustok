@@ -111,14 +111,14 @@ class ReaderViewModelRealDataTest {
     @Test
     fun verse_range_11_12_stays_one_verse() {
         val chapters = runBlocking { repository.getChapters("Utpoti") }
-        val chapter17 = chapters.first { it.number == 17 }
+        val chapter16 = chapters.first { it.number == 16 }
 
         val viewModel = ReaderViewModel(repository, FakeBookmarkRepository())
-        viewModel.load("Utpoti", chapter17.position)
+        viewModel.load("Utpoti", chapter16.position)
         await(viewModel)
 
         val ranged = viewModel.uiState.value.verses.filter { it.verseStart != it.verseEnd }
-        assertTrue("Genesis 17 must contain range verses", ranged.isNotEmpty())
+        assertTrue("Genesis 16 must contain range verses", ranged.isNotEmpty())
         val rangeVerse = ranged.first { it.verseStart == 11 }
         assertEquals(11, rangeVerse.verseStart)
         assertEquals(12, rangeVerse.verseEnd)

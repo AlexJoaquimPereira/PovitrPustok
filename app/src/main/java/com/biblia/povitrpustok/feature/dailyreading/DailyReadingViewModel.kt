@@ -62,6 +62,8 @@ class DailyReadingViewModel @Inject constructor(
                     _pendingNavigation.value = resolution.reference.toReaderDestination()
                 is ScriptureResolution.Ambiguous ->
                     _navigationNotice.value = "Multiple chapters match '${reading.reference}'."
+                is ScriptureResolution.AmbiguousVerse ->
+                    _navigationNotice.value = "Multiple source verses match '${reading.reference}'."
                 is ScriptureResolution.NotFound ->
                     _navigationNotice.value = "Could not find '${reading.reference}' in the Bible."
                 is ScriptureResolution.Invalid ->

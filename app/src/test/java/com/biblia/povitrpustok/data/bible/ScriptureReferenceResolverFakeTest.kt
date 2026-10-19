@@ -41,6 +41,9 @@ class ScriptureReferenceResolverFakeTest {
 
         override suspend fun getVerse(bookId: String, chapterId: Long, verseStart: Int): Verse? =
             versesByChapter[chapterId]?.firstOrNull { it.verseStart == verseStart }
+
+        override suspend fun getVersesCovering(bookId: String, chapterId: Long, verse: Int): List<Verse> =
+            listOfNotNull(getVerse(bookId, chapterId, verse))
     }
 
     private fun chapter(bookId: String, number: Int, position: Int) =

@@ -13,6 +13,7 @@
     <string name="reference_entry_hint">e.g. James 1:5</string>
     <string name="reference_entry_go">Go</string>
     <string name="reference_ambiguous">Multiple chapters match. Choose one:</string>
+    <string name="reference_ambiguous_verse">Multiple source verses match. Choose one:</string>
     <string name="reference_not_found">%1$s</string>
     <string name="reference_invalid">%1$s</string>
     <string name="reader_add_bookmark">Add bookmark</string>

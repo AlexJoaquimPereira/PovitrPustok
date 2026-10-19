@@ -134,6 +134,21 @@ fun ReferenceEntryScreen(
                     }
                 )
 
+                is ScriptureResolution.AmbiguousVerse -> AmbiguousVerseMessage(
+                    resolution = resolution,
+                    onCandidateSelected = { verse ->
+                        onOpenResolved(
+                            ReaderDestination(
+                                bookId = resolution.bookId,
+                                chapterPosition = resolution.chapterPosition,
+                                verseId = verse.id,
+                                verseStart = verse.verseStart,
+                                verseEnd = verse.verseEnd
+                            )
+                        )
+                    }
+                )
+
                 is ScriptureResolution.NotFound -> Message(
                     text = stringResource(R.string.reference_not_found, resolution.reason)
                 )
@@ -172,6 +187,52 @@ private fun AmbiguousMessage(
             }
         }
     }
+}
+
+@Composable
+private fun AmbiguousVerseMessage(
+    resolution: ScriptureResolution.AmbiguousVerse,
+    onCandidateSelected: (com.biblia.povitrpustok.domain.model.Verse) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.reference_ambiguous_verse),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+            items(resolution.candidates, key = { it.id }) { verse ->
+                Text(
+                    text = verseLabel(verse, resolution.candidates),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onCandidateSelected(verse) }
+                        .padding(vertical = 10.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Presentation-only label for ambiguous verse candidates: the source range
+ * plus a source-order occurrence suffix when several records share it.
+ */
+private fun verseLabel(
+    verse: com.biblia.povitrpustok.domain.model.Verse,
+    candidates: List<com.biblia.povitrpustok.domain.model.Verse>
+): String {
+    val base = if (verse.verseStart == verse.verseEnd) {
+        verse.verseStart.toString()
+    } else {
+        "${verse.verseStart}–${verse.verseEnd}"
+    }
+    if (candidates.size <= 1) return base
+    val occurrence = candidates.indexOfFirst { it.id == verse.id } + 1
+    return "$base ($occurrence)"
 }
 
 @Composable
