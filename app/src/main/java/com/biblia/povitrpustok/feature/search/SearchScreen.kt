@@ -90,6 +90,15 @@ fun SearchScreen(
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
 
+            state.warning?.let { warning ->
+                Text(
+                    text = warning,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+            }
+
             when {
                 state.isSearching -> Box(
                     modifier = Modifier.fillMaxSize(),

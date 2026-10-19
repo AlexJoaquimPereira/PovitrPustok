@@ -103,10 +103,10 @@ class BibleSearchRepositoryTest {
         var processed = 0
         lateinit var job: Job
         job = launch(Dispatchers.Default, start = CoroutineStart.LAZY) {
-            repository.forEachBook(BibleCatalog.books) { book ->
+            repository.searchBooks(BibleCatalog.books) { book ->
                 processed++
                 if (processed == 2) job.cancel()
-                book.id
+                emptyList()
             }
         }
         job.start()
@@ -118,6 +118,28 @@ class BibleSearchRepositoryTest {
             2,
             processed
         )
+    }
+
+    /** SEARCH-02: a single book-level failure must not erase healthy results. */
+    @Test
+    fun one_failing_book_does_not_erase_healthy_results() = runBlocking {
+        val repository = BibleSearchRepositoryImpl(
+            object : BibleDatabaseProvider {
+                override suspend fun openBook(bookId: String): BibleDatabase =
+                    error("the isolation test must not open a database")
+
+                override fun close() = Unit
+            }
+        )
+
+        val (perBook, failures) = repository.searchBooks(listOf(book("a"), book("b"), book("c"))) { b ->
+            if (b.id == "b") throw BibleDatabaseAccessException("bad index")
+            listOf(hit(if (b.id == "a") 1L else 3L))
+        }
+
+        assertEquals("healthy books must still contribute hits", listOf("a", "c"), perBook.map { it.first.id })
+        assertEquals("the failing book is retained as a diagnostic", listOf("b"), failures.map { it.bookId })
+        assertTrue("the failure reason must not be blank", failures.single().reason.isNotBlank())
     }
 
     /** SEARCH-01: fair rank interleaving and the global limit. */

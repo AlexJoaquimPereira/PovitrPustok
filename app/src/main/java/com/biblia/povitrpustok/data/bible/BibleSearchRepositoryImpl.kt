@@ -2,13 +2,17 @@ package com.biblia.povitrpustok.data.bible
 
 import com.biblia.povitrpustok.core.database.BibleDatabaseProvider
 import com.biblia.povitrpustok.core.database.BibleVerseHit
+import com.biblia.povitrpustok.core.result.BibleDataException
 import com.biblia.povitrpustok.domain.model.BibleBook
 import com.biblia.povitrpustok.domain.model.BibleCanonicalOrder
 import com.biblia.povitrpustok.domain.model.BibleCatalog
+import com.biblia.povitrpustok.domain.model.SearchFailure
+import com.biblia.povitrpustok.domain.model.SearchOutcome
 import com.biblia.povitrpustok.domain.model.SearchResult
 import com.biblia.povitrpustok.domain.repository.BibleSearchRepository
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -32,8 +36,10 @@ import kotlinx.coroutines.withContext
  *    first book can no longer monopolize the result set;
  *  - snippets are built only for the returned rows.
  *
- * Cancellation is checked before each book (DB-05), so a superseded search
- * stops opening/querying the remaining databases promptly.
+ * Failure isolation (SEARCH-02): a [BibleDataException] from one book's
+ * index is recorded in [SearchOutcome.failures] and the remaining books are
+ * still searched. Cancellation is rethrown and checked before each book
+ * (DB-05).
  */
 @Singleton
 class BibleSearchRepositoryImpl @Inject constructor(
@@ -44,10 +50,16 @@ class BibleSearchRepositoryImpl @Inject constructor(
         query: String,
         bookIds: List<String>?,
         limit: Int
-    ): List<SearchResult> = withContext(Dispatchers.IO) {
+    ): List<SearchResult> = searchWithDiagnostics(query, bookIds, limit).results
+
+    override suspend fun searchWithDiagnostics(
+        query: String,
+        bookIds: List<String>?,
+        limit: Int
+    ): SearchOutcome = withContext(Dispatchers.IO) {
         val trimmed = query.trim()
         if (trimmed.isEmpty() || limit <= 0) {
-            return@withContext emptyList()
+            return@withContext SearchOutcome(emptyList())
         }
 
         val requested = if (bookIds == null) {
@@ -59,37 +71,50 @@ class BibleSearchRepositoryImpl @Inject constructor(
         // Canonical book order is the deterministic tie-breaker for equal ranks.
         val books = requested.sortedBy { BibleCanonicalOrder.position(it.id) ?: Int.MAX_VALUE }
 
-        val perBook = forEachBook(books) { book ->
+        val (perBook, failures) = searchBooks(books) { book ->
             provider.openBook(book.id).searchVerses(trimmed, limit)
         }
 
-        mergeByRank(perBook, limit).map { (book, hit) ->
-            SearchResult(
-                bookId = book.id,
-                chapterId = hit.chapterId,
-                chapterNumber = hit.chapterNumber,
-                chapterPosition = hit.chapterPosition,
-                verseId = hit.verseId,
-                verseStart = hit.verseStart,
-                verseEnd = hit.verseEnd,
-                snippet = SnippetBuilder.build(hit.plainText, trimmed)
-            )
-        }
+        SearchOutcome(
+            results = mergeByRank(perBook, limit).map { (book, hit) ->
+                SearchResult(
+                    bookId = book.id,
+                    chapterId = hit.chapterId,
+                    chapterNumber = hit.chapterNumber,
+                    chapterPosition = hit.chapterPosition,
+                    verseId = hit.verseId,
+                    verseStart = hit.verseStart,
+                    verseEnd = hit.verseEnd,
+                    snippet = SnippetBuilder.build(hit.plainText, trimmed)
+                )
+            },
+            failures = failures
+        )
     }
 
     /**
-     * Runs [block] for each book with a cancellation checkpoint before every
-     * iteration (DB-05). Extracted so the cancellation contract is testable
-     * deterministically without an FTS-capable SQLite build.
+     * Searches each book with a cancellation checkpoint before every
+     * iteration (DB-05) and isolates per-book data failures (SEARCH-02).
+     * Extracted so both contracts are testable without an FTS-capable
+     * SQLite build. Cancellation is never swallowed.
      */
-    internal suspend fun <T> forEachBook(
+    internal suspend fun searchBooks(
         books: List<BibleBook>,
-        block: suspend (BibleBook) -> T
-    ): List<Pair<BibleBook, T>> = buildList {
+        searchBook: suspend (BibleBook) -> List<BibleVerseHit>
+    ): Pair<List<Pair<BibleBook, List<BibleVerseHit>>>, List<SearchFailure>> {
+        val hits = mutableListOf<Pair<BibleBook, List<BibleVerseHit>>>()
+        val failures = mutableListOf<SearchFailure>()
         for (book in books) {
             currentCoroutineContext().ensureActive()
-            add(book to block(book))
+            try {
+                hits += book to searchBook(book)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: BibleDataException) {
+                failures += SearchFailure(book.id, e.message ?: "search failed")
+            }
         }
+        return hits to failures
     }
 }
 

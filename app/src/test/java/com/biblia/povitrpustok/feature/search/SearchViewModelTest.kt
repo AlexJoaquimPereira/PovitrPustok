@@ -1,6 +1,8 @@
 package com.biblia.povitrpustok.feature.search
 
 import com.biblia.povitrpustok.core.result.BibleDatabaseAccessException
+import com.biblia.povitrpustok.domain.model.SearchFailure
+import com.biblia.povitrpustok.domain.model.SearchOutcome
 import com.biblia.povitrpustok.domain.model.SearchResult
 import com.biblia.povitrpustok.domain.repository.BibleSearchRepository
 import kotlinx.coroutines.CompletableDeferred
@@ -48,19 +50,26 @@ class SearchViewModelTest {
         var lastBookIds: List<String>? = null
         var gate: CompletableDeferred<Unit>? = null
         var results: List<SearchResult> = emptyList()
+        var failures: List<SearchFailure> = emptyList()
         var failure: Exception? = null
 
         override suspend fun search(
             query: String,
             bookIds: List<String>?,
             limit: Int
-        ): List<SearchResult> {
+        ): List<SearchResult> = searchWithDiagnostics(query, bookIds, limit).results
+
+        override suspend fun searchWithDiagnostics(
+            query: String,
+            bookIds: List<String>?,
+            limit: Int
+        ): SearchOutcome {
             callCount++
             lastQuery = query
             lastBookIds = bookIds
             gate?.await()
             failure?.let { throw it }
-            return results
+            return SearchOutcome(results = results, failures = failures)
         }
     }
 
@@ -171,6 +180,43 @@ class SearchViewModelTest {
 
         assertEquals(listOf("jakob"), repository.lastBookIds)
         assertEquals("jakob", viewModel.uiState.value.selectedBookId)
+    }
+
+    @Test
+    fun partial_book_failures_surface_a_warning_with_healthy_results() = runTest(dispatcher.scheduler) {
+        val repository = FakeSearchRepository().apply {
+            results = listOf(result())
+            failures = listOf(SearchFailure("Amos", "bad index"))
+        }
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser())
+        runCurrent()
+
+        viewModel.onQueryChange("dev")
+        advanceTimeBy(300)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(1, state.results.size)
+        assertNull(state.error)
+        assertNotNull("expected a partial-result warning", state.warning)
+    }
+
+    @Test
+    fun all_books_failing_yields_a_controlled_error() = runTest(dispatcher.scheduler) {
+        val repository = FakeSearchRepository().apply {
+            failures = listOf(SearchFailure("Amos", "bad index"), SearchFailure("Esther", "bad index"))
+        }
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser())
+        runCurrent()
+
+        viewModel.onQueryChange("dev")
+        advanceTimeBy(300)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.results.isEmpty())
+        assertNotNull("expected a controlled error when every book fails", state.error)
+        assertNull(state.warning)
     }
 
     @Test

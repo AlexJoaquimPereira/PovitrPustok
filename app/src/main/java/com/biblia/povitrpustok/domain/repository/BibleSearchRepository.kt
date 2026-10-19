@@ -1,5 +1,6 @@
 package com.biblia.povitrpustok.domain.repository
 
+import com.biblia.povitrpustok.domain.model.SearchOutcome
 import com.biblia.povitrpustok.domain.model.SearchResult
 
 /**
@@ -29,4 +30,18 @@ interface BibleSearchRepository {
         bookIds: List<String>? = null,
         limit: Int = 50
     ): List<SearchResult>
+
+    /**
+     * SEARCH-02: like [search], but a failure in one book's index does not
+     * erase results from the rest of the corpus. [SearchOutcome.failures]
+     * retains the skipped books (and a reason) for diagnostics.
+     *
+     * Implementations must isolate per-book data failures; cancellation
+     * must always propagate.
+     */
+    suspend fun searchWithDiagnostics(
+        query: String,
+        bookIds: List<String>? = null,
+        limit: Int = 50
+    ): SearchOutcome
 }

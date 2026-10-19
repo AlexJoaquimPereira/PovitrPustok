@@ -10,6 +10,8 @@ data class SearchUiState(
     val results: List<SearchResult> = emptyList(),
     val isSearching: Boolean = false,
     val error: String? = null,
+    /** Non-blocking partial-result notice (SEARCH-02); null when complete. */
+    val warning: String? = null,
     val selectedBookId: String? = null,
     val resultCount: Int? = null
 )

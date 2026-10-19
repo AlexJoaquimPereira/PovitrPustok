@@ -66,20 +66,35 @@ class SearchViewModel @Inject constructor(
 
     private suspend fun runSearch(rawQuery: String, bookId: String?) {
         val expression = queryParser.parse(rawQuery)
-        _uiState.update { it.copy(isSearching = true, error = null) }
+        _uiState.update { it.copy(isSearching = true, error = null, warning = null) }
         if (expression == null) {
             _uiState.update {
-                it.copy(results = emptyList(), isSearching = false, resultCount = null)
+                it.copy(results = emptyList(), isSearching = false, resultCount = null, warning = null)
             }
             return
         }
         try {
-            val results = searchRepository.search(
+            val outcome = searchRepository.searchWithDiagnostics(
                 query = expression,
                 bookIds = bookId?.let { listOf(it) }
             )
+            val partial = outcome.results.isNotEmpty() && outcome.failures.isNotEmpty()
             _uiState.update {
-                it.copy(results = results, isSearching = false, resultCount = results.size)
+                it.copy(
+                    results = outcome.results,
+                    isSearching = false,
+                    resultCount = outcome.results.size,
+                    error = if (outcome.results.isEmpty() && outcome.failures.isNotEmpty()) {
+                        "Search failed for ${outcome.failures.size} book(s)."
+                    } else {
+                        null
+                    },
+                    warning = if (partial) {
+                        "Partial results: ${outcome.failures.size} book(s) could not be searched."
+                    } else {
+                        null
+                    }
+                )
             }
         } catch (e: BibleDataException) {
             _uiState.update {
@@ -87,6 +102,7 @@ class SearchViewModel @Inject constructor(
                     results = emptyList(),
                     isSearching = false,
                     error = e.message ?: "Search failed.",
+                    warning = null,
                     resultCount = null
                 )
             }
