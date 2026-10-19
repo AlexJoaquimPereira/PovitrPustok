@@ -25,13 +25,20 @@ class BibleDatabase internal constructor(
     internal val sqliteDatabase: SQLiteDatabase
 ) : AutoCloseable {
 
-    private val bookRowId: Long by lazy {
+    /**
+     * The book's stable textual identity from its single `books` row
+     * (`books.id` is TEXT, e.g. `jakob`). It is the value referenced by
+     * `chapters.book_id` / `introduction_blocks.book_id`, so it must never
+     * be coerced through a numeric accessor (DB-01: `getLong` produced `0`
+     * and every book-scoped query returned no rows).
+     */
+    private val storedBookId: String by lazy {
         query(
             "SELECT id FROM books LIMIT 1",
             emptyArray()
         ) { cursor ->
             if (cursor.moveToFirst()) {
-                cursor.getLong(0)
+                cursor.getString(0)
             } else {
                 throw CorruptBibleDatabaseException("unknown", null)
             }
@@ -42,7 +49,7 @@ class BibleDatabase internal constructor(
     fun getChapters(bookId: String): List<Chapter> =
         query(
             "SELECT id, number, position FROM chapters WHERE book_id = ? ORDER BY position",
-            arrayOf(bookRowId.toString())
+            arrayOf(storedBookId)
         ) { cursor ->
             buildList {
                 while (cursor.moveToNext()) {
@@ -66,7 +73,7 @@ class BibleDatabase internal constructor(
     fun getChapter(bookId: String, position: Int): Chapter? =
         query(
             "SELECT id, number, position FROM chapters WHERE book_id = ? AND position = ?",
-            arrayOf(bookRowId.toString(), position.toString())
+            arrayOf(storedBookId, position.toString())
         ) { cursor ->
             if (cursor.moveToFirst()) {
                 Chapter(
@@ -127,7 +134,7 @@ class BibleDatabase internal constructor(
     fun getIntroductionBlocks(bookId: String): List<IntroductionBlock> =
         query(
             "SELECT id, book_id, position, type, html FROM introduction_blocks WHERE book_id = ? ORDER BY position",
-            arrayOf(bookRowId.toString())
+            arrayOf(storedBookId)
         ) { cursor ->
             buildList {
                 while (cursor.moveToNext()) {
