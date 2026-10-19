@@ -147,6 +147,10 @@ class ScriptureReferenceRangeTest {
         // any verse lookup, unchanged by REF-01.
         val resolution = resolver.resolve("Job 26:5")
         assertTrue("expected chapter-level Ambiguous, got $resolution", resolution is ScriptureResolution.Ambiguous)
+        val ambiguous = resolution as ScriptureResolution.Ambiguous
+        // REF-04: the requested verse is carried through the choice.
+        assertEquals(5, ambiguous.verseStart)
+        assertEquals(5, ambiguous.verseEnd)
     }
 
     @Test

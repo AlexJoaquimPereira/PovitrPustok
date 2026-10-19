@@ -84,7 +84,11 @@ class ScriptureReferenceResolverImpl @Inject constructor(
             return ScriptureResolution.Ambiguous(
                 bookId = bookId,
                 chapterNumber = parsed.chapter,
-                candidates = chapterMatches
+                candidates = chapterMatches,
+                // REF-04: keep the requested verse/range so choosing a
+                // duplicate chapter does not silently drop the target.
+                verseStart = parsed.verseStart,
+                verseEnd = parsed.verseEnd
             )
         }
         val chapter = chapterMatches.single()

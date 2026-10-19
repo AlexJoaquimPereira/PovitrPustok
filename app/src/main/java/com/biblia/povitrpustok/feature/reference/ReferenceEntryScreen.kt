@@ -37,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.ReaderDestination
 import com.biblia.povitrpustok.domain.model.ScriptureResolution
+import com.biblia.povitrpustok.domain.model.toReaderDestination
 
 /**
  * Scripture-reference entry screen (Phase 8, plan §9–§11, §16, §17).
@@ -125,12 +126,7 @@ fun ReferenceEntryScreen(
                 is ScriptureResolution.Ambiguous -> AmbiguousMessage(
                     resolution = resolution,
                     onCandidateSelected = { chapter ->
-                        onOpenResolved(
-                            ReaderDestination(
-                                bookId = resolution.bookId,
-                                chapterPosition = chapter.position
-                            )
-                        )
+                        onOpenResolved(resolution.toReaderDestination(chapter))
                     }
                 )
 

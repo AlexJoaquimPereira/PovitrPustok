@@ -23,7 +23,10 @@ sealed interface ScriptureResolution {
     data class Ambiguous(
         val bookId: String,
         val chapterNumber: Int,
-        val candidates: List<Chapter>
+        val candidates: List<Chapter>,
+        /** REF-04: requested verse/range, preserved through chapter choice. */
+        val verseStart: Int? = null,
+        val verseEnd: Int? = null
     ) : ScriptureResolution
 
     /**
@@ -51,3 +54,15 @@ sealed interface ScriptureResolution {
         val reason: String
     ) : ScriptureResolution
 }
+
+/**
+ * REF-04: destination for a chosen ambiguous chapter, preserving the
+ * originally requested verse/range as a passage target.
+ */
+fun ScriptureResolution.Ambiguous.toReaderDestination(chapter: Chapter): ReaderDestination =
+    ReaderDestination(
+        bookId = bookId,
+        chapterPosition = chapter.position,
+        verseStart = verseStart,
+        verseEnd = verseEnd
+    )
