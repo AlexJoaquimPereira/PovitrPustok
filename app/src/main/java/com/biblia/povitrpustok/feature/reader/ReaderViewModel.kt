@@ -41,6 +41,16 @@ class ReaderViewModel @Inject constructor(
     private var bookId: String? = null
     private var loadJob: Job? = null
     private var bookmarkObservation: Job? = null
+    private var lastRequest: LoadRequest? = null
+
+    /** READER-01: retry must replay the exact target/passage request. */
+    private data class LoadRequest(
+        val bookId: String,
+        val chapterPosition: Int,
+        val targetVerseId: Long?,
+        val passageStart: Int?,
+        val passageEnd: Int?
+    )
 
     /** Serializes bookmark toggles so rapid taps cannot act on a stale snapshot (READER-05). */
     private val bookmarkToggleMutex = Mutex()
@@ -69,6 +79,7 @@ class ReaderViewModel @Inject constructor(
         passageEnd: Int? = null
     ) {
         this.bookId = bookId
+        lastRequest = LoadRequest(bookId, chapterPosition, targetVerseId, passageStart, passageEnd)
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
@@ -113,6 +124,19 @@ class ReaderViewModel @Inject constructor(
                     it.copy(isLoading = false, errorMessage = "Failed to load chapter.")
                 }
             }
+        }
+    }
+
+    /** READER-01: replay the last request (including target/passage) after an error. */
+    fun retry() {
+        lastRequest?.let { request ->
+            load(
+                bookId = request.bookId,
+                chapterPosition = request.chapterPosition,
+                targetVerseId = request.targetVerseId,
+                passageStart = request.passageStart,
+                passageEnd = request.passageEnd
+            )
         }
     }
 

@@ -64,7 +64,7 @@ fun ReaderScreen(
                 errorMessage != null ->
                     ReaderErrorState(
                         message = errorMessage,
-                        onRetry = { viewModel.load(bookId, chapterPosition) }
+                        onRetry = viewModel::retry
                     )
                 state.chapter != null -> ReaderContent(
                     state = state,

@@ -171,6 +171,32 @@ class ReaderViewModelTest {
     }
 
     @Test
+    fun retry_replays_target_and_passage_after_an_error() = runTest(dispatcher.scheduler) {
+        val bookId = "jakob"
+        val ch1 = chapter(bookId, number = 1, position = 1)
+        val chapterContent = content(bookId, ch1)
+        val repository = FakeRepository(
+            chapterLists = mapOf(bookId to listOf(ch1)),
+            contents = mapOf(bookId to mapOf(1 to chapterContent))
+        ).apply { failure = IllegalStateException("boom") }
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository())
+        val verseId = chapterContent.verses.first().id
+
+        viewModel.load(bookId, 1, targetVerseId = verseId, passageStart = 1, passageEnd = 1)
+        advanceUntilIdle()
+        assertNotNull(viewModel.uiState.value.errorMessage)
+
+        repository.failure = null
+        viewModel.retry()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertNull(state.errorMessage)
+        assertEquals("the retry must keep the verse target", verseId, state.targetVerseId)
+        assertEquals("the retry must keep the passage", ReaderPassage(1, 1), state.passage)
+    }
+
+    @Test
     fun rapid_double_toggle_ends_unbookmarked_without_duplicates() = runTest(dispatcher.scheduler) {
         val bookId = "jakob"
         val ch1 = chapter(bookId, number = 1, position = 1)
