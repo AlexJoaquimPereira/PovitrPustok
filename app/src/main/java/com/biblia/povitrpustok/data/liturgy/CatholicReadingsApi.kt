@@ -14,11 +14,11 @@ interface CatholicReadingsApi {
     suspend fun getReadings(
         @Path("year") year: Int,
         @Path("monthDay") monthDay: String
-    ): ReadingsDto
+    ): ReadingsDto?
 
     @GET("liturgical-calendar/{year}/{monthDay}.json")
     suspend fun getCalendar(
         @Path("year") year: Int,
         @Path("monthDay") monthDay: String
-    ): CalendarDto
+    ): CalendarDto?
 }

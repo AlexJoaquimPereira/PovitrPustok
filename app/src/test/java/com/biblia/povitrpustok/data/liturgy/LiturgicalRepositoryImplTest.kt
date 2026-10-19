@@ -7,6 +7,11 @@ import com.google.gson.JsonSyntaxException
 import java.io.IOException
 import java.time.LocalDate
 import java.util.Locale
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import okhttp3.ResponseBody
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -51,8 +56,8 @@ class LiturgicalRepositoryImplTest {
         LiturgicalRepositoryImpl(api, database)
 
     private class FakeApi(
-        var readings: ReadingsDto = ReadingsDto(season = "Ordinary Time"),
-        var calendar: CalendarDto = CalendarDto(season = "Ordinary Time"),
+        var readings: ReadingsDto? = ReadingsDto(season = "Ordinary Time"),
+        var calendar: CalendarDto? = CalendarDto(season = "Ordinary Time"),
         var readingsFailure: Exception? = null,
         var calendarFailure: Exception? = null
     ) : CatholicReadingsApi {
@@ -61,7 +66,7 @@ class LiturgicalRepositoryImplTest {
         var lastYear: Int? = null
         var lastMonthDay: String? = null
 
-        override suspend fun getReadings(year: Int, monthDay: String): ReadingsDto {
+        override suspend fun getReadings(year: Int, monthDay: String): ReadingsDto? {
             readingsCalls++
             lastYear = year
             lastMonthDay = monthDay
@@ -69,7 +74,7 @@ class LiturgicalRepositoryImplTest {
             return readings
         }
 
-        override suspend fun getCalendar(year: Int, monthDay: String): CalendarDto {
+        override suspend fun getCalendar(year: Int, monthDay: String): CalendarDto? {
             calendarCalls++
             lastYear = year
             lastMonthDay = monthDay
@@ -122,6 +127,57 @@ class LiturgicalRepositoryImplTest {
         } finally {
             Locale.setDefault(previous)
         }
+    }
+
+    @Test
+    fun null_readings_body_is_a_controlled_malformed_response() = runBlocking {
+        val result = newRepository(FakeApi(readings = null)).getLiturgicalDay(date)
+        assertTrue(result is LiturgicalDayResult.Error)
+        assertEquals(
+            LiturgicalErrorKind.MALFORMED_RESPONSE,
+            (result as LiturgicalDayResult.Error).kind
+        )
+    }
+
+    @Test
+    fun null_calendar_body_is_a_controlled_malformed_response() = runBlocking {
+        val result = newRepository(FakeApi(calendar = null)).getLiturgicalDay(date)
+        assertTrue(result is LiturgicalDayResult.Error)
+        assertEquals(
+            LiturgicalErrorKind.MALFORMED_RESPONSE,
+            (result as LiturgicalDayResult.Error).kind
+        )
+    }
+
+    @Test
+    fun concurrent_loads_for_the_same_date_fetch_once() = runBlocking {
+        val gate = CompletableDeferred<Unit>()
+        val api = object : CatholicReadingsApi {
+            var readingsCalls = 0
+
+            override suspend fun getReadings(year: Int, monthDay: String): ReadingsDto? {
+                readingsCalls++
+                gate.await()
+                return ReadingsDto(
+                    season = "Ordinary Time",
+                    readings = ReadingsFieldsDto(gospel = "John 3:16")
+                )
+            }
+
+            override suspend fun getCalendar(year: Int, monthDay: String): CalendarDto? =
+                CalendarDto(season = "Ordinary Time")
+        }
+        val repository = newRepository(api)
+
+        val loads = (1..5).map {
+            async(Dispatchers.IO) { repository.getLiturgicalDay(date) }
+        }
+        delay(50) // let the first load start and suspend on the gate
+        gate.complete(Unit)
+        val results = loads.awaitAll()
+
+        assertEquals("five concurrent loads must share one network fetch", 1, api.readingsCalls)
+        assertTrue("every concurrent load must receive the day", results.all { it is LiturgicalDayResult.Success })
     }
 
     @Test

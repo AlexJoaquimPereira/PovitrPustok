@@ -15,6 +15,8 @@ import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 
@@ -54,27 +56,37 @@ class LiturgicalRepositoryImpl @Inject constructor(
                 return@withContext LiturgicalDayResult.Success(LiturgicalCacheMapper.toDomain(cached))
             }
 
-            when (val network = fetchFromNetwork(date)) {
-                is LiturgicalDayResult.Success -> {
-                    // LITURGY-01: one transaction — day + readings are
-                    // replaced atomically, so process death can never leave a
-                    // cached day with missing/mixed readings.
-                    cacheDao.replaceDay(
-                        day = LiturgicalCacheMapper.toDayEntity(network.day, System.currentTimeMillis()),
-                        readings = LiturgicalCacheMapper.toReadingEntities(
-                            // The DAO re-points rows at the real day id.
-                            dayId = 0L,
-                            readings = network.day.readings
-                        )
+            fetchMutex.withLock {
+                // LITURGY-04: another load may have populated the cache while
+                // this coroutine waited; re-check before touching the network.
+                cacheDao.getByDateWithReadings(dateKey)?.let { cached ->
+                    return@withLock LiturgicalDayResult.Success(
+                        LiturgicalCacheMapper.toDomain(cached)
                     )
-                    network
                 }
-                is LiturgicalDayResult.Error -> {
-                    val lateCache = cacheDao.getByDateWithReadings(dateKey)
-                    if (lateCache != null) {
-                        LiturgicalDayResult.Success(LiturgicalCacheMapper.toDomain(lateCache))
-                    } else {
+
+                when (val network = fetchFromNetwork(date)) {
+                    is LiturgicalDayResult.Success -> {
+                        // LITURGY-01: one transaction — day + readings are
+                        // replaced atomically, so process death can never leave a
+                        // cached day with missing/mixed readings.
+                        cacheDao.replaceDay(
+                            day = LiturgicalCacheMapper.toDayEntity(network.day, System.currentTimeMillis()),
+                            readings = LiturgicalCacheMapper.toReadingEntities(
+                                // The DAO re-points rows at the real day id.
+                                dayId = 0L,
+                                readings = network.day.readings
+                            )
+                        )
                         network
+                    }
+                    is LiturgicalDayResult.Error -> {
+                        val lateCache = cacheDao.getByDateWithReadings(dateKey)
+                        if (lateCache != null) {
+                            LiturgicalDayResult.Success(LiturgicalCacheMapper.toDomain(lateCache))
+                        } else {
+                            network
+                        }
                     }
                 }
             }
@@ -87,6 +99,16 @@ class LiturgicalRepositoryImpl @Inject constructor(
                 val calendarDeferred = async { api.getCalendar(date.year, date.monthDayPath()) }
                 val readingsDto = readingsDeferred.await()
                 val calendarDto = calendarDeferred.await()
+
+                // LITURGY-04: Retrofit/Gson can yield a null body despite the
+                // declared type (e.g. 200 with an empty payload). Guard before
+                // dereferencing so the UI gets a controlled error, not an NPE.
+                if (readingsDto == null || calendarDto == null) {
+                    return@coroutineScope LiturgicalDayResult.Error(
+                        LiturgicalErrorKind.MALFORMED_RESPONSE,
+                        "The liturgical service returned an empty response."
+                    )
+                }
 
                 val day = CatholicReadingsMapper.toLiturgicalDay(date, readingsDto, calendarDto)
                 if (day.readings.isEmpty() && day.celebrationName == null) {
@@ -122,6 +144,9 @@ class LiturgicalRepositoryImpl @Inject constructor(
 
     private val cacheDao: LiturgicalDayCacheDao
         get() = appDatabase.liturgicalDayCacheDao()
+
+    /** Serializes cache-miss fetches so concurrent loads cannot duplicate network work (LITURGY-04). */
+    private val fetchMutex = Mutex()
 
     private fun LocalDate.monthDayPath(): String =
         // LITURGY-03: API paths require ASCII digits; the default locale can
