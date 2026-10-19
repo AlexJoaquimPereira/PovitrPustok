@@ -8,6 +8,7 @@ import com.biblia.povitrpustok.feature.reader.ReaderContentItem
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -50,11 +51,12 @@ class JohnChapterOneDataTest {
         val verses = db.getVerses(chapter.id)
         val headings = db.getHeadings(chapter.id)
 
-        // the complete database content for chapter 1
+        // the complete database content for chapter 1 (current corpus:
+        // John 1 starts at verse 2 and has 50 records ending at 51)
         assertTrue("chapter content must be non-empty", verses.isNotEmpty())
-        assertEquals("first verse is 1", 1, verses.first().verseStart)
+        assertEquals("first verse is 2", 2, verses.first().verseStart)
         assertEquals("last verse is 51", 51, verses.last().verseStart)
-        assertEquals("chapter 1 has 35 verse records in the corpus", 35, verses.size)
+        assertEquals("chapter 1 has 50 verse records in the corpus", 50, verses.size)
         assertTrue("headings are present", headings.isNotEmpty())
         assertEquals(5, headings.size)
 
@@ -65,30 +67,30 @@ class JohnChapterOneDataTest {
             verses = verses,
             passage = null
         )
-        assertEquals("normal mode must render every verse", 35, items.count { it is ReaderContentItem.Verse })
+        assertEquals("normal mode must render every verse", 50, items.count { it is ReaderContentItem.Verse })
         assertEquals("all headings render", 5, items.count { it is ReaderContentItem.Heading })
         assertTrue("header present", items.any { it is ReaderContentItem.Header })
-        // headings interleaved by before_verse (1, 19, 29, 35, 43)
+        // current corpus headings all carry before_verse = 2
         val headingOrder = items.filterIsInstance<ReaderContentItem.Heading>().map { it.heading.beforeVerse }
-        assertEquals(listOf(1, 19, 29, 35, 43), headingOrder)
+        assertEquals(listOf(2, 2, 2, 2, 2), headingOrder)
     }
 
     @Test
-    fun john_chapter_one_gap_is_a_database_fact() = runBlocking {
+    fun john_chapter_one_starts_at_verse_two_without_inventing_verse_one() = runBlocking {
         val db = provider.openBook("juanv")
         val chapter = db.getChapter("juanv", 1)!!
         val verses = db.getVerses(chapter.id)
         val starts = verses.map { it.verseStart }.toSet()
 
-        // verses 2..17 do NOT exist in the corpus for chapter 1
-        // (they exist for chapters 2-21). This documents the DATABASE
-        // state; the app must not invent content (Issue 5, no faking).
-        assertEquals("verse 1 exists", true, 1 in starts)
-        assertTrue("no verse_start 2..17 in the DB for John 1", (2..17).none { it in starts })
-        assertEquals("verse 18 exists", true, 18 in starts)
+        // Current corpus fact: John 1 has no verse 1; verses 2..51 are
+        // contiguous. The app must render exactly these rows and never
+        // invent a verse 1.
+        assertFalse("verse 1 must not exist in the current corpus", 1 in starts)
+        assertEquals("John 1 starts at verse 2", 2, verses.first().verseStart)
+        assertTrue("verses 2..51 are contiguous", (2..51).all { it in starts })
 
-        // a normal chapter (John 2) has its expected first verses, proving
-        // the gap is specific to chapter 1's source data, not the reader
+        // a normal chapter (John 2) also starts at 1, proving chapter 1's
+        // offset is source data rather than a reader bug
         val chapter2 = db.getChapter("juanv", 2)!!
         val starts2 = db.getVerses(chapter2.id).map { it.verseStart }.toSet()
         assertTrue("John 2 starts at verse 1", starts2.contains(1))

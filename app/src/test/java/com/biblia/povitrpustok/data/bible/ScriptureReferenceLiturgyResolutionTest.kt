@@ -85,12 +85,16 @@ class ScriptureReferenceLiturgyResolutionTest {
     }
 
     @Test
-    fun corpus_verse_gap_is_a_controlled_not_found() = runBlocking {
-        // The corpus's John 12 has verse gaps (no verses 24-26); the
-        // lectionary reference "John 12:24-26" must be a controlled
-        // NotFound, never a crash or a silent redirect.
-        val result = resolver.resolve("John 12:24-26")
-        assertTrue("expected NotFound, got $result", result is ScriptureResolution.NotFound)
+    fun john_twelve_verse_range_resolves() = runBlocking {
+        // Current corpus fact: John 12 contains verses 24-26, so the
+        // lectionary reference must resolve to that source range (it was
+        // previously asserted as a "gap" against an older corpus).
+        val r = resolved("John 12:24-26")
+        assertEquals("juanv", r.bookId)
+        assertEquals(12, r.chapterNumber)
+        assertEquals(24, r.verseStart)
+        assertEquals(26, r.verseEnd)
+        assertNotNull(r.verseId)
     }
 
     @Test

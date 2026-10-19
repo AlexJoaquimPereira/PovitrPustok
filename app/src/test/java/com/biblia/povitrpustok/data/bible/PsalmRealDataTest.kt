@@ -55,11 +55,19 @@ class PsalmRealDataTest {
                     verse.html.contains("<br/>")
                 )
                 if (verse.verseStart > verses.first().verseStart) {
-                    // subsequent verses lack their own alignment -> poetic mode
-                    assertTrue(
-                        "psalm $position verse ${verse.verseStart} must be poetic-centered",
-                        PsalmPoetry.isPoeticVerse(PsalmPoetry.PSALMS_BOOK_ID, document)
-                    )
+                    if (verse.html.contains("align=")) {
+                        // Verses that carry their own alignment keep it; poetic
+                        // mode must not override explicit source alignment.
+                        assertFalse(
+                            "psalm $position verse ${verse.verseStart} has explicit alignment and must not be re-centered",
+                            PsalmPoetry.isPoeticVerse(PsalmPoetry.PSALMS_BOOK_ID, document)
+                        )
+                    } else {
+                        assertTrue(
+                            "psalm $position verse ${verse.verseStart} must be poetic-centered",
+                            PsalmPoetry.isPoeticVerse(PsalmPoetry.PSALMS_BOOK_ID, document)
+                        )
+                    }
                 }
             }
         }
@@ -83,8 +91,9 @@ class PsalmRealDataTest {
         val missingVerse1 = chapters.count { chapter ->
             db.getVerses(chapter.id).none { it.verseStart == 1 }
         }
-        // 148 of 150 psalms have no verse_start=1 record (Issue 9)
-        assertEquals("148 psalms lack a verse 1 record in the DB", 148, missingVerse1)
+        // 147 of 150 psalms have no verse_start=1 record (current corpus;
+        // Psalms 55, 67 and 135 retain verse 1)
+        assertEquals("147 psalms lack a verse 1 record in the DB", 147, missingVerse1)
     }
 
     @Test
