@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Reader state holder (implementation plan §17).
@@ -39,6 +41,9 @@ class ReaderViewModel @Inject constructor(
     private var bookId: String? = null
     private var loadJob: Job? = null
     private var bookmarkObservation: Job? = null
+
+    /** Serializes bookmark toggles so rapid taps cannot act on a stale snapshot (READER-05). */
+    private val bookmarkToggleMutex = Mutex()
 
     /**
      * Loads [chapterPosition] of [bookId]; replaces the current state.
@@ -138,24 +143,31 @@ class ReaderViewModel @Inject constructor(
      * Bookmarks or unbookmarks the currently selected (targeted) verse
      * using only ids already present in the loaded chapter.
      */
-    fun toggleBookmark() {        val state = _uiState.value
+    fun toggleBookmark() {
+        val state = _uiState.value
         val verseId = state.selectedVerseId ?: return
         val chapter = state.chapter ?: return
         val verse = state.verses.firstOrNull { it.id == verseId } ?: return
         val bookId = state.book?.id ?: return
         viewModelScope.launch {
-            if (state.bookmarkedVerseIds.contains(verseId)) {
-                bookmarkRepository.removeBookmark(bookId, chapter.id, verseId)
-            } else {
-                bookmarkRepository.addBookmark(
-                    bookId = bookId,
-                    chapterId = chapter.id,
-                    chapterPosition = chapter.position,
-                    chapterNumber = chapter.number,
-                    verseId = verse.id,
-                    verseStart = verse.verseStart,
-                    verseEnd = verse.verseEnd
-                )
+            // READER-05: decide inside the serialized critical section from
+            // the persisted state, not the possibly-stale UI snapshot. Rapid
+            // taps therefore alternate add/remove instead of duplicating.
+            bookmarkToggleMutex.withLock {
+                val bookmarked = bookmarkRepository.isBookmarked(bookId, chapter.id, verseId)
+                if (bookmarked) {
+                    bookmarkRepository.removeBookmark(bookId, chapter.id, verseId)
+                } else {
+                    bookmarkRepository.addBookmark(
+                        bookId = bookId,
+                        chapterId = chapter.id,
+                        chapterPosition = chapter.position,
+                        chapterNumber = chapter.number,
+                        verseId = verse.id,
+                        verseStart = verse.verseStart,
+                        verseEnd = verse.verseEnd
+                    )
+                }
             }
         }
     }

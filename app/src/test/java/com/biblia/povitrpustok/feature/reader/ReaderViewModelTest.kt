@@ -13,6 +13,7 @@ import com.biblia.povitrpustok.domain.repository.BibleRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -167,6 +168,35 @@ class ReaderViewModelTest {
         val state = viewModel.uiState.value
         assertNotNull("expected an error message", state.errorMessage)
         assertFalse(state.isLoading)
+    }
+
+    @Test
+    fun rapid_double_toggle_ends_unbookmarked_without_duplicates() = runTest(dispatcher.scheduler) {
+        val bookId = "jakob"
+        val ch1 = chapter(bookId, number = 1, position = 1)
+        val chapterContent = content(bookId, ch1)
+        val repository = FakeRepository(
+            chapterLists = mapOf(bookId to listOf(ch1)),
+            contents = mapOf(bookId to mapOf(1 to chapterContent))
+        )
+        val bookmarks = FakeBookmarkRepository()
+        val viewModel = ReaderViewModel(repository, bookmarks)
+
+        viewModel.load(bookId, 1)
+        advanceUntilIdle()
+        val verseId = chapterContent.verses.first().id
+        viewModel.onVerseSelected(verseId)
+
+        // Two taps before the observation flow can update the UI snapshot.
+        viewModel.toggleBookmark()
+        viewModel.toggleBookmark()
+        advanceUntilIdle()
+
+        val saved = bookmarks.observeBookmarksForChapter(bookId, ch1.id).first()
+        assertTrue(
+            "two rapid toggles must end unbookmarked, got ${saved.size} row(s)",
+            saved.isEmpty()
+        )
     }
 
     @Test
