@@ -95,3 +95,6 @@ test-output/
 # Audit / remediation working documents (kept local; deliberately not versioned)
 /AUDIT_REPORT.md
 /TODO.md
+
+# Inert duplicate corpus tree (only app/src/main/assets is packaged)
+/app/src/assets/
