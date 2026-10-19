@@ -78,6 +78,7 @@ class SnippetBuilderTest {
     fun no_match_falls_back_to_abbreviated_prefix() {
         val text = "Survatim Dev sorg ani prithum rochlem"
         val snippet = SnippetBuilder.build(text, "\"zzzqqq\"", maxLength = 12)
-        assertTrue(snippet.endsWith("…"))
+        assertTrue("fallback keeps the text prefix, got '$snippet'", snippet.startsWith("Survatim"))
+        assertTrue("fallback must be marked as truncated, got '$snippet'", snippet.endsWith("…"))
     }
 }

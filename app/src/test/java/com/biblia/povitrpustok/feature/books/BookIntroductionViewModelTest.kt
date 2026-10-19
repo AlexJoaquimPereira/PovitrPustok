@@ -47,7 +47,7 @@ class BookIntroductionViewModelTest {
             shadowOf(Looper.getMainLooper()).idle()
             val state = viewModel.uiState.value
             if (!state.isLoading && (state.blocks.isNotEmpty() || state.errorMessage != null)) {
-                assertTrue("expected 8 introduction blocks in James", state.blocks.size >= 2)
+                assertEquals("James has exactly 8 introduction blocks", 8, state.blocks.size)
                 assertEquals("blocks must stay distinct", state.blocks.size, state.blocks.map { it.id }.toSet().size)
                 assertEquals(
                     "blocks must be in source order",

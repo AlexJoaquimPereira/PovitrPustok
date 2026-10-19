@@ -66,13 +66,16 @@ class AppDestinationTest {
     fun route_constants_are_distinct() {
         val routes = setOf(
             AppDestination.HOME,
+            AppDestination.DAILY_READING,
+            AppDestination.BOOKMARKS,
             AppDestination.BOOKS,
             AppDestination.BOOK_CHAPTERS,
             AppDestination.BOOK_INTRODUCTION,
             AppDestination.READER,
-            AppDestination.SEARCH
+            AppDestination.SEARCH,
+            AppDestination.REFERENCE_ENTRY
         )
-        assertEquals(6, routes.size)
+        assertEquals(9, routes.size)
     }
 
     @Test

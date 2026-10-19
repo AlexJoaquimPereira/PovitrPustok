@@ -37,8 +37,6 @@ object AppDestination {
 
     const val BOOKMARKS = "bookmarks"
 
-    const val SETTINGS = "settings"
-
     fun bookChapters(bookId: String): String = "books/$bookId"
 
     fun bookIntroduction(bookId: String): String = "books/$bookId/introduction"

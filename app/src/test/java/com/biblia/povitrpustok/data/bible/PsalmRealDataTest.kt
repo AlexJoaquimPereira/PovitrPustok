@@ -5,6 +5,8 @@ import androidx.test.core.app.ApplicationProvider
 import com.biblia.povitrpustok.core.database.AssetBibleDatabaseProvider
 import com.biblia.povitrpustok.core.html.BibleHtmlParser
 import com.biblia.povitrpustok.feature.reader.PsalmPoetry
+import com.biblia.povitrpustok.feature.reader.ReaderContentBuilder
+import com.biblia.povitrpustok.feature.reader.ReaderContentItem
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -79,9 +81,15 @@ class PsalmRealDataTest {
         val psalm112 = db.getChapter(PsalmPoetry.PSALMS_BOOK_ID, 112)
         val verses = db.getVerses(psalm112!!.id)
         assertEquals("database first verse_start is 2 (Issue 9: corpus data)", 2, verses.first().verseStart)
-        // the app displays verse.verseStart directly; assert the value the
-        // reader would show matches the database value exactly
-        assertEquals(verses.first().verseStart, verses.first().verseStart)
+        // DB-vs-display assertion: the Reader renders the database value.
+        val headings = db.getHeadings(psalm112.id)
+        val items = ReaderContentBuilder.build(psalm112, headings, verses)
+        val displayedFirst = items.filterIsInstance<ReaderContentItem.Verse>().first()
+        assertEquals(
+            "the reader must display the database verse_start verbatim",
+            2,
+            displayedFirst.verse.verseStart
+        )
     }
 
     @Test
