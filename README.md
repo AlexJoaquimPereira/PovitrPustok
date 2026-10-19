@@ -10,12 +10,12 @@ the app never re-imports, rewrites or "fixes" it.
 | | |
 |---|---|
 | **Application ID / namespace** | `com.biblia.povitrpustok` |
-| **Version** | 1.0 (versionCode 1) |
-| **Min SDK** | 30 (Android 11) — required for the framework's FTS5 SQLite module |
+| **Version** | 1.1.0 (versionCode 2) |
+| **Min SDK** | 30 (Android 11) — FTS5 is used when the device SQLite provides it; a scan fallback covers builds that omit it |
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 380 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 15 instrumented tests |
+| **Tests** | 381 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 19 instrumented tests |
 
 ---
 
@@ -98,7 +98,12 @@ from the application database.
 * Malformed source HTML degrades deterministically and is reported through parser diagnostics.
 
 ### 2.4 Search
-* FTS5 `MATCH` full-text search across all per-book indexes, with an optional single-book filter.
+* FTS5 `MATCH` full-text search across all per-book indexes when the device SQLite provides
+  FTS5, with an optional single-book filter.
+* On devices whose SQLite build omits FTS5 (observed on some API 31 OEM builds), a scan fallback
+  matches case- and accent-insensitively with the same per-book limit. Fallback results are
+  source-position-ordered rather than BM25-ranked; search never silently returns zero because a
+  module is missing.
 * Input is sanitised into a safe FTS5 query (no raw injection into the MATCH string).
 * Results show the book name, `chapter:verse` (or range) and a plain-text context snippet
   (up to 3 lines, ellipsised) — the snippet is the `text_plain` window, never raw HTML.
@@ -235,8 +240,9 @@ Versions are centralised in [`gradle/libs.versions.toml`](gradle/libs.versions.t
 
 Two build notes worth knowing:
 
-* `minSdk = 30` is deliberate: Android's framework SQLite ships the **FTS5** module only from
-  API 30, and search depends on it.
+* `minSdk = 30` is deliberate: it is the baseline for the app's storage/lifecycle APIs. Search
+  uses the framework SQLite FTS5 module when present; because some OEM builds omit it, a
+  normalized scan fallback keeps search functional (SEARCH-04).
 * `android.disallowKotlinSourceSets=false` in `gradle.properties` keeps KSP working with AGP 9
   built-in Kotlin (KSP still registers generated sources through the legacy `kotlin.sourceSets` DSL).
 
@@ -272,7 +278,10 @@ Two build notes worth knowing:
 | `introduction_blocks` | `id`, `book_id`, `position`, `type`, `html` — separate, ordered blocks |
 | `verses_fts` | FTS5 external-content index over `verses.text_plain` |
 
-**Full-text search** uses FTS5 `MATCH` joined back to `verses`/`chapters`. Search results are
+**Full-text search** uses FTS5 `MATCH` joined back to `verses`/`chapters` when the device build
+provides FTS5. If the module is absent, a per-book scan normalizes case/diacritics/apostrophes and
+requires every query token; results stay deterministic but are position-ordered rather than ranked.
+Search results are
 snippeted in Kotlin because the SQL `snippet()` auxiliary function is not portable across SQLite
 builds when the FTS table's columns do not match the content table (see §7).
 
@@ -311,9 +320,8 @@ in the app:
 
 | Observation | Handling |
 |---|---|
-| **John 1 has no verse records for verses 2–17** (chapter 1 = verse 1, then 18–51). Verses 2–17 exist only in chapters 2–21. | Rendered exactly as the database contains; documented by `JohnChapterOneDataTest`. |
-| **148 of 150 Psalms have no `verse_start = 1` record** (their first record is verse 2). | The app displays `verse_start` verbatim — there is no application-side offset. |
-| **`tesalonikarank1/2` (1 & 2 Thessalonians) are tagged `OLD_TESTAMENT`** in the corpus metadata, so their testament grouping follows the corpus (48 OT / 25 NT as tagged). | Not reinterpreted. |
+| **John 1 starts at verse 2** (50 records; no verse 1 record). | Rendered exactly as the database contains; documented by `JohnChapterOneDataTest`. |
+| **147 of 150 Psalms have no `verse_start = 1` record** (their first record is verse 2). | The app displays `verse_start` verbatim — there is no application-side offset. |
 | **`korintkarant1/2` have short display names** in the corpus. | Not silently corrected; display names are Capitalize-Cased only. |
 | **`books.position` follows importer filename order**, not the Catholic canonical order. | Canonical ordering comes from the explicit `BibleCanonicalOrder`, not from `books.position`. |
 | **Duplicate chapter numbers** (e.g. Job) and repeated/chapter-1 anomalies. | Chapters are addressed by `position`, never by `number`. |
@@ -341,8 +349,8 @@ PovitrPustok/
 │       │   │   ├── feature/{books,reader,search,reference,bookmarks,dailyreading}
 │       │   │   └── ui/{theme, HomeScreen, HomeViewModel}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
-│       ├── test/                        # 380 JVM unit tests + HTML fixtures
-│       └── androidTest/                 # 15 instrumented tests
+│       ├── test/                        # 381 JVM unit tests + HTML fixtures
+│       └── androidTest/                 # 19 instrumented tests
 ├── gradle/libs.versions.toml            # version catalog
 ├── build.gradle.kts, settings.gradle.kts, gradle.properties
 ├── gradlew, gradlew.bat, gradle/wrapper/
@@ -458,16 +466,16 @@ If the file is absent, the release signing config is simply left unset and the p
 
 | Suite | Count | Runner | Notes |
 |---|---|---|---|
-| JVM unit tests | **335** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
-| Instrumented tests | **16** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device |
+| JVM unit tests | **381** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
+| Instrumented tests | **19** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the POCO M2 Pro (API 31): 19 / 0 failed / 3 FTS5-only skips |
 
-19 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
+29 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
 assets or Room.
 
 **Robolectric configuration**
 
 * `app/src/test/resources/robolectric.properties` pins `sdk=35` (the provisioned
-  `android-all-instrumented` jar; `targetSdk 37` has no matching jar).
+  `android-all-instrumented` jar; targetSdk 36 has no matching local jar).
 * `app/build.gradle.kts` maps the `ROBOLECTRIC_USER_HOME` environment variable onto the test
   `user.home`, for hosts where `$HOME` is read-only. Robolectric resolves `android-all` jars from
   `$HOME/.m2` and writes a download lock there, so point it at a writable directory:
@@ -480,19 +488,21 @@ export ROBOLECTRIC_USER_HOME=/path/to/writable/dir   # containing .m2/repository
 **Real-content tests.** Most data-layer and reader tests run against the **real corpus assets**,
 not synthetic fixtures, and assert semantic preservation rather than exact serialisation.
 
-**Documented skip.** One test calls `Assume.assumeTrue(...)` in `BibleDatabaseProviderTest`, which
-skips the FTS5-`MATCH` check under Robolectric (desktop SQLite in Robolectric does not provide the
-same FTS5 build). The on-device equivalent is covered by the instrumented tests.
+**Documented skips.** Two tests call `Assume.assumeTrue(...)`: `BibleDatabaseProviderTest` and
+`CorpusGateTest`. Both skip the FTS5-`MATCH` parity check under Robolectric (desktop SQLite does
+not provide the same FTS5 build). On devices without FTS5 the three `BibleFtsInstrumentedTest`
+cases skip as well; the search path is still covered by the scan fallback tests.
 
-**Instrumented coverage.** `BibleFtsInstrumentedTest` verifies FTS5 on device, including a
-full-path `MATCH` test that must run on an API 30+ device to close the device-side proof.
+**Instrumented coverage.** `BibleFtsInstrumentedTest` verifies FTS5 on devices whose SQLite
+provides it, including a full-path `MATCH` test. On builds without FTS5 these three tests skip;
+the repository/search instrumented tests still run through the scan fallback.
 
 **Device gate (required).** The on-device FTS5 suite is not part of the JVM suite and cannot be
 replaced by Robolectric:
 
 ```bash
 ./gradlew :app:assembleDebugAndroidTest
-./gradlew :app:connectedDebugAndroidTest   # API 30+ device/emulator required
+./gradlew :app:connectedDebugAndroidTest   # API 30+; FTS5-only cases skip if the build lacks the module
 ```
 
 CI must either provision such a device/emulator or require a documented pre-release device run.
@@ -513,6 +523,10 @@ Artifacts are produced by Gradle under `app/build/outputs/` (never committed):
 | `:app:assembleRelease` | `app/build/outputs/apk/release/app-release.apk` (signed only when `keystore.properties` exists; otherwise `app-release-unsigned.apk`) |
 | `:app:bundleRelease` | `app/build/outputs/bundle/release/app-release.aab` |
 
+Release builds are R8-optimized (`optimization.enable = true`): the signed APK is ≈**12.2 MB**
+(down from ≈38.0 MB unminified). `app/build/outputs/mapping/release/mapping.txt` is kept locally
+for deobfuscation; it is not committed.
+
 The old `dist/` folder was removed in REPO-01: it held stale, divergent APKs that did not match the
 current corpus. Build the artifact you need from source instead.
 
@@ -522,13 +536,17 @@ current corpus. Build the artifact you need from source instead.
 
 **Known limitations**
 
-* Instrumented tests cannot run without a physical or emulated API 30+ device; the device-side
-  FTS5 proof remains outstanding in device-less environments.
+* The on-device FTS5 `MATCH` path is verified only on hardware whose SQLite includes FTS5.
+  The test POCO M2 Pro (API 31) does not, so its three FTS5-only tests skip; search there uses the
+  scan fallback (SEARCH-04). This does not affect the shipped fallback behavior.
+* Release-variant instrumentation is not runnable because R8 shrinks test-runner dependencies; the
+  R8 release is covered by app-level smoke tests instead. Debug instrumentation remains the UI gate.
+* The corpus is copyrighted and not committed. CI runs without it unless the private
+  `CORPUS_ARCHIVE_*` secrets are configured; a locally built APK requires the private corpus.
 * Lint reports style warnings ("Modifier parameter should be the first optional parameter"); there
   are no lint errors.
-* John 1 (verses 2–17) and 148 Psalms (verse 1) lack verse records in the corpus. This is source
-  data, deliberately not "fixed" — see [§7](#7-corpus-characteristics-and-known-data-quirks).
-* The Settings destination is declared in the route contract but not implemented.
+* John 1 starts at verse 2, and 147 Psalms lack a verse-1 record. This is source data,
+  deliberately not "fixed" — see [§7](#7-corpus-characteristics-and-known-data-quirks).
 
 **Planned (reserved packages, not yet implemented)**
 
@@ -565,6 +583,8 @@ Bible corpus from inside the app.
   *Note: this working document is currently **not** tracked by git, so it will be absent from a
   fresh clone.*
 * Section references of the form "implementation plan §N" in source KDoc point into that document.
+* Release notes for this version: [`RELEASE_NOTES_1.1.0.md`](RELEASE_NOTES_1.1.0.md). Earlier
+  releases are tagged in git (`v1.0.0`, `v1.1.0`).
 
 ---
 
