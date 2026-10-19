@@ -17,14 +17,14 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.biblia.povitrpustok"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.biblia.povitrpustok"
         // minSdk 30: Android's framework SQLite only ships the FTS5 module
         // from API 30 onward; the app's Bible search depends on FTS5.
         minSdk = 30
-        targetSdk = 37
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
