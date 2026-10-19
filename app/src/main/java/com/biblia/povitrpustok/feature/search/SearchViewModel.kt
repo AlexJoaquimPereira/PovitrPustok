@@ -1,5 +1,6 @@
 package com.biblia.povitrpustok.feature.search
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.biblia.povitrpustok.core.result.BibleDataException
@@ -32,14 +33,22 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val searchRepository: BibleSearchRepository,
-    private val queryParser: BibleSearchQueryParser
+    private val queryParser: BibleSearchQueryParser,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SearchUiState())
+    // DIST-01: the query and book filter survive process recreation; the
+    // debounced pipeline re-runs the search against the restored query.
+    private val _uiState = MutableStateFlow(
+        SearchUiState(
+            query = savedStateHandle[KEY_QUERY] ?: "",
+            selectedBookId = savedStateHandle[KEY_BOOK_FILTER]
+        )
+    )
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 
-    private val queryInput = MutableStateFlow("")
-    private val bookFilter = MutableStateFlow<String?>(null)
+    private val queryInput = MutableStateFlow(savedStateHandle.get<String>(KEY_QUERY) ?: "")
+    private val bookFilter = MutableStateFlow(savedStateHandle.get<String>(KEY_BOOK_FILTER))
 
     init {
         viewModelScope.launch {
@@ -55,11 +64,13 @@ class SearchViewModel @Inject constructor(
     }
 
     fun onQueryChange(rawQuery: String) {
+        savedStateHandle[KEY_QUERY] = rawQuery
         _uiState.update { it.copy(query = rawQuery) }
         queryInput.value = rawQuery
     }
 
     fun onBookFilterChange(bookId: String?) {
+        savedStateHandle[KEY_BOOK_FILTER] = bookId
         _uiState.update { it.copy(selectedBookId = bookId) }
         bookFilter.value = bookId
     }
@@ -111,5 +122,7 @@ class SearchViewModel @Inject constructor(
 
     private companion object {
         const val DEBOUNCE_MILLIS = 300L
+        const val KEY_QUERY = "search_query"
+        const val KEY_BOOK_FILTER = "search_book_filter"
     }
 }

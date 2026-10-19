@@ -1,5 +1,6 @@
 package com.biblia.povitrpustok.feature.reference
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.biblia.povitrpustok.core.result.BibleDataException
@@ -28,16 +29,21 @@ import kotlinx.coroutines.launch
  */
 @HiltViewModel
 class ReferenceEntryViewModel @Inject constructor(
-    private val resolver: ScriptureReferenceResolver
+    private val resolver: ScriptureReferenceResolver,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ReferenceEntryUiState())
+    // DIST-01: the typed reference survives process recreation.
+    private val _uiState = MutableStateFlow(
+        ReferenceEntryUiState(query = savedStateHandle[KEY_QUERY] ?: "")
+    )
     val uiState: StateFlow<ReferenceEntryUiState> = _uiState.asStateFlow()
 
     private val _pendingNavigation = MutableStateFlow<ReaderDestination?>(null)
     val pendingNavigation: StateFlow<ReaderDestination?> = _pendingNavigation.asStateFlow()
 
     fun onQueryChange(query: String) {
+        savedStateHandle[KEY_QUERY] = query
         _uiState.update { it.copy(query = query, resolution = null) }
     }
 
@@ -62,5 +68,9 @@ class ReferenceEntryViewModel @Inject constructor(
     /** Consumes the one-shot navigation event (called by the screen after navigating). */
     fun consumeNavigation() {
         _pendingNavigation.value = null
+    }
+
+    private companion object {
+        const val KEY_QUERY = "reference_query"
     }
 }

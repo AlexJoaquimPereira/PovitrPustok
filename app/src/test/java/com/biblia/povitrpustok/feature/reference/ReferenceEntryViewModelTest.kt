@@ -1,5 +1,6 @@
 package com.biblia.povitrpustok.feature.reference
 
+import androidx.lifecycle.SavedStateHandle
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.ResolvedScriptureReference
 import com.biblia.povitrpustok.domain.model.ScriptureResolution
@@ -64,7 +65,7 @@ class ReferenceEntryViewModelTest {
     @Test
     fun normal_reference_resolves_to_destination_with_verse_target() = runTest(dispatcher.scheduler) {
         val resolver = FakeResolver().apply { result = resolved(verseId = 123L) }
-        val viewModel = ReferenceEntryViewModel(resolver)
+        val viewModel = ReferenceEntryViewModel(resolver, SavedStateHandle())
 
         viewModel.onQueryChange("James 1:5")
         viewModel.resolve()
@@ -88,7 +89,7 @@ class ReferenceEntryViewModelTest {
                 )
             )
         }
-        val viewModel = ReferenceEntryViewModel(resolver)
+        val viewModel = ReferenceEntryViewModel(resolver, SavedStateHandle())
 
         viewModel.onQueryChange("Genesis 17:11-12")
         viewModel.resolve()
@@ -103,7 +104,7 @@ class ReferenceEntryViewModelTest {
     @Test
     fun book_only_reference_has_no_verse_target() = runTest(dispatcher.scheduler) {
         val resolver = FakeResolver().apply { result = resolved(verseId = null) }
-        val viewModel = ReferenceEntryViewModel(resolver)
+        val viewModel = ReferenceEntryViewModel(resolver, SavedStateHandle())
 
         viewModel.onQueryChange("James 1")
         viewModel.resolve()
@@ -118,7 +119,7 @@ class ReferenceEntryViewModelTest {
     @Test
     fun invalid_reference_presents_invalid_state() = runTest(dispatcher.scheduler) {
         val resolver = FakeResolver().apply { result = ScriptureResolution.Invalid("Reference is empty.") }
-        val viewModel = ReferenceEntryViewModel(resolver)
+        val viewModel = ReferenceEntryViewModel(resolver, SavedStateHandle())
 
         viewModel.onQueryChange("")
         viewModel.resolve()
@@ -130,7 +131,7 @@ class ReferenceEntryViewModelTest {
     @Test
     fun unknown_reference_presents_not_found_state() = runTest(dispatcher.scheduler) {
         val resolver = FakeResolver().apply { result = ScriptureResolution.NotFound("Unknown book: 'NotABook'.") }
-        val viewModel = ReferenceEntryViewModel(resolver)
+        val viewModel = ReferenceEntryViewModel(resolver, SavedStateHandle())
 
         viewModel.onQueryChange("NotABook 1")
         viewModel.resolve()
@@ -148,7 +149,7 @@ class ReferenceEntryViewModelTest {
         val resolver = FakeResolver().apply {
             result = ScriptureResolution.Ambiguous("Jobachem_Pustok", 26, candidates)
         }
-        val viewModel = ReferenceEntryViewModel(resolver)
+        val viewModel = ReferenceEntryViewModel(resolver, SavedStateHandle())
 
         viewModel.onQueryChange("Job 26")
         viewModel.resolve()
@@ -165,7 +166,7 @@ class ReferenceEntryViewModelTest {
     @Test
     fun input_is_forwarded_verbatim_and_case_preserved() = runTest(dispatcher.scheduler) {
         val resolver = FakeResolver().apply { result = resolved(verseId = 123L) }
-        val viewModel = ReferenceEntryViewModel(resolver)
+        val viewModel = ReferenceEntryViewModel(resolver, SavedStateHandle())
 
         viewModel.onQueryChange("JAMES 1:5")
         viewModel.resolve()
@@ -179,7 +180,7 @@ class ReferenceEntryViewModelTest {
     @Test
     fun editing_query_clears_previous_resolution() = runTest(dispatcher.scheduler) {
         val resolver = FakeResolver().apply { result = resolved(verseId = 123L) }
-        val viewModel = ReferenceEntryViewModel(resolver)
+        val viewModel = ReferenceEntryViewModel(resolver, SavedStateHandle())
 
         viewModel.onQueryChange("James 1:5")
         viewModel.resolve()
@@ -194,7 +195,7 @@ class ReferenceEntryViewModelTest {
     @Test
     fun navigation_is_one_shot_and_consumable() = runTest(dispatcher.scheduler) {
         val resolver = FakeResolver().apply { result = resolved(verseId = 123L) }
-        val viewModel = ReferenceEntryViewModel(resolver)
+        val viewModel = ReferenceEntryViewModel(resolver, SavedStateHandle())
 
         viewModel.onQueryChange("James 1:5")
         viewModel.resolve()
@@ -218,5 +219,18 @@ class ReferenceEntryViewModelTest {
         viewModel.resolve()
         advanceUntilIdle()
         assertNotNull(viewModel.pendingNavigation.value)
+    }
+
+    @Test
+    fun typed_reference_restores_from_saved_state_and_is_persisted() {
+        val handle = SavedStateHandle(mapOf("reference_query" to "James 1:5"))
+        val viewModel = ReferenceEntryViewModel(FakeResolver(), handle)
+
+        assertEquals("James 1:5", viewModel.uiState.value.query)
+        assertNull("no navigation may be replayed after restoration", viewModel.pendingNavigation.value)
+
+        viewModel.onQueryChange("John 3:16")
+        assertEquals("John 3:16", handle.get<String>("reference_query"))
+        assertEquals("John 3:16", viewModel.uiState.value.query)
     }
 }

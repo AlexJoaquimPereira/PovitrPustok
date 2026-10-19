@@ -1,5 +1,6 @@
 package com.biblia.povitrpustok.feature.search
 
+import androidx.lifecycle.SavedStateHandle
 import com.biblia.povitrpustok.core.result.BibleDatabaseAccessException
 import com.biblia.povitrpustok.domain.model.SearchFailure
 import com.biblia.povitrpustok.domain.model.SearchOutcome
@@ -89,7 +90,7 @@ class SearchViewModelTest {
         val repository = FakeSearchRepository().apply {
             results = listOf(result())
         }
-        val viewModel = SearchViewModel(repository, BibleSearchQueryParser())
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle())
         runCurrent() // start the debounce collector before emitting
 
         // rapid keystrokes: only the last query is searched, after debounce
@@ -115,7 +116,7 @@ class SearchViewModelTest {
     @Test
     fun empty_query_never_touches_the_repository() = runTest(dispatcher.scheduler) {
         val repository = FakeSearchRepository()
-        val viewModel = SearchViewModel(repository, BibleSearchQueryParser())
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle())
         runCurrent()
 
         viewModel.onQueryChange("   ")
@@ -130,7 +131,7 @@ class SearchViewModelTest {
     @Test
     fun no_results_yields_empty_state() = runTest(dispatcher.scheduler) {
         val repository = FakeSearchRepository()
-        val viewModel = SearchViewModel(repository, BibleSearchQueryParser())
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle())
         runCurrent()
 
         viewModel.onQueryChange("zzzqqqxxx")
@@ -148,7 +149,7 @@ class SearchViewModelTest {
         val repository = FakeSearchRepository().apply {
             failure = BibleDatabaseAccessException("boom")
         }
-        val viewModel = SearchViewModel(repository, BibleSearchQueryParser())
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle())
         runCurrent()
 
         viewModel.onQueryChange("dev")
@@ -166,7 +167,7 @@ class SearchViewModelTest {
         val repository = FakeSearchRepository().apply {
             results = listOf(result())
         }
-        val viewModel = SearchViewModel(repository, BibleSearchQueryParser())
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle())
         runCurrent()
 
         viewModel.onQueryChange("dev")
@@ -188,7 +189,7 @@ class SearchViewModelTest {
             results = listOf(result())
             failures = listOf(SearchFailure("Amos", "bad index"))
         }
-        val viewModel = SearchViewModel(repository, BibleSearchQueryParser())
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle())
         runCurrent()
 
         viewModel.onQueryChange("dev")
@@ -206,7 +207,7 @@ class SearchViewModelTest {
         val repository = FakeSearchRepository().apply {
             failures = listOf(SearchFailure("Amos", "bad index"), SearchFailure("Esther", "bad index"))
         }
-        val viewModel = SearchViewModel(repository, BibleSearchQueryParser())
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle())
         runCurrent()
 
         viewModel.onQueryChange("dev")
@@ -226,7 +227,7 @@ class SearchViewModelTest {
             this.gate = gate
             results = listOf(result(bookId = "jakob", position = 2))
         }
-        val viewModel = SearchViewModel(repository, BibleSearchQueryParser())
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle())
         runCurrent()
 
         viewModel.onQueryChange("first")
@@ -244,5 +245,31 @@ class SearchViewModelTest {
         assertEquals("\"second\"", repository.lastQuery)
         assertEquals(2, viewModel.uiState.value.results.first().chapterPosition)
         assertFalse(viewModel.uiState.value.isSearching)
+    }
+
+    @Test
+    fun query_and_filter_restore_from_saved_state_and_updates_are_persisted() = runTest(dispatcher.scheduler) {
+        val handle = SavedStateHandle(
+            mapOf("search_query" to "subhagi", "search_book_filter" to "jakob")
+        )
+        val repository = FakeSearchRepository()
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), handle)
+        runCurrent()
+
+        assertEquals("subhagi", viewModel.uiState.value.query)
+        assertEquals("jakob", viewModel.uiState.value.selectedBookId)
+
+        advanceTimeBy(300)
+        advanceUntilIdle()
+        assertEquals(
+            "the restored query must re-run with the restored book filter",
+            listOf("jakob"),
+            repository.lastBookIds
+        )
+
+        viewModel.onQueryChange("dev")
+        viewModel.onBookFilterChange(null)
+        assertEquals("dev", handle.get<String>("search_query"))
+        assertEquals(null, handle.get<String>("search_book_filter"))
     }
 }

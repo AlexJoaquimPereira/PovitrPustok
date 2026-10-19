@@ -30,6 +30,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -176,7 +177,14 @@ fun ReaderContent(
     // Keyed on the chapter identity: a new chapter gets a fresh list state
     // (starts at the top); recomposition of the same chapter preserves the
     // scroll position (Track A §E).
-    val listState = remember(state.chapter?.id) { LazyListState() }
+    // DIST-01: survive process recreation; keyed by chapter so a new chapter
+    // starts at the top while the same chapter restores its scroll offset.
+    val listState = rememberSaveable(
+        state.chapter?.id,
+        saver = androidx.compose.foundation.lazy.LazyListState.Saver
+    ) {
+        androidx.compose.foundation.lazy.LazyListState()
+    }
 
     // One authoritative display sequence (corrective phase Issues 3 & 5;
     // READER-03): normal mode = interleaved headings/verses; targeted mode =
