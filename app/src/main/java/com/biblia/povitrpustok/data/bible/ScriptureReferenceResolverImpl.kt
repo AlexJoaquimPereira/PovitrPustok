@@ -23,6 +23,11 @@ import kotlin.math.max
  * share the requested number (Job 26), the result is
  * [ScriptureResolution.Ambiguous] listing every candidate — never a
  * silent pick.
+ *
+ * Verse resolution uses the source range (REF-01): a requested number may
+ * be covered by a combined record, and duplicate source numbers surface as
+ * [ScriptureResolution.AmbiguousVerse]. A requested range end must also be
+ * covered by chapter data (REF-02), otherwise the result is `NotFound`.
  */
 @Singleton
 class ScriptureReferenceResolverImpl @Inject constructor(
@@ -103,6 +108,17 @@ class ScriptureReferenceResolverImpl @Inject constructor(
             )
         }
         val sourceVerse = verse.single()
+
+        // REF-02: a requested range end must be supported by chapter data.
+        val requestedEnd = parsed.verseEnd
+        if (requestedEnd != null && requestedEnd != requestedStart) {
+            val endCoverage = bibleRepository.getVersesCovering(bookId, chapter.id, requestedEnd)
+            if (endCoverage.isEmpty()) {
+                return ScriptureResolution.NotFound(
+                    "No verse covering range end $requestedEnd in chapter ${parsed.chapter} of '$bookId'."
+                )
+            }
+        }
 
         return ScriptureResolution.Resolved(
             ResolvedScriptureReference(

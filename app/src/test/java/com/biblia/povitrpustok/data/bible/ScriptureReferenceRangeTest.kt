@@ -148,4 +148,70 @@ class ScriptureReferenceRangeTest {
         val resolution = resolver.resolve("Job 26:5")
         assertTrue("expected chapter-level Ambiguous, got $resolution", resolution is ScriptureResolution.Ambiguous)
     }
+
+    @Test
+    fun range_end_beyond_the_corpus_is_not_found() = runBlocking {
+        val resolution = resolver.resolve("James 1:5-999")
+        assertTrue("expected NotFound, got $resolution", resolution is ScriptureResolution.NotFound)
+    }
+
+    @Test
+    fun range_end_in_a_corpus_gap_is_not_found() = runBlocking {
+        // James 1 has no record for verse 7 (only an inline text marker).
+        val resolution = resolver.resolve("James 1:6-7")
+        assertTrue("expected NotFound, got $resolution", resolution is ScriptureResolution.NotFound)
+    }
+
+    @Test
+    fun range_with_a_supported_end_resolves() = runBlocking {
+        val resolution = resolver.resolve("James 1:5-8")
+        assertTrue("expected Resolved, got $resolution", resolution is ScriptureResolution.Resolved)
+        val reference = (resolution as ScriptureResolution.Resolved).reference
+        assertEquals(5, reference.verseStart)
+        assertEquals(8, reference.verseEnd)
+    }
+
+    @Test
+    fun range_whose_end_equals_its_start_resolves() = runBlocking {
+        val resolution = resolver.resolve("James 1:5-5")
+        assertTrue("expected Resolved, got $resolution", resolution is ScriptureResolution.Resolved)
+        val reference = (resolution as ScriptureResolution.Resolved).reference
+        assertEquals(5, reference.verseStart)
+        assertEquals(5, reference.verseEnd)
+    }
+
+    @Test
+    fun reversed_range_is_invalid() = runBlocking {
+        val resolution = resolver.resolve("James 1:8-5")
+        assertTrue("expected Invalid, got $resolution", resolution is ScriptureResolution.Invalid)
+    }
+
+    @Test
+    fun range_end_inside_a_combined_record_is_valid() = runBlocking {
+        // End 12 is covered by the single 11-12 source record.
+        val resolution = resolver.resolve("Genesis 16:11-12")
+        assertTrue("expected Resolved, got $resolution", resolution is ScriptureResolution.Resolved)
+        val reference = (resolution as ScriptureResolution.Resolved).reference
+        assertEquals(11, reference.verseStart)
+        assertEquals(12, reference.verseEnd)
+    }
+
+    @Test
+    fun range_end_with_duplicate_coverage_resolves() = runBlocking {
+        // Esther 3:12 is a unique start; verse 13 is covered by two records.
+        // End validation only requires coverage, so the start record anchors
+        // the result and the end duplicates do not create ambiguity.
+        val resolution = resolver.resolve("Esther 3:12-13")
+        assertTrue("expected Resolved, got $resolution", resolution is ScriptureResolution.Resolved)
+        val reference = (resolution as ScriptureResolution.Resolved).reference
+        assertEquals(12, reference.verseStart)
+        assertEquals(13, reference.verseEnd)
+    }
+
+    @Test
+    fun start_ambiguity_is_reported_before_range_end_validation() = runBlocking {
+        // Esther 3:2 is ambiguous; that must win over the impossible end 999.
+        val resolution = resolver.resolve("Esther 3:2-999")
+        assertTrue("expected AmbiguousVerse, got $resolution", resolution is ScriptureResolution.AmbiguousVerse)
+    }
 }
