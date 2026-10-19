@@ -11,49 +11,73 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
  * [BookTitleRepository] over the per-book databases (corrective phase
- * Issue 1).
+ * Issue 1; BOOKS-01).
  *
  * The display name comes from the book's own `introduction_blocks` record
  * with type `title` (smallest position) — the HTML title is parsed and
  * rendered to plain text with the existing parser/renderer, so no raw tags
- * are displayed. Titles are loaded once per process and cached; the Books
- * screen never opens all 73 databases per recomposition, and chapters/
- * verses are never loaded for metadata.
+ * are displayed.
+ *
+ * Caching policy (BOOKS-01): both outcomes are cached — a present title and
+ * `ABSENT` (a book with no title block, e.g. 2 Kings). A single [Mutex]
+ * serializes corpus scans, so concurrent callers never open the corpus
+ * twice and repeat calls open no databases at all.
  */
 @Singleton
 class BookTitleRepositoryImpl @Inject constructor(
     private val provider: BibleDatabaseProvider
 ) : BookTitleRepository {
 
-    private val cache = ConcurrentHashMap<String, String>()
-
-    override suspend fun getDisplayName(bookId: String): String? =
-        cache[bookId] ?: withContext(Dispatchers.IO) {
-            loadTitle(bookId)?.also { cache[bookId] = it }
-        }
-
-    override suspend fun loadAllDisplayNames(): Map<String, String> = withContext(Dispatchers.IO) {
-        if (cache.size < BibleCatalog.books.size) {
-            BibleCatalog.books.forEach { book ->
-                loadTitle(book.id)?.let { cache[book.id] = it }
-            }
-        }
-        cache.toMap()
+    /** Distinguishes "no title in the corpus" from "not loaded yet". */
+    private sealed interface Lookup {
+        data class Present(val title: String) : Lookup
+        data object Absent : Lookup
     }
 
-    private suspend fun loadTitle(bookId: String): String? {
+    private val cache = ConcurrentHashMap<String, Lookup>()
+    private val scanMutex = Mutex()
+
+    override suspend fun getDisplayName(bookId: String): String? {
+        cache[bookId]?.let { return it.titleOrNull() }
+        return withContext(Dispatchers.IO) {
+            scanMutex.withLock {
+                cache[bookId]?.let { return@withLock it.titleOrNull() }
+                val lookup = loadLookup(bookId)
+                cache[bookId] = lookup
+                lookup.titleOrNull()
+            }
+        }
+    }
+
+    override suspend fun loadAllDisplayNames(): Map<String, String> = withContext(Dispatchers.IO) {
+        scanMutex.withLock {
+            // Only scan books that have never been looked up. Absent titles
+            // are cached, so this is a true one-time corpus scan (BOOKS-01).
+            BibleCatalog.books.forEach { book ->
+                if (!cache.containsKey(book.id)) {
+                    cache[book.id] = loadLookup(book.id)
+                }
+            }
+            cache.mapNotNull { (id, lookup) -> lookup.titleOrNull()?.let { id to it } }.toMap()
+        }
+    }
+
+    private suspend fun loadLookup(bookId: String): Lookup {
         val blocks = provider.openBook(bookId).getIntroductionBlocks(bookId)
         val title = blocks
             .filter { it.type == TITLE_TYPE }
             .minByOrNull { it.position }
             ?.html
-            ?: return null
-        return renderTitle(title)
+        return if (title == null) Lookup.Absent else Lookup.Present(renderTitle(title))
     }
+
+    private fun Lookup.titleOrNull(): String? = (this as? Lookup.Present)?.title
 
     private fun renderTitle(html: String): String {
         val document = BibleHtmlParser().parse(html)
