@@ -44,6 +44,7 @@ import com.biblia.povitrpustok.core.html.BibleHtmlDocument
 import com.biblia.povitrpustok.core.html.BibleHtmlParser
 import com.biblia.povitrpustok.core.html.BibleHtmlText
 import com.biblia.povitrpustok.domain.model.Chapter
+import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
 import com.biblia.povitrpustok.domain.model.Heading
 import com.biblia.povitrpustok.domain.model.IntroductionBlock
 import com.biblia.povitrpustok.domain.model.Verse
@@ -324,15 +325,17 @@ fun ChapterSelector(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val currentNumber = chapters.firstOrNull { it.position == currentPosition }?.number
+    val currentChapter = chapters.firstOrNull { it.position == currentPosition }
+    val currentLabel = currentChapter?.let { chapterDisplayLabel(it, chapters) }
+        ?: currentPosition.toString()
     Box(modifier = modifier) {
         TextButton(onClick = { expanded = true }) {
-            Text(text = stringResource(R.string.chapter_selector_label, currentNumber ?: currentPosition))
+            Text(text = stringResource(R.string.chapter_selector_label, currentLabel))
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             chapters.forEach { chapter ->
                 DropdownMenuItem(
-                    text = { Text(text = chapter.number.toString()) },
+                    text = { Text(text = chapterDisplayLabel(chapter, chapters)) },
                     onClick = {
                         expanded = false
                         if (chapter.position != currentPosition) {

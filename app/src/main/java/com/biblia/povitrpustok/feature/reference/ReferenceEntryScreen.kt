@@ -38,6 +38,7 @@ import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.ReaderDestination
 import com.biblia.povitrpustok.domain.model.ScriptureResolution
 import com.biblia.povitrpustok.domain.model.toReaderDestination
+import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
 
 /**
  * Scripture-reference entry screen (Phase 8, plan §9–§11, §16, §17).
@@ -172,7 +173,7 @@ private fun AmbiguousMessage(
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
             items(resolution.candidates, key = { it.id }) { chapter ->
                 Text(
-                    text = chapterLabel(chapter, resolution.candidates),
+                    text = chapterDisplayLabel(chapter, resolution.candidates),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
@@ -241,15 +242,4 @@ private fun Message(text: String) {
     )
 }
 
-/**
- * Presentation-only chapter label for ambiguous candidates (plan §11):
- * the source number plus a source-order occurrence suffix when duplicated.
- */
-private fun chapterLabel(
-    chapter: com.biblia.povitrpustok.domain.model.Chapter,
-    candidates: List<com.biblia.povitrpustok.domain.model.Chapter>
-): String {
-    if (candidates.size <= 1) return chapter.number.toString()
-    val occurrence = candidates.sortedBy { it.position }.indexOfFirst { it.id == chapter.id } + 1
-    return "${chapter.number} ($occurrence)"
-}
+

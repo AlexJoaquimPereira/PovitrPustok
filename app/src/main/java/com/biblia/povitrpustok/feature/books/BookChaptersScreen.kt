@@ -35,6 +35,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.Chapter
+import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
 
 /**
  * Chapter-selection screen for one book (implementation plan §8, §9, §10).
@@ -130,17 +131,6 @@ private fun ChapterCell(label: String, onClick: () -> Unit, modifier: Modifier =
 }
 
 /**
- * Presentation-only chapter label (implementation plan §10): the source
- * chapter number; when several records share a number (Job), a source-order
- * occurrence suffix "(1)", "(2)" disambiguates them. Never persisted, never
- * treated as the source number.
+ * Presentation-only chapter label (moved to `feature.common` so the Reader
+ * selector can share it — READER-02).
  */
-fun chapterDisplayLabel(chapter: Chapter, chapters: List<Chapter>): String {
-    val siblings = chapters.filter { it.number == chapter.number }
-    return if (siblings.size <= 1) {
-        chapter.number.toString()
-    } else {
-        val occurrence = siblings.indexOfFirst { it.id == chapter.id } + 1
-        "${chapter.number} ($occurrence)"
-    }
-}

@@ -1,6 +1,7 @@
 package com.biblia.povitrpustok.feature.books
 
 import com.biblia.povitrpustok.domain.model.Chapter
+import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
