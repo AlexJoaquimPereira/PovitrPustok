@@ -32,6 +32,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.LiturgicalDay
@@ -55,7 +57,12 @@ fun DailyReadingScreen(
     onBack: () -> Unit = {},
     viewModel: DailyReadingViewModel = hiltViewModel()
 ) {
-    LaunchedEffect(Unit) { viewModel.load() }
+    LaunchedEffect(Unit) { viewModel.refreshIfDateChanged() }
+    // LITURGY-02: revalidate "today" when the screen resumes (e.g. app left
+    // open across midnight). Same-day resumes make no request.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshIfDateChanged()
+    }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val pendingNavigation by viewModel.pendingNavigation.collectAsStateWithLifecycle()
     val notice by viewModel.navigationNotice.collectAsStateWithLifecycle()

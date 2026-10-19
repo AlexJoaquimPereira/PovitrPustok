@@ -11,6 +11,7 @@ import com.biblia.povitrpustok.domain.model.ScriptureResolution
 import com.biblia.povitrpustok.domain.repository.LiturgicalRepository
 import com.biblia.povitrpustok.domain.repository.ScriptureReferenceResolver
 import java.time.LocalDate
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -84,6 +85,64 @@ class DailyReadingViewModelTest {
 
         assertEquals(listOf(LocalDate.of(2026, 8, 15)), repository.requestedDates)
         assertTrue(viewModel.uiState.value is DailyReadingUiState.Success)
+    }
+
+    @Test
+    fun resume_refreshes_only_when_the_local_date_changes() = runTest(dispatcher.scheduler) {
+        var today = LocalDate.of(2026, 8, 15)
+        val repository = FakeLiturgicalRepository()
+        val viewModel = DailyReadingViewModel(repository, FakeResolver()) { today }
+
+        viewModel.load()
+        advanceUntilIdle()
+        assertEquals(listOf(today), repository.requestedDates)
+
+        viewModel.refreshIfDateChanged()
+        advanceUntilIdle()
+        assertEquals("same-day resume must not reload", 1, repository.requestedDates.size)
+
+        today = LocalDate.of(2026, 8, 16)
+        viewModel.refreshIfDateChanged()
+        advanceUntilIdle()
+        assertEquals(
+            listOf(LocalDate.of(2026, 8, 15), LocalDate.of(2026, 8, 16)),
+            repository.requestedDates
+        )
+        assertTrue(viewModel.uiState.value is DailyReadingUiState.Success)
+    }
+
+    @Test
+    fun date_change_during_load_supersedes_the_old_request() = runTest(dispatcher.scheduler) {
+        val firstDate = LocalDate.of(2026, 8, 15)
+        val secondDate = LocalDate.of(2026, 8, 16)
+        var today = firstDate
+        val gate = CompletableDeferred<Unit>()
+
+        val repository = object : LiturgicalRepository {
+            val requested = mutableListOf<LocalDate>()
+
+            override suspend fun getLiturgicalDay(date: LocalDate): LiturgicalDayResult {
+                requested += date
+                if (date == firstDate) gate.await()
+                return LiturgicalDayResult.Success(
+                    LiturgicalDay(date, "Ordinary Time", null, null, null, null, emptyList())
+                )
+            }
+        }
+
+        val viewModel = DailyReadingViewModel(repository, FakeResolver()) { today }
+        viewModel.load()
+        runCurrent() // first request is suspended on the gate
+        assertEquals(listOf(firstDate), repository.requested)
+
+        today = secondDate
+        viewModel.refreshIfDateChanged()
+        advanceUntilIdle() // the first load is cancelled; the second completes
+
+        assertEquals(listOf(firstDate, secondDate), repository.requested)
+        val state = viewModel.uiState.value
+        assertTrue(state is DailyReadingUiState.Success)
+        assertEquals(secondDate, (state as DailyReadingUiState.Success).day.date)
     }
 
     @Test
