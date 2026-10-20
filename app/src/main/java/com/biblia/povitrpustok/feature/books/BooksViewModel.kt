@@ -5,15 +5,24 @@ import androidx.lifecycle.viewModelScope
 import com.biblia.povitrpustok.domain.repository.BookTitleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
  * Loads database-sourced book display names once per process
- * (corrective phase Issue 1). The repository caches titles, so the Books
- * screen never reopens databases on recomposition.
+ * (corrective phase Issue 1; F-03). The repository caches titles, so the
+ * Books screen never reopens databases on recomposition.
+ *
+ * Failure policy (F-03): the catalog is always renderable, so a failed scan
+ * must never leave a permanent spinner. The state degrades to
+ * `isLoading = false, titlesFailed = true` and [retry] re-runs the scan.
+ * Cancellation is never swallowed; a single in-flight job is kept so
+ * repeated retries cannot duplicate a corpus scan.
  */
 @HiltViewModel
 class BooksViewModel @Inject constructor(
@@ -23,10 +32,40 @@ class BooksViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(BooksUiState())
     val uiState: StateFlow<BooksUiState> = _uiState.asStateFlow()
 
+    private var titlesJob: Job? = null
+
     init {
-        viewModelScope.launch {
-            val displayNames = titleRepository.loadAllDisplayNames()
-            _uiState.value = BooksUiState(displayNames = displayNames, isLoading = false)
+        loadTitles()
+    }
+
+    /** Re-runs the title scan after a failure (banner Retry button). */
+    fun retry() = loadTitles()
+
+    private fun loadTitles() {
+        if (titlesJob?.isActive == true) return
+        titlesJob = viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, titlesFailed = false) }
+            try {
+                val displayNames = titleRepository.loadAllDisplayNames()
+                _uiState.update {
+                    it.copy(
+                        displayNames = displayNames,
+                        isLoading = false,
+                        titlesFailed = false
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // No raw exception text in state: the UI shows a localized
+                // banner and keeps the catalog names (F-03).
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        titlesFailed = true
+                    )
+                }
+            }
         }
     }
 }

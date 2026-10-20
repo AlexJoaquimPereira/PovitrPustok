@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Star
@@ -19,7 +20,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
@@ -36,6 +39,7 @@ import com.biblia.povitrpustok.R
 fun ReaderScreen(
     bookId: String,
     chapterPosition: Int,
+    onBack: () -> Unit,
     targetVerseId: Long? = null,
     passageStart: Int? = null,
     passageEnd: Int? = null,
@@ -50,6 +54,7 @@ fun ReaderScreen(
         topBar = {
             ReaderTopBar(
                 state = state,
+                onBack = onBack,
                 onPrevious = viewModel::previous,
                 onNext = viewModel::next,
                 onSelectChapter = viewModel::selectChapter,
@@ -84,48 +89,57 @@ fun ReaderScreen(
 @Composable
 private fun ReaderTopBar(
     state: ReaderUiState,
+    onBack: () -> Unit,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     onSelectChapter: (Int) -> Unit,
     onToggleBookmark: () -> Unit
 ) {
     TopAppBar(
+        modifier = Modifier.testTag("reader.topbar"),
         title = {
             Column {
                 Text(
                     text = state.book?.displayName.orEmpty(),
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
+                val chapter = state.chapter
                 val selectedVerse = state.selectedVerseId?.let { id ->
                     state.verses.firstOrNull { it.id == id }
                 }
-                Text(
-                    text = if (selectedVerse != null) {
-                        // The top-bar bookmark applies to this verse (Issue 6).
-                        stringResource(
-                            R.string.reader_selected_verse,
-                            state.chapter?.number ?: 0,
-                            selectedVerse.verseStart
-                        )
-                    } else {
-                        stringResource(
-                            R.string.reader_chapter_number,
-                            state.chapter?.number ?: 0
-                        )
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (chapter != null) {
+                    Text(
+                        text = if (selectedVerse != null) {
+                            // The top-bar bookmark applies to this verse (Issue 6).
+                            stringResource(
+                                R.string.reader_selected_verse,
+                                chapter.number,
+                                selectedVerse.verseStart
+                            )
+                        } else {
+                            stringResource(
+                                R.string.reader_chapter_number,
+                                chapter.number
+                            )
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         },
         navigationIcon = {
             IconButton(
-                onClick = onPrevious,
-                enabled = state.canGoPrevious
+                onClick = onBack,
+                modifier = Modifier.testTag("reader.back")
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                    contentDescription = stringResource(R.string.reader_previous_chapter)
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back)
                 )
             }
         },
@@ -154,6 +168,17 @@ private fun ReaderTopBar(
                     onSelect = onSelectChapter
                 )
             }
+            // Day 1 interim: chapter stepping stays in the actions row until
+            // it moves to the reader's own navigation.
+            IconButton(
+                onClick = onPrevious,
+                enabled = state.canGoPrevious
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = stringResource(R.string.reader_previous_chapter)
+                )
+            }
             IconButton(
                 onClick = onNext,
                 enabled = state.canGoNext
@@ -166,3 +191,4 @@ private fun ReaderTopBar(
         }
     )
 }
+

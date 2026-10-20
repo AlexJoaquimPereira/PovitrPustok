@@ -1,23 +1,26 @@
 package com.biblia.povitrpustok.feature.books
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -32,12 +35,17 @@ import com.biblia.povitrpustok.domain.model.Testament
 
 /**
  * Books screen (implementation plan §7, §10, §20; corrective phase
- * Issues 1 & 2).
+ * Issues 1 & 2; F-03).
  *
  * Ordering/grouping come from the explicit canonical 73-book order; the
  * displayed name is the book's own database title (loaded once and cached
  * via [BooksViewModel]). No database is opened per recomposition and no
  * second book list is maintained.
+ *
+ * The catalog is always renderable, so this screen never shows a
+ * full-screen spinner: title loading is a thin linear indicator above the
+ * list, and a failed scan degrades to an inline banner with Retry while the
+ * catalog names stay visible underneath.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,14 +60,16 @@ fun BooksScreen(
         modifier = modifier.fillMaxSize(),
         topBar = { TopAppBar(title = { Text(stringResource(R.string.books_title)) }) }
     ) { innerPadding ->
-        when {
-            state.isLoading -> Box(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            if (state.isLoading) {
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth().testTag("books.loading")
+                )
             }
-            else -> LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            if (state.titlesFailed) {
+                TitlesUnavailableBanner(onRetry = viewModel::retry)
+            }
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
                 BooksGrouping.groupByTestament(BibleCatalog.books).forEach { (testament, books) ->
                     item(key = "section-${testament.name}") {
                         TestamentHeader(testament)
@@ -70,10 +80,37 @@ fun BooksScreen(
                                 state.displayNames[book.id] ?: book.displayName
                             ),
                             englishName = book.englishName,
-                            onClick = { onBookSelected(book.id) }
+                            onClick = { onBookSelected(book.id) },
+                            modifier = Modifier.testTag("books.row.${book.id}")
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Inline, non-blocking title-load failure notice (F-03). Offers Retry and
+ * never replaces the book list, which keeps showing catalog names.
+ */
+@Composable
+private fun TitlesUnavailableBanner(
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Text(
+                text = stringResource(R.string.books_titles_unavailable),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            TextButton(
+                onClick = onRetry,
+                modifier = Modifier.testTag("books.retry")
+            ) {
+                Text(text = stringResource(R.string.books_retry))
             }
         }
     }

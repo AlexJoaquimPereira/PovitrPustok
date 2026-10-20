@@ -137,6 +137,7 @@ fun PovitrPustokNavHost() {
             ReaderScreen(
                 bookId = arguments?.getString("bookId").orEmpty(),
                 chapterPosition = arguments?.getInt("chapterPosition") ?: 1,
+                onBack = { navController.popBackStack() },
                 targetVerseId = verseId,
                 passageStart = verseStart,
                 passageEnd = verseEnd

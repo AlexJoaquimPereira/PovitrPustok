@@ -4,6 +4,8 @@
     <string name="home_search">Search</string>
     <string name="home_reference">Go to reference</string>
     <string name="books_title">Books</string>
+    <string name="books_titles_unavailable">Book titles could not be loaded. Showing catalog names.</string>
+    <string name="books_retry">Retry</string>
     <string name="old_testament">Old Testament</string>
     <string name="new_testament">New Testament</string>
     <string name="book_introduction">Introduction</string>

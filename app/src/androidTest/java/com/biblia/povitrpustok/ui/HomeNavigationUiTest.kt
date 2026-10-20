@@ -5,6 +5,7 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -36,6 +37,18 @@ class HomeNavigationUiTest {
         composeRule.onNodeWithContentDescription("Back").assertIsDisplayed().performClick()
 
         composeRule.onNodeWithText(notice).assertIsDisplayed()
+    }
+
+    @Test
+    fun home_actions_expose_stable_tags_and_notice() {
+        listOf(
+            "home.bible",
+            "home.search",
+            "home.bookmarks",
+            "home.reference",
+            "home.daily",
+            "home.notice",
+        ).forEach { tag -> composeRule.onNodeWithTag(tag).assertIsDisplayed() }
     }
 
     @Test

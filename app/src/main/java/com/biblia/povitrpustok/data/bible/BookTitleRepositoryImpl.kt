@@ -5,11 +5,13 @@ import com.biblia.povitrpustok.core.html.BibleHtmlDocument
 import com.biblia.povitrpustok.core.html.BibleHtmlNode
 import com.biblia.povitrpustok.core.html.BibleHtmlParser
 import com.biblia.povitrpustok.core.html.BibleHtmlRenderer
+import com.biblia.povitrpustok.core.result.BibleDatabaseAccessException
 import com.biblia.povitrpustok.domain.model.BibleCatalog
 import com.biblia.povitrpustok.domain.repository.BookTitleRepository
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -59,10 +61,34 @@ class BookTitleRepositoryImpl @Inject constructor(
         scanMutex.withLock {
             // Only scan books that have never been looked up. Absent titles
             // are cached, so this is a true one-time corpus scan (BOOKS-01).
+            //
+            // F-03: a single corrupt/missing book must not abort the whole
+            // scan. Its failure is isolated (the book is simply omitted from
+            // the returned map, so the UI falls back to the catalog name)
+            // and it is not cached, so Retry can attempt it again. If every
+            // attempted book fails, the failure is catastrophic and surfaces
+            // as a BibleDataException for the UI banner.
+            var attempted = 0
+            var failed = 0
+            var lastFailure: Exception? = null
             BibleCatalog.books.forEach { book ->
                 if (!cache.containsKey(book.id)) {
-                    cache[book.id] = loadLookup(book.id)
+                    attempted++
+                    try {
+                        cache[book.id] = loadLookup(book.id)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        failed++
+                        lastFailure = e
+                    }
                 }
+            }
+            if (attempted > 0 && failed == attempted) {
+                throw BibleDatabaseAccessException(
+                    "Book titles could not be loaded for any book",
+                    lastFailure
+                )
             }
             cache.mapNotNull { (id, lookup) -> lookup.titleOrNull()?.let { id to it } }.toMap()
         }
