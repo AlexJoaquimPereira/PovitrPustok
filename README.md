@@ -587,6 +587,8 @@ Bible corpus from inside the app.
   corresponding GitHub release.
 * UI/UX research and prioritized, non-breaking improvement proposals:
   [`UI_UX_RESEARCH.md`](UI_UX_RESEARCH.md).
+* Figma plan (20-day roadmap, guardrails, structural wireframes):
+  [`PovitrPustok_UIUX_Plan_1.2.0.fig`](PovitrPustok_UIUX_Plan_1.2.0.fig).
 
 ---
 
