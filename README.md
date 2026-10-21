@@ -15,7 +15,7 @@ the app never re-imports, rewrites or "fixes" it.
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 381 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 19 instrumented tests |
+| **Tests** | 398 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 21 instrumented tests |
 
 ---
 
@@ -349,7 +349,7 @@ PovitrPustok/
 │       │   │   ├── feature/{books,reader,search,reference,bookmarks,dailyreading}
 │       │   │   └── ui/{theme, HomeScreen, HomeViewModel}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
-│       ├── test/                        # 381 JVM unit tests + HTML fixtures
+│       ├── test/                        # 398 JVM unit tests + HTML fixtures
 │       └── androidTest/                 # 19 instrumented tests
 ├── gradle/libs.versions.toml            # version catalog
 ├── build.gradle.kts, settings.gradle.kts, gradle.properties
@@ -466,8 +466,8 @@ If the file is absent, the release signing config is simply left unset and the p
 
 | Suite | Count | Runner | Notes |
 |---|---|---|---|
-| JVM unit tests | **381** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
-| Instrumented tests | **19** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the POCO M2 Pro (API 31): 19 / 0 failed / 3 FTS5-only skips |
+| JVM unit tests | **398** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
+| Instrumented tests | **21** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 21 / 0 failed / 3 FTS5-only skips |
 
 29 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
 assets or Room.
