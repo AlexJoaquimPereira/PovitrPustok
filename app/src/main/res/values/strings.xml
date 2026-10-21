@@ -38,6 +38,9 @@
     <string name="reader_retry">Retry</string>
     <string name="reader_chapter_number">Chapter %1$d</string>
     <string name="reader_selected_verse">Chapter %1$d · verse %2$d</string>
+    <string name="reader_verse_state_target">Target verse</string>
+    <string name="reader_verse_state_selected">Selected</string>
+    <string name="reader_verse_state_bookmarked">Bookmarked</string>
     <string name="reader_previous_chapter">Previous chapter</string>
     <string name="reader_next_chapter">Next chapter</string>
     <string name="chapter_selector_label">Ch %1$s</string>

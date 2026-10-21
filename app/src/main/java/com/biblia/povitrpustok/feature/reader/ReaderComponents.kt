@@ -34,10 +34,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.biblia.povitrpustok.R
@@ -49,6 +55,7 @@ import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
 import com.biblia.povitrpustok.domain.model.Heading
 import com.biblia.povitrpustok.domain.model.Verse
 import com.biblia.povitrpustok.ui.theme.BibleTextStyle
+import com.biblia.povitrpustok.ui.theme.LocalScripturePalette
 import kotlinx.coroutines.delay
 
 /**
@@ -90,11 +97,15 @@ fun HeadingBlock(heading: Heading, modifier: Modifier = Modifier) {
 /**
  * One verse: number + formatted Scripture from Verse.text.
  *
- * [isTarget] applies a temporary, theme-derived background to the target
- * verse only (Phase 8); [isBookmarked] shows a persistent, subtle bookmark
- * indicator (Phase 9); [isSelected] marks a tapped verse (corrective
- * phase Issue 6) so the top-bar bookmark action is unambiguous. The three
- * states are independent and neither modifies the canonical Verse content.
+ * F-06: the reader states use solid, theme-aware surfaces from
+ * [LocalScripturePalette] instead of alpha tints, so a state is visible on
+ * both light paper and true black. [isTarget] marks the transient highlight
+ * (Phase 8), [isSelected] the tapped verse (corrective phase Issue 6) and
+ * [isBookmarked] a persistent bookmark (Phase 9). Target wins over selected,
+ * selected over bookmarked. A 2 dp gutter accent bar marks target/selected
+ * and a small tab marks a bookmark; the same states are announced to
+ * accessibility services through `stateDescription`. None of the states
+ * modify the canonical Verse content.
  */
 @Composable
 fun VerseBlock(
@@ -107,20 +118,56 @@ fun VerseBlock(
     modifier: Modifier = Modifier
 ) {
     val document = rememberDocument(verse.html)
+    val palette = LocalScripturePalette.current
     val background = when {
-        isTarget -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
-        isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.20f)
-        isBookmarked -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.25f)
+        isTarget -> palette.target
+        isSelected -> palette.selection
+        isBookmarked -> palette.bookmarked
         else -> Color.Transparent
     }
+    val stateDescription = verseStateDescription(isTarget, isSelected, isBookmarked)
     Row(
         modifier = modifier
             .fillMaxWidth()
             .then(
+                if (stateDescription != null) {
+                    Modifier.semantics { this.stateDescription = stateDescription }
+                } else {
+                    Modifier
+                }
+            )
+            .then(
                 if (onSelect != null) Modifier.clickable(onClick = onSelect) else Modifier
             )
             .background(background, MaterialTheme.shapes.small)
-            .padding(horizontal = 4.dp, vertical = 2.dp)
+            // F-06: markers live in the gutter/end padding, drawn after the
+            // background so they stay visible on a state surface. Drawing
+            // never changes the row's measured size or the item keys.
+            .drawBehind {
+                if (isTarget || isSelected) {
+                    val barWidth = GUTTER_ACCENT_WIDTH.toPx()
+                    drawRoundRect(
+                        color = palette.gutterAccent,
+                        topLeft = Offset.Zero,
+                        size = Size(barWidth, size.height),
+                        cornerRadius = CornerRadius(barWidth / 2f)
+                    )
+                }
+                if (isBookmarked) {
+                    val tabWidth = BOOKMARK_TAB_WIDTH.toPx()
+                    val tabInset = BOOKMARK_TAB_INSET.toPx()
+                    drawRoundRect(
+                        color = palette.gutterAccent,
+                        topLeft = Offset(size.width - tabWidth - tabInset, tabInset),
+                        size = Size(
+                            tabWidth,
+                            BOOKMARK_TAB_HEIGHT.toPx().coerceAtMost(size.height - tabInset * 2)
+                        ),
+                        cornerRadius = CornerRadius(tabWidth / 2f)
+                    )
+                }
+            }
+            .padding(start = 4.dp, top = 2.dp, end = 10.dp, bottom = 2.dp)
     ) {
         VerseNumber(
             verseStart = verse.verseStart,
@@ -138,6 +185,28 @@ fun VerseBlock(
             textAlign = if (PsalmPoetry.isPoeticVerse(bookId, document)) TextAlign.Center else null
         )
     }
+}
+
+/**
+ * Spoken state of one verse row, e.g. "Target verse. Selected. Bookmarked."
+ * Returns null when the verse carries no state, so a plain verse keeps the
+ * default accessibility description. F-06.
+ */
+@Composable
+private fun verseStateDescription(
+    isTarget: Boolean,
+    isSelected: Boolean,
+    isBookmarked: Boolean
+): String? {
+    val labels = buildList {
+        if (isTarget) add(stringResource(R.string.reader_verse_state_target))
+        if (isSelected) add(stringResource(R.string.reader_verse_state_selected))
+        if (isBookmarked) add(stringResource(R.string.reader_verse_state_bookmarked))
+    }
+    if (labels.isEmpty()) return null
+    // Sentence punctuation is not localized separately; keep the spoken
+    // state compact and free of literal quote characters.
+    return labels.joinToString(". ") + "."
 }
 
 /**
@@ -269,6 +338,14 @@ fun ReaderContent(
 
 /** Horizontal distance (dp) a swipe must exceed to navigate chapters. */
 private val SWIPE_THRESHOLD_DP = 96.dp
+
+/** F-06 gutter accent bar width for target/selected verses. */
+private val GUTTER_ACCENT_WIDTH = 2.dp
+
+/** F-06 bookmark tab in the row's end padding (decorative; announced via stateDescription). */
+private val BOOKMARK_TAB_WIDTH = 4.dp
+private val BOOKMARK_TAB_HEIGHT = 18.dp
+private val BOOKMARK_TAB_INSET = 2.dp
 
 /** Highlight duration for a targeted verse (Phase 8, modest and local). */
 private const val HIGHLIGHT_DURATION_MILLIS = 2_000L
