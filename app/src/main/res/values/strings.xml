@@ -8,6 +8,7 @@
     <string name="books_retry">Retry</string>
     <string name="old_testament">Old Testament</string>
     <string name="new_testament">New Testament</string>
+    <string name="chapters_empty">No chapters available for this book.</string>
     <string name="book_introduction">Introduction</string>
     <string name="no_introduction">No introduction available.</string>
     <string name="back">Back</string>
