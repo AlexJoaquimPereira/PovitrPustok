@@ -11,7 +11,11 @@ Compact, verified guidance for working in this repository. Read `README.md` for 
   (repositories), `domain/*` (models/repositories), `feature/*` (screens/ViewModels),
   `ui/theme`.
 - `app/build/generated/` and KSP output are generated; never edit them.
-- Branch is `master`. **Do not push without the user's explicit approval.**
+- Branch is `master`.
+- **Make atomic commits**: one logical change per commit. Do not bundle unrelated features, tests,
+  or documentation. Stage by path or with `git add -p`; each commit should build and test on its
+  own.
+- **Do not push without the user's explicit approval.**
 
 ## Toolchain and commands
 
