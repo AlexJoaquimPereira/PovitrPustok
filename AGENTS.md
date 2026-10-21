@@ -1,0 +1,108 @@
+# AGENTS.md
+
+Compact, verified guidance for working in this repository. Read `README.md` for product context.
+
+## Project shape
+
+- Single-module Android app (`:app`), Kotlin + Jetpack Compose + Material 3, Hilt, Room, and raw
+  read-only SQLite for the Bible corpus.
+- Entry point: `app/src/main/java/com/biblia/povitrpustok/MainActivity.kt`.
+- Boundaries: `core/database` (corpus access), `core/html` (parser/renderer), `data/*`
+  (repositories), `domain/*` (models/repositories), `feature/*` (screens/ViewModels),
+  `ui/theme`.
+- `app/build/generated/` and KSP output are generated; never edit them.
+- Branch is `master`. **Do not push without the user's explicit approval.**
+
+## Toolchain and commands
+
+- Gradle wrapper + **JDK 25** daemon (`gradle/gradle-daemon-jvm.properties`). `compileSdk`/`targetSdk`
+  are **36**; `minSdk` is 30.
+- Run from the repository root:
+
+```bash
+./gradlew :app:testDebugUnitTest
+./gradlew :app:testDebugUnitTest --tests 'com.biblia.povitrpustok.data.bible.JohnChapterOneDataTest'
+./gradlew :app:assembleDebug :app:lintDebug
+./gradlew :app:assembleDebugAndroidTest
+./gradlew :app:assembleRelease
+```
+
+- Configuration cache is enabled. If a flag changes, Gradle handles invalidation; do not disable it.
+- `assembleRelease` is signed only when a gitignored `keystore.properties` exists; otherwise it
+  produces an unsigned artifact. Never commit keystore material.
+- R8 is enabled for release (`optimization.enable = true`); release build failures are usually
+  missing keep rules, not debug-code bugs.
+
+## Corpus is private and required for most tests
+
+- The 73 `app/src/main/assets/bible/*.sqlite` files are **gitignored and copyrighted**
+  (© Archdiocese of Goa and Daman). Never commit them or source XML.
+- A fresh clone has no corpus. Most data/reader tests need it; without assets, use:
+
+```bash
+./gradlew :app:testDebugUnitTest -PskipCorpusTests
+```
+
+  Corpus-dependent tests then skip explicitly. Never treat those skips as passing coverage.
+- Corpus tooling: `tools/corpus/README.md`.
+  - Regenerate: `python3 tools/corpus/import_corpus.py --source <private-xml> --out app/src/main/assets/bible`
+  - Verify/update metadata: `python3 tools/corpus/generate_manifest.py [--check]`
+- Any corpus change requires regenerating `tools/corpus/corpus-manifest.json`; `CorpusManifestTest`
+  will fail on hash/count drift. Do not hand-edit `.sqlite` files.
+- CI uses private `CORPUS_ARCHIVE_*` secrets. Without them it runs the skip path and does not build
+  a release APK.
+
+## Data invariants (easy to break)
+
+- `books.id` is **TEXT**. Never read it with `getLong`/`getInt`; bind `storedBookId` as a string.
+- Navigate chapters by **`position`**, never `number`: source numbers repeat (Job 26).
+- `verse_end` is NULL for ordinary single verses; coalesce to `verse_start`. Keep real source
+  ranges intact.
+- Do not reorder verses by `verse_start`; source order is `position, id`.
+- Imported corpus rows are immutable. Never write to a corpus database.
+- Search uses FTS5 only when the device SQLite provides it; otherwise it uses the normalized scan
+  fallback. Do not assume FTS5 exists. Android phones and the bundled emulator both lack it.
+- Non-continuous references are ordered segments, not one span. Preserve `segments`;
+  cross-chapter passages carry one chapter per segment.
+
+## Tests and device/emulator quirks
+
+- JVM baseline is JUnit4 + Robolectric; `app/src/test/resources/robolectric.properties` pins
+  `sdk=35` because that android-all jar is provisioned. Do not bump it without checking `~/.m2`.
+- Two tests skip FTS5 parity under Robolectric via `Assume`; three `BibleFtsInstrumentedTest` cases
+  skip on devices/emulators without FTS5. This is expected, not a failure.
+- Use a focused filter while iterating; run the full JVM suite before committing.
+- Compose UI tests live under `app/src/androidTest`; they require a device/emulator. Existing tests
+  use both visible text and test tags, so preserve labels unless deliberately migrating tests.
+
+### Working emulator
+
+The AVD is `Pixel_8_Pro_API_35` (x86_64, KVM). Default/SwiftShader GPU backends SIGSEGV in
+`libGLESv2.so`; **`-gpu angle_indirect` works**:
+
+```bash
+"$ANDROID_HOME/emulator/emulator" -avd Pixel_8_Pro_API_35 \
+  -no-window -no-audio -no-boot-anim -no-snapshot \
+  -gpu angle_indirect -feature -Vulkan \
+  -camera-back none -camera-front none
+```
+
+Wait for `emulator-5554`, then target it explicitly if a phone is also attached:
+
+```bash
+ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest
+```
+
+The emulator boots in ~16 s. Its system image also lacks FTS5, so it closes UI/device regression
+testing but **not** the FTS5 verification item.
+
+- On some OEM phones, Gradle's default install fails with a signature/user-profile conflict; use
+  `adb install --user 0 -r -t app/build/outputs/apk/debug/app-debug.apk` first.
+- `adb devices` may list multiple transports; always set `ANDROID_SERIAL` for deterministic runs.
+
+## Documentation and local-only files
+
+- `README.md` is the product/architecture reference; `UI_UX_RESEARCH.md` is the UI/UX audit.
+- `TODO.md` and `AUDIT_REPORT.md` are **gitignored local working documents**; do not assume a fresh
+  clone contains them. Do not rewrite `AUDIT_REPORT.md` as fixes land.
+- Release notes are published in GitHub releases, not committed as a file.
