@@ -55,7 +55,8 @@ fun PovitrPustokNavHost() {
                             destination.chapterPosition,
                             destination.verseId,
                             destination.verseStart,
-                            destination.verseEnd
+                            destination.verseEnd,
+                            destination.passages
                         )
                     )
                 },
@@ -72,7 +73,8 @@ fun PovitrPustokNavHost() {
                             destination.chapterPosition,
                             destination.verseId,
                             destination.verseStart,
-                            destination.verseEnd
+                            destination.verseEnd,
+                            destination.passages
                         )
                     )
                 },
@@ -127,7 +129,8 @@ fun PovitrPustokNavHost() {
                 navArgument("chapterPosition") { type = NavType.IntType },
                 navArgument("verseId") { type = NavType.LongType; defaultValue = -1L },
                 navArgument("verseStart") { type = NavType.IntType; defaultValue = -1 },
-                navArgument("verseEnd") { type = NavType.IntType; defaultValue = -1 }
+                navArgument("verseEnd") { type = NavType.IntType; defaultValue = -1 },
+                navArgument("passages") { type = NavType.StringType; defaultValue = "" }
             )
         ) { backStackEntry ->
             val arguments = backStackEntry.arguments
@@ -140,7 +143,8 @@ fun PovitrPustokNavHost() {
                 onBack = { navController.popBackStack() },
                 targetVerseId = verseId,
                 passageStart = verseStart,
-                passageEnd = verseEnd
+                passageEnd = verseEnd,
+                passagesSpec = arguments?.getString("passages").orEmpty()
             )
         }
 
@@ -163,7 +167,8 @@ fun PovitrPustokNavHost() {
                             destination.chapterPosition,
                             destination.verseId,
                             destination.verseStart,
-                            destination.verseEnd
+                            destination.verseEnd,
+                            destination.passages
                         )
                     )
                 },

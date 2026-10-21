@@ -258,13 +258,30 @@ fun ReaderContent(
     // One authoritative display sequence (corrective phase Issues 3 & 5;
     // READER-03): normal mode = interleaved headings/verses; targeted mode =
     // the passage-filtered sequence. Introductions live on their own screen.
-    val items = remember(chapter.id, state.headings, state.verses, state.passage) {
-        ReaderContentBuilder.build(
-            chapter = chapter,
-            headings = state.headings,
-            verses = state.verses,
-            passage = state.passage
-        )
+    val items = remember(
+        chapter.id,
+        state.headings,
+        state.verses,
+        state.passage,
+        state.passageChapters
+    ) {
+        if (state.passageChapters.isNotEmpty()) {
+            state.passageChapters.flatMap { part ->
+                ReaderContentBuilder.build(
+                    chapter = part.chapter,
+                    headings = part.headings,
+                    verses = part.verses,
+                    passage = part.passage
+                )
+            }
+        } else {
+            ReaderContentBuilder.build(
+                chapter = chapter,
+                headings = state.headings,
+                verses = state.verses,
+                passage = state.passage
+            )
+        }
     }
 
     // One-shot scroll to the target verse: the index comes from the exact

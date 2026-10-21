@@ -55,7 +55,9 @@ data class ReaderUiState(
      * Optional requested passage (corrective phase Issue 5): when set, the
      * Reader displays only that passage instead of the whole chapter.
      */
-    val passage: ReaderPassage? = null
+    val passage: ReaderPassage? = null,
+    /** Non-empty only for non-continuous/cross-chapter references. */
+    val passageChapters: List<ReaderChapterPassage> = emptyList()
 ) {
 
     /** Previous is available only inside the book (position-based). */

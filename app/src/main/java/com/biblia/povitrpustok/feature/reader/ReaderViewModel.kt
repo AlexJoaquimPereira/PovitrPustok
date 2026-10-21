@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.biblia.povitrpustok.core.result.BibleDataException
 import com.biblia.povitrpustok.domain.model.Chapter
+import com.biblia.povitrpustok.domain.model.ReaderPassageSpec
 import com.biblia.povitrpustok.domain.repository.BibleRepository
 import com.biblia.povitrpustok.domain.repository.BookmarkRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -49,7 +50,8 @@ class ReaderViewModel @Inject constructor(
         val chapterPosition: Int,
         val targetVerseId: Long?,
         val passageStart: Int?,
-        val passageEnd: Int?
+        val passageEnd: Int?,
+        val passages: List<ReaderPassageSpec>
     )
 
     /** Serializes bookmark toggles so rapid taps cannot act on a stale snapshot (READER-05). */
@@ -58,34 +60,74 @@ class ReaderViewModel @Inject constructor(
     /**
      * Loads [chapterPosition] of [bookId]; replaces the current state.
      *
-     * A newer request supersedes an older one (Track A §D): the previous
-     * in-flight load is cancelled, so stale chapters, errors, or reading
-     * state can never overwrite the latest request.
-     *
-     * @param targetVerseId optional verse target (Phase 8): located by
-     *   [Verse.id] in the already-loaded chapter content — never by
-     *   verseStart alone, never re-queried from the database, never
-     *   searched in other chapters. A missing id sets [ReaderUiState.targetMissing]
-     *   and the chapter still renders normally.
-     * @param passageStart / @param passageEnd optional requested passage
-     *   (corrective phase Issue 5): when both present, the Reader renders
-     *   only that verse range (targeted passage mode).
+     * [passages] carries non-continuous / cross-chapter segments. When it is
+     * non-empty, every distinct chapter is loaded once and each requested
+     * range is kept separate, so gap verses are never rendered.
      */
     fun load(
         bookId: String,
         chapterPosition: Int,
         targetVerseId: Long? = null,
         passageStart: Int? = null,
-        passageEnd: Int? = null
+        passageEnd: Int? = null,
+        passages: List<ReaderPassageSpec> = emptyList()
     ) {
         this.bookId = bookId
-        lastRequest = LoadRequest(bookId, chapterPosition, targetVerseId, passageStart, passageEnd)
+        lastRequest = LoadRequest(bookId, chapterPosition, targetVerseId, passageStart, passageEnd, passages)
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 val book = repository.getBook(bookId)
                 val chapters = repository.getChapters(bookId)
+
+                if (passages.isNotEmpty()) {
+                    val chapterContents = passages
+                        .map { it.chapterPosition }
+                        .distinct()
+                        .associateWith { repository.getChapter(bookId, it) }
+                    val firstContent = chapterContents.getValue(passages.first().chapterPosition)
+                    val passageChapters = passages
+                        .groupBy { it.chapterPosition }
+                        .map { (position, specs) ->
+                            val content = chapterContents.getValue(position)
+                            val firstVerse = content.verses.firstOrNull()?.verseStart ?: 1
+                            val lastVerse = content.verses.lastOrNull()?.verseEnd ?: firstVerse
+                            val ranges = specs.map { spec ->
+                                (spec.verseStart ?: firstVerse)..(spec.verseEnd ?: lastVerse)
+                            }
+                            ReaderChapterPassage(
+                                chapter = content.chapter,
+                                headings = content.headings,
+                                verses = content.verses,
+                                passage = ReaderPassage(
+                                    verseStart = ranges.first().first,
+                                    verseEnd = ranges.last().last,
+                                    ranges = ranges
+                                )
+                            )
+                        }
+                    val target = targetVerseId?.let { id ->
+                        chapterContents.values.firstNotNullOfOrNull { content ->
+                            content.verses.firstOrNull { it.id == id }
+                        }
+                    }
+                    _uiState.value = ReaderUiState(
+                        book = book,
+                        chapter = firstContent.chapter,
+                        chapters = chapters,
+                        headings = firstContent.headings,
+                        verses = firstContent.verses,
+                        isLoading = false,
+                        targetVerseId = target?.id,
+                        targetMissing = targetVerseId != null && target == null,
+                        passageChapters = passageChapters
+                    )
+                    observeChapterBookmarks(bookId, firstContent.chapter.id)
+                    bookmarkRepository.updateReadingState(bookId, firstContent.chapter.position)
+                    return@launch
+                }
+
                 val content = repository.getChapter(bookId, chapterPosition)
                 val target = targetVerseId?.let { id ->
                     content.verses.firstOrNull { it.id == id }
@@ -107,17 +149,12 @@ class ReaderViewModel @Inject constructor(
                     passage = passage
                 )
                 observeChapterBookmarks(bookId, content.chapter.id)
-                // Reading state: persist the last opened location once per
-                // meaningful navigation — never on scroll.
                 bookmarkRepository.updateReadingState(bookId, chapterPosition)
             } catch (e: kotlinx.coroutines.CancellationException) {
-                // A newer load superseded this one; never publish an error.
                 throw e
             } catch (e: BibleDataException) {
                 setLoadError(e.message ?: "Failed to load chapter.")
             } catch (e: Exception) {
-                // READER-04: unexpected runtime failures must not crash the
-                // app or leave the Reader stuck in a loading state.
                 setLoadError("Failed to load chapter.")
             }
         }
@@ -136,7 +173,8 @@ class ReaderViewModel @Inject constructor(
                 targetMissing = false,
                 selectedVerseId = null,
                 highlightedVerseId = null,
-                passage = null
+                passage = null,
+                passageChapters = emptyList()
             )
         }
     }
@@ -149,7 +187,8 @@ class ReaderViewModel @Inject constructor(
                 chapterPosition = request.chapterPosition,
                 targetVerseId = request.targetVerseId,
                 passageStart = request.passageStart,
-                passageEnd = request.passageEnd
+                passageEnd = request.passageEnd,
+                passages = request.passages
             )
         }
     }

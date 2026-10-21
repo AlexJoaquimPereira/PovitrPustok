@@ -17,7 +17,7 @@ sealed interface ReaderContentItem {
     val key: String
 
     data class Header(val chapter: DomainChapter) : ReaderContentItem {
-        override val key: String = "chapter-header"
+        override val key: String = "chapter-header-${chapter.id}"
     }
 
     data class Heading(val heading: DomainHeading) : ReaderContentItem {
@@ -37,5 +37,15 @@ sealed interface ReaderContentItem {
  */
 data class ReaderPassage(
     val verseStart: Int,
-    val verseEnd: Int
+    val verseEnd: Int,
+    /** Non-continuous ranges; defaults to the single inclusive span. */
+    val ranges: List<IntRange> = listOf(verseStart..verseEnd)
+)
+
+/** One chapter of a multi-chapter or non-continuous passage. */
+data class ReaderChapterPassage(
+    val chapter: DomainChapter,
+    val headings: List<DomainHeading>,
+    val verses: List<DomainVerse>,
+    val passage: ReaderPassage
 )

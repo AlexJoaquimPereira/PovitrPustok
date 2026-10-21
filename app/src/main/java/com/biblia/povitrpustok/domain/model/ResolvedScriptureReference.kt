@@ -17,7 +17,9 @@ data class ResolvedScriptureReference(
     val chapterPosition: Int,
     val verseId: Long? = null,
     val verseStart: Int? = null,
-    val verseEnd: Int? = null
+    val verseEnd: Int? = null,
+    /** Every resolved segment, in source order, including cross-chapter ones. */
+    val segments: List<ResolvedScriptureSegment> = emptyList()
 ) {
 
     /** Chapter-navigation destination for the existing reader route. */
@@ -27,6 +29,14 @@ data class ResolvedScriptureReference(
             chapterPosition = chapterPosition,
             verseId = verseId,
             verseStart = verseStart,
-            verseEnd = verseEnd
+            verseEnd = verseEnd,
+            passages = segments.ifEmpty {
+                listOf(
+                    ResolvedScriptureSegment(
+                        bookId, chapterId, chapterNumber, chapterPosition,
+                        verseId, verseStart, verseEnd
+                    )
+                )
+            }.map { ReaderPassageSpec(it.chapterPosition, it.verseStart, it.verseEnd, it.openEnd) }
         )
 }

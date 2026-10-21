@@ -27,7 +27,7 @@ object AppDestination {
      * and kept separate from the chapter navigation identity
      * (chapterPosition). Existing callers that omit them still match.
      */
-    const val READER = "reader/{bookId}/{chapterPosition}?verseId={verseId}&verseStart={verseStart}&verseEnd={verseEnd}"
+    const val READER = "reader/{bookId}/{chapterPosition}?verseId={verseId}&verseStart={verseStart}&verseEnd={verseEnd}&passages={passages}"
 
     const val SEARCH = "search"
 
@@ -46,13 +46,17 @@ object AppDestination {
         chapterPosition: Int,
         verseId: Long? = null,
         verseStart: Int? = null,
-        verseEnd: Int? = null
+        verseEnd: Int? = null,
+        passages: List<com.biblia.povitrpustok.domain.model.ReaderPassageSpec> = emptyList()
     ): String {
         val base = "reader/$bookId/$chapterPosition"
         val params = buildList {
             verseId?.let { add("verseId=$it") }
             verseStart?.let { add("verseStart=$it") }
             verseEnd?.let { add("verseEnd=$it") }
+            if (passages.isNotEmpty()) {
+                add("passages=" + com.biblia.povitrpustok.domain.model.ReaderPassageCodec.encode(passages))
+            }
         }
         return if (params.isEmpty()) base else base + "?" + params.joinToString("&")
     }

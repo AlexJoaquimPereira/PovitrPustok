@@ -39,7 +39,7 @@ class ReaderContentBuilderTest {
 
         val kinds = items.map { it.key }
         assertEquals(
-            listOf("chapter-header", "heading-1", "verse-100", "verse-101", "heading-2", "verse-102"),
+            listOf("chapter-header-1", "heading-1", "verse-100", "verse-101", "heading-2", "verse-102"),
             kinds
         )
     }
@@ -184,5 +184,25 @@ class ReaderContentBuilderTest {
         assertEquals(1, items.count { it is ReaderContentItem.Heading })
         assertEquals(1, items.count { it is ReaderContentItem.Header })
         assertEquals(4, items.size)
+    }
+
+    @Test
+    fun disjoint_passage_ranges_do_not_render_gap_verses() {
+        val verses = (1..20).map { verse(100L + it, it) }
+        val items = ReaderContentBuilder.build(
+            chapter,
+            headings = emptyList(),
+            verses = verses,
+            passage = ReaderPassage(
+                verseStart = 3,
+                verseEnd = 17,
+                ranges = listOf(3..4, 5..6, 12..13, 14..14, 17..17)
+            )
+        )
+        assertEquals(
+            "only requested verse groups may render",
+            listOf(103L, 104L, 105L, 106L, 112L, 113L, 114L, 117L),
+            verseIds(items)
+        )
     }
 }

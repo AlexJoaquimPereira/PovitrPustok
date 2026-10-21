@@ -175,7 +175,6 @@ class ScriptureReferenceResolverTest {
         assertTrue(resolver.resolve("James 1:8-5") is ScriptureResolution.Invalid)
         assertTrue(resolver.resolve("James 0") is ScriptureResolution.Invalid)
         assertTrue(resolver.resolve("James 1:0") is ScriptureResolution.Invalid)
-        assertTrue(resolver.resolve("John 3:16-4:2") is ScriptureResolution.Invalid)
     }
 
     @Test
@@ -232,5 +231,32 @@ class ScriptureReferenceResolverTest {
         assertEquals(r.verseId, destination.verseId)
         // navigation identity is chapter position, never verse or chapter number
         assertEquals(r.chapterPosition, destination.chapterPosition)
+    }
+
+    @Test
+    fun non_continuous_and_cross_chapter_references_keep_segments() = runBlocking {
+        val psalm = resolved("Psalm 90:3-4, 5-6, 12-13, 14 and 17")
+        assertEquals(5, psalm.segments.size)
+        assertEquals(listOf(3, 5, 12, 14, 17), psalm.segments.map { it.verseStart })
+        assertEquals(5, psalm.toReaderDestination().passages.size)
+
+        val cross = resolved("John 3:16, 4:2")
+        assertEquals(2, cross.segments.size)
+        assertEquals(listOf(3, 4), cross.segments.map { it.chapterNumber })
+        assertEquals(listOf(16, 2), cross.segments.map { it.verseStart })
+        assertEquals(listOf(3, 4), cross.toReaderDestination().passages.map { it.chapterPosition }.map { it })
+        assertEquals(2, cross.toReaderDestination().passages.size)
+    }
+
+    @Test
+    fun dash_cross_chapter_range_resolves_both_chapters() = runBlocking {
+        val reference = resolved("John 3:16-4:2")
+        assertEquals(2, reference.segments.size)
+        assertEquals(listOf(3, 4), reference.segments.map { it.chapterNumber })
+        assertEquals(16, reference.segments[0].verseStart)
+        assertEquals(null, reference.segments[0].verseEnd)
+        assertEquals(null, reference.segments[1].verseStart)
+        assertEquals(2, reference.segments[1].verseEnd)
+        assertEquals(2, reference.toReaderDestination().passages.size)
     }
 }

@@ -11,9 +11,23 @@ data class ScriptureReference(
     val book: String?,
     val chapter: Int,
     val verseStart: Int?,
-    val verseEnd: Int?
+    val verseEnd: Int?,
+    /**
+     * Every referenced portion in source order. A non-continuous reference
+     * such as "Psalm 90:3-4, 5-6, 17" must never collapse into one span,
+     * and a cross-chapter reference carries one segment per chapter.
+     * [chapter]/[verseStart]/[verseEnd] mirror the first segment for
+     * compatibility with single-segment callers.
+     */
+    val segments: List<ScriptureSegment> = emptyList()
 ) {
 
     /** Whether the reference names a specific verse (or range). */
     val hasVerse: Boolean get() = verseStart != null
+
+    /** All segments, including the compatibility fields for old callers. */
+    val allSegments: List<ScriptureSegment>
+        get() = segments.ifEmpty {
+            listOf(ScriptureSegment(chapter, verseStart, verseEnd))
+        }
 }

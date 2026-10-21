@@ -34,8 +34,9 @@ object ReaderContentBuilder {
         val full = buildNormal(chapter, headings, verses)
         val requested = passage ?: return full
 
+        val ranges = requested.ranges.ifEmpty { listOf(requested.verseStart..requested.verseEnd) }
         val keptVerseIds = verses
-            .filter { it.verseStart in requested.verseStart..requested.verseEnd }
+            .filter { verse -> ranges.any { verse.verseStart in it } }
             .map { it.id }
             .toSet()
 

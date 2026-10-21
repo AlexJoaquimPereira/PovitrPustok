@@ -16,5 +16,7 @@ data class ReaderDestination(
     val chapterPosition: Int,
     val verseId: Long? = null,
     val verseStart: Int? = null,
-    val verseEnd: Int? = null
+    val verseEnd: Int? = null,
+    /** Cross-chapter or non-continuous passage segments in source order. */
+    val passages: List<ReaderPassageSpec> = emptyList()
 )

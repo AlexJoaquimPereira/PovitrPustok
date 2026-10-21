@@ -1,6 +1,7 @@
 package com.biblia.povitrpustok.domain.reference
 
 import com.biblia.povitrpustok.domain.model.ScriptureReference
+import com.biblia.povitrpustok.domain.model.ScriptureSegment
 
 /**
  * Stage A: pure Scripture reference parser (implementation plan §16;
@@ -77,91 +78,114 @@ object ScriptureReferenceParser {
     }
 
     private fun parseLocator(book: String?, locator: String): Result {
-        val colonParts = locator.split(':')
-        if (colonParts.size > 2) {
+        // Semicolons are another enumeration separator in lectionary feeds.
+        // Groups can change chapter: "John 3:16, 4:2" is two segments.
+        val normalized = AND_WORD.replace(locator, ",").replace(';', ',')
+        val groups = normalized.split(',').map { it.trim() }
+        if (groups.isEmpty() || groups.any { it.isEmpty() }) {
             return Result.Invalid("Malformed reference: '$locator'.")
         }
 
-        val chapterToken = colonParts[0].trim()
-        if (colonParts.size == 1) {
-            // No colon: either a plain chapter number, or — for single-chapter
-            // books such as Philemon — a verse enumeration ("Philemon 9-10,
-            // 12-17" is verses 9-17 of chapter 1, not a chapter locator).
-            val chapterOnly = chapterToken.toIntOrNull()
-            if (chapterOnly != null) {
-                if (chapterOnly < 1) {
-                    return Result.Invalid("Chapter must be at least 1: $chapterOnly.")
+        var currentChapter: Int? = null
+        val segments = mutableListOf<ScriptureSegment>()
+
+        for (group in groups) {
+            // "John 3:16-4:2" means from 3:16 through 4:2, including the
+            // remainder of chapter 3. Keep open ends in the segments; the
+            // reader fills them with the chapter's first/last verse.
+            val crossChapter = Regex("""^(\d+):([0-9]+[A-Za-z]*)-([0-9]+):([0-9]+[A-Za-z]*)$""")
+                .matchEntire(group)
+            if (crossChapter != null) {
+                val firstChapter = crossChapter.groupValues[1].toInt()
+                val firstVerse = parseVerseToken(crossChapter.groupValues[2])
+                val secondChapter = crossChapter.groupValues[3].toInt()
+                val secondVerse = parseVerseToken(crossChapter.groupValues[4])
+                if (firstChapter < 1 || secondChapter <= firstChapter ||
+                    firstVerse == null || firstVerse < 1 || secondVerse == null || secondVerse < 1
+                ) {
+                    return Result.Invalid("Malformed cross-chapter range: '$group'.")
                 }
-                return Result.Valid(
-                    ScriptureReference(book = book, chapter = chapterOnly, verseStart = null, verseEnd = null)
-                )
+                currentChapter = secondChapter
+                segments += ScriptureSegment(firstChapter, firstVerse, null, openEnd = true)
+                segments += ScriptureSegment(secondChapter, null, secondVerse)
+                continue
             }
-            return parseVersePart(book, 1, chapterToken)
+
+            val colonParts = group.split(':')
+            if (colonParts.size > 2) {
+                return Result.Invalid("Malformed reference: '$group'.")
+            }
+
+            if (colonParts.size == 2) {
+                val chapter = colonParts[0].toIntOrNull()
+                    ?: return Result.Invalid("Chapter is not a number: '${colonParts[0]}'.")
+                if (chapter < 1) {
+                    return Result.Invalid("Chapter must be at least 1: $chapter.")
+                }
+                currentChapter = chapter
+                val (start, end) = parseVerseGroup(colonParts[1])
+                    ?: return Result.Invalid("Malformed or reversed verse range: '${colonParts[1]}'.")
+                segments += ScriptureSegment(chapter, start, end)
+            } else {
+                if (currentChapter == null) {
+                    val chapterOnly = group.toIntOrNull()
+                    if (chapterOnly != null) {
+                        if (chapterOnly < 1) {
+                            return Result.Invalid("Chapter must be at least 1: $chapterOnly.")
+                        }
+                        currentChapter = chapterOnly
+                        segments += ScriptureSegment(chapterOnly, null, null)
+                        continue
+                    }
+                    // Bare verse enumeration for a single-chapter book.
+                    currentChapter = 1
+                }
+                val (start, end) = parseVerseGroup(group)
+                    ?: return Result.Invalid("Malformed or reversed verse range: '$group'.")
+                segments += ScriptureSegment(currentChapter, start, end)
+            }
         }
 
-        val chapter = chapterToken.toIntOrNull()
-            ?: return Result.Invalid("Chapter is not a number: '$chapterToken'.")
-        if (chapter < 1) {
-            return Result.Invalid("Chapter must be at least 1: $chapter.")
+        for (i in 1 until segments.size) {
+            val previous = segments[i - 1]
+            val current = segments[i]
+            val previousEnd = previous.verseEnd ?: previous.verseStart ?: 0
+            val currentStart = current.verseStart ?: 0
+            val outOfOrder = current.chapter < previous.chapter ||
+                (current.chapter == previous.chapter && currentStart < previousEnd)
+            if (outOfOrder) {
+                return Result.Invalid("Reversed verse enumeration: '$locator'.")
+            }
         }
 
-        return parseVersePart(book, chapter, colonParts[1])
+        val first = segments.first()
+        return Result.Valid(
+            ScriptureReference(
+                book = book,
+                chapter = first.chapter,
+                verseStart = first.verseStart,
+                verseEnd = segments.last().verseEnd,
+                // Keep the compatibility fields alone for single-group
+                // references; only multi-segment references need the list.
+                segments = if (segments.size > 1) segments else emptyList()
+            )
+        )
     }
 
-    private fun parseVersePart(book: String?, chapter: Int, versePartRaw: String): Result {
-        // "14 and 17" is an enumeration separator equivalent to a comma.
-        val versePart = AND_WORD.replace(versePartRaw, ",")
-        // Groups separated by commas; each group is "n" or "n-m".
-        val groups = versePart.split(',')
-        if (groups.isEmpty()) {
-            return Result.Invalid("Malformed verse range: '$versePartRaw'.")
+    /** Parses one "n" or "n-m" group; returns null for a malformed token. */
+    private fun parseVerseGroup(raw: String): Pair<Int, Int?>? {
+        val dashParts = raw.trim().split('-')
+        if (dashParts.size > 2) return null
+        val start = parseVerseToken(dashParts[0]) ?: return null
+        if (start < 1) return null
+        val end = if (dashParts.size == 2) {
+            val parsedEnd = parseVerseToken(dashParts[1]) ?: return null
+            if (parsedEnd < 1 || parsedEnd < start) return null
+            parsedEnd
+        } else {
+            start
         }
-
-        var firstStart: Int? = null
-        var lastEnd: Int? = null
-        for (group in groups) {
-            val trimmed = group.trim()
-            if (trimmed.isEmpty()) {
-                return Result.Invalid("Malformed verse range: '$versePartRaw'.")
-            }
-            val dashParts = trimmed.split('-')
-            if (dashParts.size > 2) {
-                return Result.Invalid("Malformed verse range: '$versePartRaw'.")
-            }
-
-            val start = parseVerseToken(dashParts[0])
-                ?: return Result.Invalid("Verse is not a number: '${dashParts[0]}'.")
-            if (start < 1) {
-                return Result.Invalid("Verse must be at least 1: $start.")
-            }
-
-            val end = if (dashParts.size == 2) {
-                val e = parseVerseToken(dashParts[1])
-                    ?: return Result.Invalid("Verse range end is not a number: '${dashParts[1]}'.")
-                if (e < 1) {
-                    return Result.Invalid("Verse range end must be at least 1: $e.")
-                }
-                if (e < start) {
-                    return Result.Invalid("Reversed verse range: $start-$e.")
-                }
-                e
-            } else {
-                start
-            }
-
-            if (firstStart == null) firstStart = start
-            lastEnd = end
-        }
-
-        val verseStart = firstStart!!
-        val verseEnd = lastEnd!!
-        if (verseEnd < verseStart) {
-            return Result.Invalid("Reversed verse range: $verseStart-$verseEnd.")
-        }
-
-        return Result.Valid(
-            ScriptureReference(book = book, chapter = chapter, verseStart = verseStart, verseEnd = verseEnd)
-        )
+        return start to end
     }
 
     /**

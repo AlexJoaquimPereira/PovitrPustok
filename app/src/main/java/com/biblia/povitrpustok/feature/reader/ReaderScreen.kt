@@ -19,6 +19,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -26,6 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
+import com.biblia.povitrpustok.domain.model.ReaderPassageCodec
 
 /**
  * Reader screen (implementation plan §17, §42).
@@ -43,10 +45,19 @@ fun ReaderScreen(
     targetVerseId: Long? = null,
     passageStart: Int? = null,
     passageEnd: Int? = null,
+    passagesSpec: String = "",
     viewModel: ReaderViewModel = hiltViewModel()
 ) {
-    LaunchedEffect(bookId, chapterPosition, targetVerseId, passageStart, passageEnd) {
-        viewModel.load(bookId, chapterPosition, targetVerseId, passageStart, passageEnd)
+    val passages = remember(passagesSpec) { ReaderPassageCodec.decode(passagesSpec) }
+    LaunchedEffect(bookId, chapterPosition, targetVerseId, passageStart, passageEnd, passagesSpec) {
+        viewModel.load(
+            bookId = bookId,
+            chapterPosition = chapterPosition,
+            targetVerseId = targetVerseId,
+            passageStart = passageStart,
+            passageEnd = passageEnd,
+            passages = passages
+        )
     }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 

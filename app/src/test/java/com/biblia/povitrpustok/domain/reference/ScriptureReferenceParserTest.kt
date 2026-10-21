@@ -1,6 +1,7 @@
 package com.biblia.povitrpustok.domain.reference
 
 import com.biblia.povitrpustok.domain.model.ScriptureReference
+import com.biblia.povitrpustok.domain.model.ScriptureSegment
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -111,9 +112,37 @@ class ScriptureReferenceParserTest {
     @Test
     fun comma_separated_verse_enumerations_map_to_a_span() {
         // Phase 10 expansion: lectionary psalms enumerate verses with commas.
-        assertEquals(ScriptureReference("Psalm", 45, 10, 16), valid("Psalm 45:10, 11, 12, 16"))
-        assertEquals(ScriptureReference("Psalm", 112, 1, 9), valid("Psalm 112:1-2, 5-6, 7-8, 9"))
-        assertEquals(ScriptureReference("Psalm", 118, 1, 24), valid("Psalm 118:1, 24"))
+        assertEquals(
+            ScriptureReference(
+                "Psalm", 45, 10, 16,
+                listOf(
+                    ScriptureSegment(45, 10, 10),
+                    ScriptureSegment(45, 11, 11),
+                    ScriptureSegment(45, 12, 12),
+                    ScriptureSegment(45, 16, 16)
+                )
+            ),
+            valid("Psalm 45:10, 11, 12, 16")
+        )
+        assertEquals(
+            ScriptureReference(
+                "Psalm", 112, 1, 9,
+                listOf(
+                    ScriptureSegment(112, 1, 2),
+                    ScriptureSegment(112, 5, 6),
+                    ScriptureSegment(112, 7, 8),
+                    ScriptureSegment(112, 9, 9)
+                )
+            ),
+            valid("Psalm 112:1-2, 5-6, 7-8, 9")
+        )
+        assertEquals(
+            ScriptureReference(
+                "Psalm", 118, 1, 24,
+                listOf(ScriptureSegment(118, 1, 1), ScriptureSegment(118, 24, 24))
+            ),
+            valid("Psalm 118:1, 24")
+        )
     }
 
     @Test
@@ -122,7 +151,19 @@ class ScriptureReferenceParserTest {
         // verse portion; the range model represents the numeric verse.
         assertEquals(ScriptureReference("Wisdom", 9, 13, 18), valid("Wisdom 9:13-18b"))
         assertEquals(ScriptureReference("James", 1, 13, 13), valid("James 1:13a"))
-        assertEquals(ScriptureReference("Psalm", 90, 3, 17), valid("Psalm 90:3-4b, 5-6a, 12-13, 14 and 17"))
+        assertEquals(
+            ScriptureReference(
+                "Psalm", 90, 3, 17,
+                listOf(
+                    ScriptureSegment(90, 3, 4),
+                    ScriptureSegment(90, 5, 6),
+                    ScriptureSegment(90, 12, 13),
+                    ScriptureSegment(90, 14, 14),
+                    ScriptureSegment(90, 17, 17)
+                )
+            ),
+            valid("Psalm 90:3-4b, 5-6a, 12-13, 14 and 17")
+        )
         // uppercase suffixes (corrective Issue 6)
         assertEquals(ScriptureReference("Revelation", 11, 19, 19), valid("Revelation 11:19A"))
         assertEquals(ScriptureReference("Revelation", 11, 19, 19), valid("Revelation 11:19a"))
@@ -136,7 +177,16 @@ class ScriptureReferenceParserTest {
     @Test
     fun and_word_is_an_enumeration_separator() {
         assertEquals(
-            ScriptureReference("Psalm", 90, 3, 17),
+            ScriptureReference(
+                "Psalm", 90, 3, 17,
+                listOf(
+                    ScriptureSegment(90, 3, 4),
+                    ScriptureSegment(90, 5, 6),
+                    ScriptureSegment(90, 12, 13),
+                    ScriptureSegment(90, 14, 14),
+                    ScriptureSegment(90, 17, 17)
+                )
+            ),
             valid("Psalm 90:3-4, 5-6, 12-13, 14 and 17")
         )
     }
@@ -145,8 +195,24 @@ class ScriptureReferenceParserTest {
     fun chapter_less_books_parse_no_colon_enumerations_as_verses() {
         // Track A §F: Philemon has a single chapter; "9-10, 12-17" is a
         // verse enumeration of chapter 1.
-        assertEquals(ScriptureReference("Philemon", 1, 9, 17), valid("Philemon 9-10, 12-17"))
-        assertEquals(ScriptureReference("Philemon", 1, 4, 21), valid("Philemon 4-7, 9, 12-21"))
+        assertEquals(
+            ScriptureReference(
+                "Philemon", 1, 9, 17,
+                listOf(ScriptureSegment(1, 9, 10), ScriptureSegment(1, 12, 17))
+            ),
+            valid("Philemon 9-10, 12-17")
+        )
+        assertEquals(
+            ScriptureReference(
+                "Philemon", 1, 4, 21,
+                listOf(
+                    ScriptureSegment(1, 4, 7),
+                    ScriptureSegment(1, 9, 9),
+                    ScriptureSegment(1, 12, 21)
+                )
+            ),
+            valid("Philemon 4-7, 9, 12-21")
+        )
     }
 
     @Test
@@ -173,7 +239,23 @@ class ScriptureReferenceParserTest {
     }
 
     @Test
-    fun cross_chapter_reference_is_unsupported() {
-        invalid("John 3:16-4:2")
+    fun cross_chapter_enumerations_keep_one_segment_per_chapter() {
+        val reference = valid("John 3:16, 4:2")
+        assertEquals(3, reference.chapter)
+        assertEquals(16, reference.verseStart)
+        assertEquals(2, reference.verseEnd)
+        assertEquals(
+            listOf(ScriptureSegment(3, 16, 16), ScriptureSegment(4, 2, 2)),
+            reference.segments
+        )
+    }
+
+    @Test
+    fun dash_cross_chapter_range_preserves_open_ends() {
+        val reference = valid("John 3:16-4:2")
+        assertEquals(
+            listOf(ScriptureSegment(3, 16, null, openEnd = true), ScriptureSegment(4, null, 2)),
+            reference.segments
+        )
     }
 }

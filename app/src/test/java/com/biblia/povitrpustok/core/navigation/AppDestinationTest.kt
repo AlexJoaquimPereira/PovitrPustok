@@ -30,7 +30,7 @@ class AppDestinationTest {
         assertEquals("reader/jakob/3?verseId=42", AppDestination.reader("jakob", 3, 42L))
         assertEquals(
             AppDestination.READER,
-            "reader/{bookId}/{chapterPosition}?verseId={verseId}&verseStart={verseStart}&verseEnd={verseEnd}"
+            "reader/{bookId}/{chapterPosition}?verseId={verseId}&verseStart={verseStart}&verseEnd={verseEnd}&passages={passages}"
         )
     }
 

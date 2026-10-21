@@ -3,7 +3,9 @@ package com.biblia.povitrpustok.data.bible
 import com.biblia.povitrpustok.domain.model.BibleCatalog
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.ResolvedScriptureReference
+import com.biblia.povitrpustok.domain.model.ResolvedScriptureSegment
 import com.biblia.povitrpustok.domain.model.ScriptureResolution
+import com.biblia.povitrpustok.domain.model.ScriptureSegment
 import com.biblia.povitrpustok.domain.reference.BookNameMatcher
 import com.biblia.povitrpustok.domain.reference.ScriptureReferenceParser
 import com.biblia.povitrpustok.domain.repository.BibleRepository
@@ -20,33 +22,37 @@ import kotlin.math.max
  * them with [BibleRepository]. Resolution opens only the named book's
  * database (getChapters + optional getVerse) — never a 73-book scan.
  *
+ * A reference is resolved as an ordered list of segments:
+ *  - non-continuous references keep their gaps ("Psalm 90:3-4, 5-6, 17");
+ *  - cross-chapter references carry one segment per chapter
+ *    ("John 3:16, 4:2");
+ *  - a single chapter/verse reference is one segment.
+ *
  * Chapter numbers are never assumed unique: if several chapter records
  * share the requested number (Job 26), the result is
  * [ScriptureResolution.Ambiguous] listing every candidate — never a
  * silent pick.
- *
- * Verse resolution uses the source range (REF-01): a requested number may
- * be covered by a combined record, and duplicate source numbers surface as
- * [ScriptureResolution.AmbiguousVerse]. A requested range end must also be
- * covered by chapter data (REF-02), otherwise the result is `NotFound`.
  */
 @Singleton
 class ScriptureReferenceResolverImpl @Inject constructor(
     private val bibleRepository: BibleRepository
 ) : ScriptureReferenceResolver {
 
+    private sealed interface SegmentOutcome {
+        data class Ok(val segment: ResolvedScriptureSegment) : SegmentOutcome
+        data class Error(val resolution: ScriptureResolution) : SegmentOutcome
+    }
+
     override suspend fun resolve(
         reference: String,
         contextBookId: String?
     ): ScriptureResolution {
-        // Stage A — parse (pure, no database).
         val parsed = when (val result = ScriptureReferenceParser.parse(reference)) {
             is ScriptureReferenceParser.Result.Invalid ->
                 return ScriptureResolution.Invalid(result.reason)
             is ScriptureReferenceParser.Result.Valid -> result.reference
         }
 
-        // Stage B1 — book resolution.
         val bookId: String = if (parsed.book != null) {
             val book = BookNameMatcher.match(parsed.book)
                 ?: return ScriptureResolution.NotFound("Unknown book: '${parsed.book}'.")
@@ -62,100 +68,142 @@ class ScriptureReferenceResolverImpl @Inject constructor(
             context
         }
 
-        // Stage B2 — chapter resolution by chapter.number.
         val chapters = bibleRepository.getChapters(bookId)
-        val chapterMatches = chapters.filter { it.number == parsed.chapter }
+        val resolvedSegments = mutableListOf<ResolvedScriptureSegment>()
+
+        for (segment in parsed.allSegments) {
+            when (val outcome = resolveSegment(bookId, chapters, segment)) {
+                is SegmentOutcome.Error -> return outcome.resolution
+                is SegmentOutcome.Ok -> resolvedSegments += outcome.segment
+            }
+        }
+
+        val first = resolvedSegments.first()
+        return ScriptureResolution.Resolved(
+            ResolvedScriptureReference(
+                bookId = bookId,
+                chapterId = first.chapterId,
+                chapterNumber = first.chapterNumber,
+                chapterPosition = first.chapterPosition,
+                verseId = first.verseId,
+                verseStart = first.verseStart,
+                // Compatibility: a multi-segment reference's primary span
+                // still reports the last requested endpoint.
+                verseEnd = resolvedSegments.last().verseEnd ?: first.verseEnd,
+                segments = resolvedSegments
+            )
+        )
+    }
+
+    private suspend fun resolveSegment(
+        bookId: String,
+        chapters: List<Chapter>,
+        segment: ScriptureSegment
+    ): SegmentOutcome {
+        val chapterMatches = chapters.filter { it.number == segment.chapter }
         if (chapterMatches.isEmpty()) {
-            // REF-03: in a single-chapter book a bare number is a verse
-            // ("Jude 5"), not a chapter locator.
-            if (chapters.size == 1 && parsed.verseStart == null) {
-                return resolveVerse(
+            // Single-chapter book: a bare number is a verse ("Jude 5").
+            if (chapters.size == 1 && segment.verseStart == null) {
+                return resolveVerseSegment(
                     bookId = bookId,
                     chapter = chapters.single(),
-                    requestedStart = parsed.chapter,
+                    requestedStart = segment.chapter,
                     requestedEnd = null
                 )
             }
-            return ScriptureResolution.NotFound(
-                "No chapter numbered ${parsed.chapter} in book '$bookId'."
+            return SegmentOutcome.Error(
+                ScriptureResolution.NotFound(
+                    "No chapter numbered ${segment.chapter} in book '$bookId'."
+                )
             )
         }
         if (chapterMatches.size > 1) {
-            return ScriptureResolution.Ambiguous(
-                bookId = bookId,
-                chapterNumber = parsed.chapter,
-                candidates = chapterMatches,
-                // REF-04: keep the requested verse/range so choosing a
-                // duplicate chapter does not silently drop the target.
-                verseStart = parsed.verseStart,
-                verseEnd = parsed.verseEnd
-            )
-        }
-        val chapter = chapterMatches.single()
-
-        // Stage B3 — verse resolution (chapter-only references stop here).
-        val requestedStart = parsed.verseStart
-        if (requestedStart == null) {
-            return ScriptureResolution.Resolved(
-                ResolvedScriptureReference(
+            return SegmentOutcome.Error(
+                ScriptureResolution.Ambiguous(
                     bookId = bookId,
-                    chapterId = chapter.id,
-                    chapterNumber = chapter.number,
-                    chapterPosition = chapter.position
+                    chapterNumber = segment.chapter,
+                    candidates = chapterMatches,
+                    verseStart = segment.verseStart,
+                    verseEnd = segment.verseEnd
                 )
             )
         }
 
-        return resolveVerse(bookId, chapter, requestedStart, parsed.verseEnd)
+        val chapter = chapterMatches.single()
+        if (segment.verseStart == null) {
+            if (segment.verseEnd != null) {
+                val endCoverage = bibleRepository.getVersesCovering(bookId, chapter.id, segment.verseEnd)
+                if (endCoverage.isEmpty()) {
+                    return SegmentOutcome.Error(
+                        ScriptureResolution.NotFound(
+                            "No verse covering range end ${segment.verseEnd} in chapter ${chapter.number} of '$bookId'."
+                        )
+                    )
+                }
+            }
+            return SegmentOutcome.Ok(
+                ResolvedScriptureSegment(
+                    bookId = bookId,
+                    chapterId = chapter.id,
+                    chapterNumber = chapter.number,
+                    chapterPosition = chapter.position,
+                    verseEnd = segment.verseEnd
+                )
+            )
+        }
+        return resolveVerseSegment(bookId, chapter, segment.verseStart, segment.verseEnd, segment.openEnd)
     }
 
-    /** Resolves a verse/range within one known chapter (REF-01/02, REF-03). */
-    private suspend fun resolveVerse(
+    private suspend fun resolveVerseSegment(
         bookId: String,
         chapter: Chapter,
         requestedStart: Int,
-        requestedEnd: Int?
-    ): ScriptureResolution {
+        requestedEnd: Int?,
+        openEnd: Boolean = false
+    ): SegmentOutcome {
         val verse = bibleRepository.getVersesCovering(bookId, chapter.id, requestedStart)
         if (verse.isEmpty()) {
-            return ScriptureResolution.NotFound(
-                "No verse covering $requestedStart in chapter ${chapter.number} of '$bookId'."
+            return SegmentOutcome.Error(
+                ScriptureResolution.NotFound(
+                    "No verse covering $requestedStart in chapter ${chapter.number} of '$bookId'."
+                )
             )
         }
         if (verse.size > 1) {
-            return ScriptureResolution.AmbiguousVerse(
-                bookId = bookId,
-                chapterId = chapter.id,
-                chapterNumber = chapter.number,
-                chapterPosition = chapter.position,
-                verseNumber = requestedStart,
-                candidates = verse
+            return SegmentOutcome.Error(
+                ScriptureResolution.AmbiguousVerse(
+                    bookId = bookId,
+                    chapterId = chapter.id,
+                    chapterNumber = chapter.number,
+                    chapterPosition = chapter.position,
+                    verseNumber = requestedStart,
+                    candidates = verse
+                )
             )
         }
         val sourceVerse = verse.single()
 
-        // REF-02: a requested range end must be supported by chapter data.
-        if (requestedEnd != null && requestedEnd != requestedStart) {
+        if (!openEnd && requestedEnd != null && requestedEnd != requestedStart) {
             val endCoverage = bibleRepository.getVersesCovering(bookId, chapter.id, requestedEnd)
             if (endCoverage.isEmpty()) {
-                return ScriptureResolution.NotFound(
-                    "No verse covering range end $requestedEnd in chapter ${chapter.number} of '$bookId'."
+                return SegmentOutcome.Error(
+                    ScriptureResolution.NotFound(
+                        "No verse covering range end $requestedEnd in chapter ${chapter.number} of '$bookId'."
+                    )
                 )
             }
         }
 
-        return ScriptureResolution.Resolved(
-            ResolvedScriptureReference(
+        return SegmentOutcome.Ok(
+            ResolvedScriptureSegment(
                 bookId = bookId,
                 chapterId = chapter.id,
                 chapterNumber = chapter.number,
                 chapterPosition = chapter.position,
                 verseId = sourceVerse.id,
                 verseStart = sourceVerse.verseStart,
-                // The resolved extent covers the source verse's own range and
-                // any explicitly requested range end (a range is never split
-                // into artificial verses; source verses are never invented).
-                verseEnd = max(requestedEnd ?: sourceVerse.verseEnd, sourceVerse.verseEnd)
+                verseEnd = if (openEnd) null else max(requestedEnd ?: sourceVerse.verseEnd, sourceVerse.verseEnd),
+                openEnd = openEnd
             )
         )
     }
