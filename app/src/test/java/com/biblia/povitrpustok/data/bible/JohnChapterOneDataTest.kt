@@ -11,7 +11,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -57,12 +56,22 @@ class JohnChapterOneDataTest {
         val verses = db.getVerses(chapter.id)
         val headings = db.getHeadings(chapter.id)
 
-        // the complete database content for chapter 1 (current corpus:
-        // John 1 starts at verse 2 and has 50 records ending at 51)
+        // The repaired corpus keeps the source's verse-1 prefix (normal
+        // left-aligned opening followed by the centred italic continuation)
+        // and has 51 records, 1..51.
         assertTrue("chapter content must be non-empty", verses.isNotEmpty())
-        assertEquals("first verse is 2", 2, verses.first().verseStart)
+        assertEquals("first verse is 1", 1, verses.first().verseStart)
         assertEquals("last verse is 51", 51, verses.last().verseStart)
-        assertEquals("chapter 1 has 50 verse records in the corpus", 50, verses.size)
+        assertEquals("chapter 1 has 51 verse records in the corpus", 51, verses.size)
+        val verseOne = verses.first().html
+        assertTrue(
+            "verse 1 must keep the normal left-aligned opening",
+            verseOne.contains("Orombak sogllê rochnnê adim")
+        )
+        assertTrue(
+            "verse 1 must keep the centred italic continuation",
+            verseOne.contains("Sôbd aslo") && verseOne.contains("align=center")
+        )
         assertTrue("headings are present", headings.isNotEmpty())
         assertEquals(5, headings.size)
 
@@ -73,27 +82,27 @@ class JohnChapterOneDataTest {
             verses = verses,
             passage = null
         )
-        assertEquals("normal mode must render every verse", 50, items.count { it is ReaderContentItem.Verse })
+        assertEquals("normal mode must render every verse", 51, items.count { it is ReaderContentItem.Verse })
         assertEquals("all headings render", 5, items.count { it is ReaderContentItem.Heading })
         assertTrue("header present", items.any { it is ReaderContentItem.Header })
-        // current corpus headings all carry before_verse = 2
+        // Section headings are anchored to their source-adjacent verses.
         val headingOrder = items.filterIsInstance<ReaderContentItem.Heading>().map { it.heading.beforeVerse }
-        assertEquals(listOf(2, 2, 2, 2, 2), headingOrder)
+        assertEquals(listOf(1, 19, 29, 35, 43), headingOrder)
     }
 
     @Test
-    fun john_chapter_one_starts_at_verse_two_without_inventing_verse_one() = runBlocking {
+    fun john_chapter_one_starts_at_verse_one_without_losing_the_prefix() = runBlocking {
         val db = provider.openBook("juanv")
         val chapter = db.getChapter("juanv", 1)!!
         val verses = db.getVerses(chapter.id)
         val starts = verses.map { it.verseStart }.toSet()
 
-        // Current corpus fact: John 1 has no verse 1; verses 2..51 are
-        // contiguous. The app must render exactly these rows and never
-        // invent a verse 1.
-        assertFalse("verse 1 must not exist in the current corpus", 1 in starts)
-        assertEquals("John 1 starts at verse 2", 2, verses.first().verseStart)
-        assertTrue("verses 2..51 are contiguous", (2..51).all { it in starts })
+        // The source opens inside <_1> without a literal "1" marker; the
+        // importer must preserve that prefix as verse 1, then continue
+        // contiguously through 51.
+        assertTrue("verse 1 must exist after the repair", 1 in starts)
+        assertEquals("John 1 starts at verse 1", 1, verses.first().verseStart)
+        assertTrue("verses 1..51 are contiguous", (1..51).all { it in starts })
 
         // a normal chapter (John 2) also starts at 1, proving chapter 1's
         // offset is source data rather than a reader bug

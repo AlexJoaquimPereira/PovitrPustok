@@ -1,11 +1,11 @@
 {
   "format": 1,
-  "corpus_version": "konkani-catholic-2026.08.17",
+  "corpus_version": "konkani-catholic-2026.10.21",
   "generator": "tools/corpus/import_corpus.py",
   "book_count": 73,
   "total_chapters": 1330,
-  "total_verses": 34272,
-  "aggregate_sha256": "74c77ad0904dae45c550eb529c29ac2b8eaf2e7f17a99af442df1f6587fc3f51",
+  "total_verses": 34289,
+  "aggregate_sha256": "c1f50aab623cc4c116154efb5b6c6d51e7471f02775f81cfa3768b300ff626eb",
   "schema_fingerprint": "13eee65f8facf108b23570f8825eb912452181ef706026964ebff831a2f49166",
   "books": [
     {
@@ -488,10 +488,10 @@
     {
       "file": "juanv.sqlite",
       "id": "juanv",
-      "sha256": "1f6d55e0c92cbc9936d4cd7d6a205037401e3133e910a898275460ea3cba7298",
-      "bytes": 540672,
+      "sha256": "61faec65615fb737082f6f1fe1fcdc7f70c5d9603a86f28a450fc0214e1025e1",
+      "bytes": 520192,
       "chapters": 21,
-      "verses": 864,
+      "verses": 881,
       "user_version": 0
     },
     {

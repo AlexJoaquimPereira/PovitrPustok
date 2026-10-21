@@ -44,6 +44,29 @@ class BibleHtmlRendererTest {
     }
 
     @Test
+    fun john_1_1_keeps_left_opening_and_centered_italic_continuation() {
+        val doc = parser.parse(fixture("john-1-1.html"))
+        val rendered = BibleHtmlRenderer.render(doc)
+
+        assertTrue(
+            "the normal opening must stay left-aligned",
+            rendered.text.startsWith("Orombak sogllê rochnnê adim,")
+        )
+        assertTrue(
+            "the continuation must remain italic",
+            rendered.spanStyles.any { it.item.fontStyle == FontStyle.Italic }
+        )
+        assertTrue(
+            "the italic continuation must carry a centered paragraph style",
+            rendered.paragraphStyles.any { it.item.textAlign == TextAlign.Center }
+        )
+        assertTrue(
+            "the full verse text must be present",
+            rendered.text.contains("Sôbd aslo") && rendered.text.contains("Sôbd Dev aslo")
+        )
+    }
+
+    @Test
     fun job_poetic_preserves_line_breaks_and_center_alignment() {
         val doc = parser.parse(fixture("job-4-2-poetic.html"))
         val rendered = BibleHtmlRenderer.render(doc)

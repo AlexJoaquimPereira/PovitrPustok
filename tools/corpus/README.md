@@ -33,7 +33,7 @@ python3 tools/corpus/generate_manifest.py --check
 
 The importer is deterministic: the same XML and Python/SQLite versions produce
 byte-identical databases. The current corpus reproduces
-`konkani-catholic-2026.08.17`.
+`konkani-catholic-2026.10.21`.
 
 ## CI (option C: private artifact store)
 

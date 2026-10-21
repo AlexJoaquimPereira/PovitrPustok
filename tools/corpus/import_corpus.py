@@ -569,6 +569,24 @@ def split_stream_into_verses(stream: str, start_position: int) -> list[VerseReco
         return []
 
     records = []
+
+    # Some chapters (notably John 1) open with verse-1 content before the
+    # first explicit marker, which is "2". The source has no literal "1"
+    # marker because the chapter starts inside <_1>. Preserve that prefix as
+    # verse 1 instead of dropping it; only do this when the first marker is
+    # 2, so a genuinely verse-2-starting stream is not rewritten.
+    if marker_number(matches[0]) == 2 and stream[:matches[0].start()].strip():
+        prefix = independently_renderable_fragment(stream, 0, matches[0].start())
+        if prefix.strip():
+            records.append(
+                VerseRecord(
+                    verse_start=1,
+                    verse_end=None,
+                    text=prefix.lstrip(),
+                    source_position=start_position,
+                )
+            )
+
     for i, match in enumerate(matches):
         content_start = match.end()
         content_end = matches[i + 1].start() if i + 1 < len(matches) else len(stream)
@@ -781,16 +799,16 @@ def parse_chapter(
         before_verse = verses[0].verse_start if verses else 1
 
         # Determine the first verse whose source content occurs after this
-        # title. In stream mode all titles occur before the flattened stream;
-        # then the first verse is the correct association.
-        if not stream_mode:
-            # Find the first numeric fragment after the title's child index.
-            later_numbers = []
-            for f in fragments:
-                if f.child_index > child_index and NUM_TAG.match(f.tag):
-                    later_numbers.append(int(NUM_TAG.match(f.tag).group(1)))
-            if later_numbers:
-                before_verse = later_numbers[0]
+        # title. This applies in stream mode too: title blocks are
+        # interspersed with numeric children (e.g. John 1's section titles),
+        # and treating every title as chapter-start put all headings at the
+        # top of the chapter.
+        later_numbers = []
+        for f in fragments:
+            if f.child_index > child_index and NUM_TAG.match(f.tag):
+                later_numbers.append(int(NUM_TAG.match(f.tag).group(1)))
+        if later_numbers:
+            before_verse = later_numbers[0]
 
         headings.append(
             (
