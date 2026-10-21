@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -54,8 +55,10 @@ import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
 import com.biblia.povitrpustok.domain.model.Heading
 import com.biblia.povitrpustok.domain.model.Verse
-import com.biblia.povitrpustok.ui.theme.BibleTextStyle
 import com.biblia.povitrpustok.ui.theme.LocalScripturePalette
+import com.biblia.povitrpustok.ui.theme.ScripturePoetryStyle
+import com.biblia.povitrpustok.ui.theme.ScriptureTextStyle
+import com.biblia.povitrpustok.ui.theme.VerseNumberStyle
 import kotlinx.coroutines.delay
 
 /**
@@ -73,13 +76,13 @@ private val htmlParser = BibleHtmlParser()
 private fun rememberDocument(html: String): BibleHtmlDocument =
     remember(html) { htmlParser.parse(html) }
 
-/** Chapter number as the reading header (plan §42). */
+/** Chapter number as a quiet overline; the corpus heading is the title (F-25). */
 @Composable
 fun ChapterHeader(chapter: Chapter, modifier: Modifier = Modifier) {
     Text(
-        text = chapter.number.toString(),
-        style = MaterialTheme.typography.headlineMedium,
-        color = MaterialTheme.colorScheme.onBackground,
+        text = stringResource(R.string.reader_chapter_number, chapter.number).uppercase(),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier
     )
 }
@@ -119,6 +122,7 @@ fun VerseBlock(
 ) {
     val document = rememberDocument(verse.html)
     val palette = LocalScripturePalette.current
+    val gutterWidth = with(LocalDensity.current) { (30f * fontScale).dp }
     val background = when {
         isTarget -> palette.target
         isSelected -> palette.selection
@@ -172,18 +176,28 @@ fun VerseBlock(
         VerseNumber(
             verseStart = verse.verseStart,
             verseEnd = verse.verseEnd,
-            modifier = Modifier.padding(top = 2.dp)
+            modifier = Modifier.width(gutterWidth).padding(top = 2.dp)
         )
-        Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(8.dp))
         // Issue 8: Psalm verses without their own alignment render as a
         // centered poetic block (the <br> line structure is preserved by
         // the renderer; nothing is flattened).
-        BibleHtmlText(
-            document = document,
-            modifier = Modifier.weight(1f),
-            style = BibleTextStyle,
-            textAlign = if (PsalmPoetry.isPoeticVerse(bookId, document)) TextAlign.Center else null
-        )
+        if (PsalmPoetry.isPoeticVerse(bookId, document)) {
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                BibleHtmlText(
+                    document = document,
+                    modifier = Modifier.widthIn(max = 480.dp),
+                    style = ScripturePoetryStyle,
+                    textAlign = TextAlign.Center
+                )
+            }
+        } else {
+            BibleHtmlText(
+                document = document,
+                modifier = Modifier.weight(1f),
+                style = ScriptureTextStyle
+            )
+        }
     }
 }
 
@@ -225,8 +239,9 @@ fun VerseNumber(
         } else {
             stringResource(R.string.verse_range, verseStart, verseEnd)
         },
-        style = MaterialTheme.typography.labelMedium,
+        style = VerseNumberStyle,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.End,
         modifier = modifier
     )
 }
@@ -334,19 +349,25 @@ fun ReaderContent(
             },
         state = listState,
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         items(items, key = { it.key }) { item ->
+            val itemWidth = Modifier.widthIn(max = 620.dp).fillMaxWidth()
             when (item) {
-                is ReaderContentItem.Header -> ChapterHeader(item.chapter)
-                is ReaderContentItem.Heading -> HeadingBlock(item.heading)
+                is ReaderContentItem.Header -> ChapterHeader(item.chapter, itemWidth)
+                is ReaderContentItem.Heading -> HeadingBlock(
+                    item.heading,
+                    itemWidth.padding(top = 16.dp, bottom = 4.dp)
+                )
                 is ReaderContentItem.Verse -> VerseBlock(
                     verse = item.verse,
                     bookId = state.book?.id,
                     isTarget = item.verse.id == state.highlightedVerseId,
                     isBookmarked = state.bookmarkedVerseIds.contains(item.verse.id),
                     isSelected = item.verse.id == state.selectedVerseId,
-                    onSelect = { onVerseSelected(item.verse.id) }
+                    onSelect = { onVerseSelected(item.verse.id) },
+                    modifier = itemWidth
                 )
             }
         }

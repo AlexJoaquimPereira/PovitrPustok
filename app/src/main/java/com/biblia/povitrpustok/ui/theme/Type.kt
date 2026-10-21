@@ -7,12 +7,41 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 /**
- * App typography (implementation plan §44).
+ * App typography (implementation plan §44; F-07).
  *
- * Typography prioritizes reading comfort: generous sizes and relaxed
- * line heights, minimal visual noise.
+ * One serif voice for display, titles and Scripture; one sans voice for UI
+ * chrome and metadata. Every style the app uses is defined here so no screen
+ * silently falls back to Material's Roboto defaults.
  */
 val Typography = Typography(
+    headlineMedium = TextStyle(
+        fontFamily = FontFamily.Serif,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 28.sp,
+        lineHeight = 36.sp,
+        letterSpacing = 0.sp
+    ),
+    titleLarge = TextStyle(
+        fontFamily = FontFamily.Serif,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 22.sp,
+        lineHeight = 30.sp,
+        letterSpacing = 0.sp
+    ),
+    titleMedium = TextStyle(
+        fontFamily = FontFamily.Serif,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 17.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.sp
+    ),
+    titleSmall = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Medium,
+        fontSize = 15.sp,
+        lineHeight = 22.sp,
+        letterSpacing = 0.sp
+    ),
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.Normal,
@@ -23,35 +52,60 @@ val Typography = Typography(
     bodyMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
+        fontSize = 15.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.sp
+    ),
+    bodySmall = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Normal,
+        fontSize = 13.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.sp
+    ),
+    labelLarge = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
-        lineHeight = 22.sp,
-        letterSpacing = 0.25.sp
+        lineHeight = 20.sp,
+        letterSpacing = 0.2.sp
     ),
-    titleLarge = TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 22.sp,
-        lineHeight = 30.sp,
-        letterSpacing = 0.sp
+    labelMedium = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.2.sp
     ),
-    headlineMedium = TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 28.sp,
-        lineHeight = 36.sp,
-        letterSpacing = 0.sp
+    labelSmall = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Normal,
+        fontSize = 11.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.2.sp
     )
 )
 
-/**
- * Dedicated Bible text style (plan §44): the reader feature uses this
- * style for Scripture text rather than default Material typography.
- * It is consumed by the reader screen in a later phase.
- */
-val BibleTextStyle = TextStyle(
+/** Canonical Scripture style: 19/32 serif, 1.68 line height. */
+val ScriptureTextStyle = TextStyle(
     fontFamily = FontFamily.Serif,
     fontWeight = FontWeight.Normal,
     fontSize = 19.sp,
     lineHeight = 32.sp,
     letterSpacing = 0.sp
 )
+
+/** Poetic Scripture: slightly tighter leading, still generous for Konkani. */
+val ScripturePoetryStyle = ScriptureTextStyle.copy(lineHeight = 31.sp)
+
+/** Verse numbers remain quiet metadata, not display text. */
+val VerseNumberStyle = TextStyle(
+    fontFamily = FontFamily.Default,
+    fontWeight = FontWeight.Medium,
+    fontSize = 12.sp,
+    lineHeight = 16.sp,
+    letterSpacing = 0.2.sp
+)
+
+/** Backwards-compatible alias used by the reader. */
+val BibleTextStyle = ScriptureTextStyle
