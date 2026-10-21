@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,6 +54,7 @@ fun BookChaptersScreen(
     onChapterSelected: (chapterPosition: Int) -> Unit,
     onIntroductionSelected: () -> Unit,
     onBack: () -> Unit,
+    onOpenSearch: () -> Unit,
     viewModel: BookChaptersViewModel = hiltViewModel()
 ) {
     LaunchedEffect(bookId) { viewModel.load(bookId) }
@@ -67,6 +69,14 @@ fun BookChaptersScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.back)
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onOpenSearch) {
+                        Icon(
+                            imageVector = Icons.Filled.Search,
+                            contentDescription = stringResource(R.string.home_search)
                         )
                     }
                 }

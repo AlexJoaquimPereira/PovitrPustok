@@ -3,6 +3,7 @@ package com.biblia.povitrpustok.ui
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -49,6 +50,20 @@ class HomeNavigationUiTest {
             "home.daily",
             "home.notice",
         ).forEach { tag -> composeRule.onNodeWithTag(tag).assertIsDisplayed() }
+    }
+
+    @Test
+    fun search_is_reachable_back_works_and_shows_a_result_count() {
+        composeRule.onNodeWithTag("home.search").performClick()
+        composeRule.onNodeWithTag("search.field").performTextInput("subhagi")
+
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("search.count")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("search.count").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithTag("home.notice").assertIsDisplayed()
     }
 
     @Test

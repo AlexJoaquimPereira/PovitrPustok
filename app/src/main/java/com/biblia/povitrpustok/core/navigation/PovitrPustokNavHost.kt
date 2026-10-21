@@ -86,7 +86,9 @@ fun PovitrPustokNavHost() {
             BooksScreen(
                 onBookSelected = { bookId ->
                     navController.navigate(AppDestination.bookChapters(bookId))
-                }
+                },
+                onBack = { navController.popBackStack() },
+                onOpenSearch = { navController.navigate(AppDestination.SEARCH) }
             )
         }
 
@@ -105,7 +107,8 @@ fun PovitrPustokNavHost() {
                 onIntroductionSelected = {
                     navController.navigate(AppDestination.bookIntroduction(bookId))
                 },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onOpenSearch = { navController.navigate(AppDestination.SEARCH) }
             )
         }
 
@@ -150,6 +153,7 @@ fun PovitrPustokNavHost() {
 
         composable(AppDestination.SEARCH) {
             SearchScreen(
+                onBack = { navController.popBackStack() },
                 onOpenResult = { result ->
                     navController.navigate(
                         AppDestination.reader(result.bookId, result.chapterPosition, result.verseId)

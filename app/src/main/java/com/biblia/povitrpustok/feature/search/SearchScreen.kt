@@ -7,13 +7,17 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,12 +30,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -52,24 +63,49 @@ import com.biblia.povitrpustok.domain.model.SearchResult
 @Composable
 fun SearchScreen(
     onOpenResult: (SearchResult) -> Unit,
+    onBack: () -> Unit,
     viewModel: SearchViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val focusManager = LocalFocusManager.current
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text(stringResource(R.string.search_title)) })
+            TopAppBar(
+                title = { Text(stringResource(R.string.search_title)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back)
+                        )
+                    }
+                }
+            )
         }
     ) { innerPadding ->
-        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .imePadding()
+        ) {
             OutlinedTextField(
                 value = state.query,
                 onValueChange = viewModel::onQueryChange,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .testTag("search.field"),
+                label = { Text(stringResource(R.string.search_field_label)) },
                 placeholder = { Text(stringResource(R.string.search_hint)) },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Search,
+                    capitalization = KeyboardCapitalization.None,
+                    autoCorrectEnabled = false
+                ),
+                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                 trailingIcon = {
                     if (state.query.isNotEmpty()) {
                         IconButton(onClick = { viewModel.onQueryChange("") }) {
@@ -90,6 +126,11 @@ fun SearchScreen(
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
 
+            if (state.isSearching) {
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth().testTag("search.progress")
+                )
+            }
             state.warning?.let { warning ->
                 Text(
                     text = warning,
@@ -98,20 +139,29 @@ fun SearchScreen(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                 )
             }
+            if (!state.isSearching && state.error == null &&
+                state.query.isNotBlank() && state.results.isNotEmpty()
+            ) {
+                Text(
+                    text = if (state.results.size >= SEARCH_LIMIT) {
+                        stringResource(R.string.search_result_count_capped, state.results.size)
+                    } else {
+                        stringResource(R.string.search_result_count, state.results.size)
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .testTag("search.count")
+                )
+            }
 
             when {
-                state.isSearching -> Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-
-                state.error != null -> Box(
+                state.error != null -> Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 32.dp),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .padding(horizontal = 32.dp, vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         text = state.error.orEmpty(),
@@ -119,20 +169,28 @@ fun SearchScreen(
                         color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center
                     )
+                    TextButton(onClick = viewModel::retry) {
+                        Text(stringResource(R.string.reader_retry))
+                    }
                 }
 
                 state.query.isBlank() -> CenteredHint(stringResource(R.string.search_empty))
 
-                state.results.isEmpty() -> CenteredHint(stringResource(R.string.search_no_results))
+                state.results.isEmpty() && !state.isSearching ->
+                    CenteredHint(stringResource(R.string.search_no_results))
 
                 else -> LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().testTag("search.results"),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
                 ) {
                     items(state.results, key = { "${it.bookId}-${it.chapterId}-${it.verseId}" }) { result ->
                         SearchResultItem(
                             result = result,
+                            query = state.query,
                             onClick = { onOpenResult(result) }
+                        )
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant
                         )
                     }
                 }
@@ -140,6 +198,8 @@ fun SearchScreen(
         }
     }
 }
+
+private const val SEARCH_LIMIT = 50
 
 @Composable
 private fun CenteredHint(text: String) {

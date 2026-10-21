@@ -75,6 +75,13 @@ class SearchViewModel @Inject constructor(
         bookFilter.value = bookId
     }
 
+    /** Re-runs the current query after a controlled error (Day 4 retry). */
+    fun retry() {
+        viewModelScope.launch {
+            runSearch(_uiState.value.query, _uiState.value.selectedBookId)
+        }
+    }
+
     private suspend fun runSearch(rawQuery: String, bookId: String?) {
         val expression = queryParser.parse(rawQuery)
         _uiState.update { it.copy(isSearching = true, error = null, warning = null) }

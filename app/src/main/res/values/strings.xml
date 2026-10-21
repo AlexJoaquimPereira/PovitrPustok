@@ -47,6 +47,7 @@
     <string name="verse_range">%1$d–%2$d</string>
     <string name="search_title">Search</string>
     <string name="search_hint">Search the Bible</string>
+    <string name="search_field_label">Search the Bible</string>
     <string name="search_clear">Clear</string>
     <string name="search_empty">Type a query to search the Bible.</string>
     <string name="search_no_results">No results found.</string>
@@ -54,5 +55,7 @@
     <string name="search_all_bible">All Bible</string>
     <string name="search_result_reference">%1$d:%2$d</string>
     <string name="search_result_reference_range">%1$d:%2$d–%3$d</string>
+    <string name="search_result_count">%1$d results</string>
+    <string name="search_result_count_capped">Showing first %1$d results</string>
     <string name="corpus_copyright_notice">Bible text © Archdiocese of Goa and Daman. All rights reserved.</string>
 </resources>
