@@ -9,9 +9,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -30,7 +34,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,6 +64,7 @@ fun ReferenceEntryScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val pendingNavigation by viewModel.pendingNavigation.collectAsStateWithLifecycle()
+    val focusManager = LocalFocusManager.current
 
     // Navigate exactly once for a successful resolution, then consume the
     // event so returning to this screen never re-navigates.
@@ -86,14 +94,29 @@ fun ReferenceEntryScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .imePadding()
                 .padding(horizontal = 16.dp)
         ) {
             OutlinedTextField(
                 value = state.query,
                 onValueChange = viewModel::onQueryChange,
                 modifier = Modifier.fillMaxWidth(),
+                label = { Text(stringResource(R.string.reference_entry_label)) },
                 placeholder = { Text(stringResource(R.string.reference_entry_hint)) },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Go,
+                    capitalization = KeyboardCapitalization.None,
+                    autoCorrectEnabled = false
+                ),
+                keyboardActions = KeyboardActions(
+                    onGo = {
+                        if (state.query.isNotBlank() && !state.isResolving) {
+                            focusManager.clearFocus()
+                            viewModel.resolve()
+                        }
+                    }
+                ),
                 trailingIcon = {
                     if (state.query.isNotEmpty()) {
                         IconButton(onClick = { viewModel.onQueryChange("") }) {
@@ -179,7 +202,8 @@ private fun AmbiguousMessage(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onCandidateSelected(chapter) }
-                        .padding(vertical = 10.dp)
+                        .heightIn(min = 48.dp)
+                        .padding(vertical = 14.dp)
                 )
             }
         }
@@ -207,7 +231,8 @@ private fun AmbiguousVerseMessage(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onCandidateSelected(verse) }
-                        .padding(vertical = 10.dp)
+                        .heightIn(min = 48.dp)
+                        .padding(vertical = 14.dp)
                 )
             }
         }

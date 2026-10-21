@@ -12,6 +12,7 @@
     <string name="no_introduction">No introduction available.</string>
     <string name="back">Back</string>
     <string name="reference_entry_title">Go to reference</string>
+    <string name="reference_entry_label">Reference</string>
     <string name="reference_entry_hint">e.g. James 1:5</string>
     <string name="reference_entry_go">Go</string>
     <string name="reference_ambiguous">Multiple chapters match. Choose one:</string>
