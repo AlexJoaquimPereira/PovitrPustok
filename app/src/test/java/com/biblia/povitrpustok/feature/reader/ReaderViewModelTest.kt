@@ -196,6 +196,69 @@ class ReaderViewModelTest {
         }
 
     @Test
+    fun passage_target_in_a_later_chapter_is_applied() =
+        runTest(dispatcher.scheduler) {
+            val bookId = "jakob"
+            val ch1 = chapter(bookId, number = 1, position = 1)
+            val ch2 = chapter(bookId, number = 2, position = 2)
+            val repository = FakeRepository(
+                chapterLists = mapOf(bookId to listOf(ch1, ch2)),
+                contents = mapOf(
+                    bookId to mapOf(1 to content(bookId, ch1), 2 to content(bookId, ch2))
+                )
+            )
+            val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+
+            viewModel.load(
+                bookId = bookId,
+                chapterPosition = 1,
+                targetVerseId = 2000L, // content() id for chapter 2's verse
+                passages = listOf(
+                    ReaderPassageSpec(1, 1, 1),
+                    ReaderPassageSpec(2, 1, 1)
+                )
+            )
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(2000L, state.targetVerseId)
+            assertFalse(state.targetMissing)
+            assertEquals(2, state.passageChapters.size)
+        }
+
+    @Test
+    fun retry_replays_a_multi_chapter_passage() =
+        runTest(dispatcher.scheduler) {
+            val bookId = "jakob"
+            val ch1 = chapter(bookId, number = 1, position = 1)
+            val ch2 = chapter(bookId, number = 2, position = 2)
+            val repository = FakeRepository(
+                chapterLists = mapOf(bookId to listOf(ch1, ch2)),
+                contents = mapOf(
+                    bookId to mapOf(1 to content(bookId, ch1), 2 to content(bookId, ch2))
+                )
+            )
+            val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+
+            viewModel.load(
+                bookId = bookId,
+                chapterPosition = 1,
+                passages = listOf(
+                    ReaderPassageSpec(1, 1, 1),
+                    ReaderPassageSpec(2, 1, 1)
+                )
+            )
+            advanceUntilIdle()
+            assertEquals(2, viewModel.uiState.value.passageChapters.size)
+
+            viewModel.retry()
+            advanceUntilIdle()
+
+            assertEquals(2, viewModel.uiState.value.passageChapters.size)
+            assertEquals(ch1, viewModel.uiState.value.chapter)
+        }
+
+    @Test
     fun long_press_toggles_a_bookmark_and_emits_one_confirmation() =
         runTest(dispatcher.scheduler) {
             val bookId = "jakob"
