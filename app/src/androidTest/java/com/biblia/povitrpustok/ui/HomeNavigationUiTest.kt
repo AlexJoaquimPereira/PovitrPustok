@@ -1,5 +1,6 @@
 package com.biblia.povitrpustok.ui
 
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -9,9 +10,11 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.biblia.povitrpustok.MainActivity
+import androidx.compose.ui.unit.dp
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -88,5 +91,15 @@ class HomeNavigationUiTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText(notice).assertIsDisplayed()
+    }
+
+    @Test
+    fun chapter_cells_meet_the_48dp_touch_target() {
+        composeRule.onNodeWithTag("home.bible").performClick()
+        composeRule.onNodeWithText("Utpoti").performScrollTo().performClick()
+
+        composeRule.onNodeWithTag("chapters.cell.1")
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
     }
 }

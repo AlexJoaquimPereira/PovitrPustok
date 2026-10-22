@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -126,7 +127,7 @@ fun BookChaptersScreen(
                     ) {
                         Text(text = stringResource(R.string.book_introduction))
                     }
-                    val columns = if (LocalDensity.current.fontScale >= 1.5f) 3 else 4
+                    val columns = chapterGridColumns(LocalDensity.current.fontScale)
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(columns),
                         modifier = Modifier.fillMaxSize(),
@@ -137,7 +138,8 @@ fun BookChaptersScreen(
                         items(state.chapters, key = { it.id }) { chapter ->
                             ChapterCell(
                                 label = chapterDisplayLabel(chapter, state.chapters),
-                                onClick = { onChapterSelected(chapter.position) }
+                                onClick = { onChapterSelected(chapter.position) },
+                                modifier = Modifier.testTag("chapters.cell.${chapter.position}")
                             )
                         }
                     }
@@ -151,7 +153,7 @@ fun BookChaptersScreen(
 private fun ChapterCell(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth().heightIn(min = 48.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = ChapterCellMinHeight),
         shape = MaterialTheme.shapes.small,
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {

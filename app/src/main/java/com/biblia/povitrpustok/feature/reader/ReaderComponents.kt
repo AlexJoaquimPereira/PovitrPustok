@@ -56,6 +56,9 @@ import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
 import com.biblia.povitrpustok.domain.model.Heading
 import com.biblia.povitrpustok.domain.model.Verse
 import com.biblia.povitrpustok.ui.theme.LocalScripturePalette
+import com.biblia.povitrpustok.ui.theme.PoetryColumnMaxWidth
+import com.biblia.povitrpustok.ui.theme.ReadingColumnMaxWidth
+import com.biblia.povitrpustok.ui.theme.VerseGutterWidth
 import com.biblia.povitrpustok.ui.theme.ScripturePoetryStyle
 import com.biblia.povitrpustok.ui.theme.ScriptureTextStyle
 import com.biblia.povitrpustok.ui.theme.VerseNumberStyle
@@ -122,7 +125,7 @@ fun VerseBlock(
 ) {
     val document = rememberDocument(verse.html)
     val palette = LocalScripturePalette.current
-    val gutterWidth = with(LocalDensity.current) { (30f * fontScale).dp }
+    val gutterWidth = with(LocalDensity.current) { (VerseGutterWidth.value * fontScale).dp }
     val background = when {
         isTarget -> palette.target
         isSelected -> palette.selection
@@ -186,7 +189,7 @@ fun VerseBlock(
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 BibleHtmlText(
                     document = document,
-                    modifier = Modifier.widthIn(max = 480.dp),
+                    modifier = Modifier.widthIn(max = PoetryColumnMaxWidth),
                     style = ScripturePoetryStyle,
                     textAlign = TextAlign.Center
                 )
@@ -353,7 +356,7 @@ fun ReaderContent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         items(items, key = { it.key }) { item ->
-            val itemWidth = Modifier.widthIn(max = 620.dp).fillMaxWidth()
+            val itemWidth = Modifier.widthIn(max = ReadingColumnMaxWidth).fillMaxWidth()
             when (item) {
                 is ReaderContentItem.Header -> ChapterHeader(item.chapter, itemWidth)
                 is ReaderContentItem.Heading -> HeadingBlock(
