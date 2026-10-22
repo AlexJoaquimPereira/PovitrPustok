@@ -10,6 +10,7 @@ import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.ChapterContent
 import com.biblia.povitrpustok.domain.model.Heading
 import com.biblia.povitrpustok.domain.model.IntroductionBlock
+import com.biblia.povitrpustok.domain.model.ReaderPassageSpec
 import com.biblia.povitrpustok.domain.model.Verse
 import com.biblia.povitrpustok.domain.repository.BibleRepository
 import kotlinx.coroutines.CompletableDeferred
@@ -150,6 +151,49 @@ class ReaderViewModelTest {
         assertFalse(state.isLoading)
         assertNull(state.errorMessage)
     }
+
+    @Test
+    fun passages_load_every_chapter_and_observe_their_bookmarks() =
+        runTest(dispatcher.scheduler) {
+            val bookId = "jakob"
+            val ch1 = chapter(bookId, number = 1, position = 1)
+            val ch2 = chapter(bookId, number = 2, position = 2)
+            val repository = FakeRepository(
+                chapterLists = mapOf(bookId to listOf(ch1, ch2)),
+                contents = mapOf(
+                    bookId to mapOf(1 to content(bookId, ch1), 2 to content(bookId, ch2))
+                )
+            )
+            val bookmarks = FakeBookmarkRepository()
+            bookmarks.addBookmark(
+                bookId = bookId,
+                chapterId = ch2.id,
+                chapterPosition = ch2.position,
+                chapterNumber = ch2.number,
+                verseId = 2000L,
+                verseStart = 1,
+                verseEnd = 1
+            )
+            val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository())
+
+            viewModel.load(
+                bookId = bookId,
+                chapterPosition = 1,
+                passages = listOf(
+                    ReaderPassageSpec(1, 1, 1),
+                    ReaderPassageSpec(2, 1, 1)
+                )
+            )
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(2, state.passageChapters.size)
+            assertEquals(ch1, state.chapter)
+            assertTrue(
+                "bookmarks from every passage chapter must be observed",
+                state.bookmarkedVerseIds.contains(2000L)
+            )
+        }
 
     @Test
     fun long_press_toggles_a_bookmark_and_emits_one_confirmation() =

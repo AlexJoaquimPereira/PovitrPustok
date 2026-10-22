@@ -5,6 +5,7 @@ import com.biblia.povitrpustok.domain.model.ReadingState
 import com.biblia.povitrpustok.domain.repository.BookmarkRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 
 /**
  * In-memory BookmarkRepository for reader tests where bookmark behavior is
@@ -17,7 +18,9 @@ class FakeBookmarkRepository : BookmarkRepository {
     override fun observeBookmarks(): Flow<List<Bookmark>> = _bookmarks
 
     override fun observeBookmarksForChapter(bookId: String, chapterId: Long): Flow<List<Bookmark>> =
-        _bookmarks
+        _bookmarks.map { bookmarks ->
+            bookmarks.filter { it.bookId == bookId && it.chapterId == chapterId }
+        }
 
     override suspend fun isBookmarked(bookId: String, chapterId: Long, verseId: Long): Boolean =
         _bookmarks.value.any { it.bookId == bookId && it.chapterId == chapterId && it.verseId == verseId }

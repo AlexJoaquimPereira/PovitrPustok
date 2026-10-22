@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -167,7 +168,10 @@ class ReaderViewModel @Inject constructor(
                             target == null,
                         passageChapters = passageChapters
                     )
-                    observeChapterBookmarks(bookId, firstContent.chapter.id)
+                    observePassageBookmarks(
+                        bookId = bookId,
+                        chapterIds = chapterContents.values.map { it.chapter.id }.distinct()
+                    )
                     bookmarkRepository.updateReadingState(bookId, firstContent.chapter.position)
                     return@launch
                 }
@@ -238,6 +242,24 @@ class ReaderViewModel @Inject constructor(
                 passageEnd = request.passageEnd,
                 passages = request.passages
             )
+        }
+    }
+
+    /**
+     * Observes bookmarks across every chapter of a passage (Day 11 carry-over):
+     * a verse in the second chapter of a cross-chapter reading must show its
+     * bookmark tab too.
+     */
+    private fun observePassageBookmarks(bookId: String, chapterIds: List<Long>) {
+        bookmarkObservation?.cancel()
+        bookmarkObservation = viewModelScope.launch {
+            combine(
+                chapterIds.map { bookmarkRepository.observeBookmarksForChapter(bookId, it) }
+            ) { chapterLists ->
+                chapterLists.flatMap { it }.map { it.verseId }.toSet()
+            }.collect { ids ->
+                _uiState.update { it.copy(bookmarkedVerseIds = ids) }
+            }
         }
     }
 
