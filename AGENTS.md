@@ -17,6 +17,15 @@ Compact, verified guidance for working in this repository. Read `README.md` for 
   own.
 - **Do not push without the user's explicit approval.**
 
+## Review after every change
+
+- After implementing a change, run a review of the actual diff with the review specialist
+  (`oracle`) before asking to push. Keep the same review session across changes so feedback
+  stays continuous and prior findings can be re-checked.
+- Verify the review against the commits/files yourself — a review summary is a claim, not
+  evidence. Fix blockers and should-fix findings, or state explicitly what is deferred.
+- A review complements, never replaces, the test/build gates below.
+
 ## Toolchain and commands
 
 - Gradle wrapper + **JDK 25** daemon (`gradle/gradle-daemon-jvm.properties`). `compileSdk`/`targetSdk`
