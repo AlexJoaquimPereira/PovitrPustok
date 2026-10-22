@@ -58,6 +58,9 @@ class BookNameMatcherTest {
         assertEquals("tesalonikarank2", BookNameMatcher.match("Tesalonikarank Dusrem")!!.id)
         assertEquals("timotak1", BookNameMatcher.match("Timotak Poilem")!!.id)
         assertEquals("timotak2", BookNameMatcher.match("Timotak Dusrem")!!.id)
+        assertEquals("galasiekarank", BookNameMatcher.match("Galasiek")!!.id)
+        assertEquals("galasiekarank", BookNameMatcher.match("Galasiekarank")!!.id)
+        assertEquals("Barukachem_Pustak", BookNameMatcher.match("Barukachem Pustak")!!.id)
 
         // The new long forms match through the catalog display name.
         assertEquals(

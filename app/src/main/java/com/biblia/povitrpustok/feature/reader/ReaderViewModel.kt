@@ -90,7 +90,11 @@ class ReaderViewModel @Inject constructor(
                     state.copy(
                         isLoading = true,
                         errorMessage = null,
-                        bookDisplayName = catalogName
+                        bookDisplayName = catalogName,
+                        // Never show the previous book's English name (or its
+                        // chapter list) next to the new local name.
+                        book = null,
+                        chapters = emptyList()
                     )
                 }
             }

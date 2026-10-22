@@ -43,7 +43,10 @@ object BookNameMatcher {
         "tesalonikarank poilem" to "tesalonikarank1",
         "tesalonikarank dusrem" to "tesalonikarank2",
         "timotak poilem" to "timotak1",
-        "timotak dusrem" to "timotak2"
+        "timotak dusrem" to "timotak2",
+        "galasiek" to "galasiekarank",
+        "galasiekarank" to "galasiekarank",
+        "barukachem pustak" to "Barukachem_Pustak"
     )
 
     fun match(rawName: String): BibleBook? {

@@ -126,8 +126,22 @@ class SearchViewModel @Inject constructor(
                 )
             }
             if (outcome.results.isNotEmpty()) {
-                val names = bookNames.displayNames(outcome.results.map { it.bookId }.distinct())
-                _uiState.update { it.copy(bookNames = names) }
+                // Refinement is best-effort: a name failure must not escape
+                // and a superseded run must not publish a stale map.
+                try {
+                    val names = bookNames.displayNames(outcome.results.map { it.bookId }.distinct())
+                    _uiState.update { state ->
+                        if (state.results == outcome.results) {
+                            state.copy(bookNames = names)
+                        } else {
+                            state
+                        }
+                    }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // Catalog fallbacks already render; nothing else to do.
+                }
             }
         } catch (e: BibleDataException) {
             _uiState.update {
