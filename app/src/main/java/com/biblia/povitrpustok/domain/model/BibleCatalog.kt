@@ -11,7 +11,7 @@ object BibleCatalog {
 
     val books: List<BibleBook> = listOf(
         BibleBook(id = "Amos", displayName = "Amos", englishName = "Amos", testament = Testament.OLD_TESTAMENT, position = 1, databaseAsset = "bible/Amos.sqlite"),
-        BibleBook(id = "Barukachem_Pustak", displayName = "Barukachem Pustak", englishName = "Baruch", testament = Testament.OLD_TESTAMENT, position = 2, databaseAsset = "bible/Barukachem_Pustak.sqlite"),
+        BibleBook(id = "Barukachem_Pustak", displayName = "Barukachem Pustok", englishName = "Baruch", testament = Testament.OLD_TESTAMENT, position = 2, databaseAsset = "bible/Barukachem_Pustak.sqlite"),
         BibleBook(id = "Daniel", displayName = "Daniel", englishName = "Daniel", testament = Testament.OLD_TESTAMENT, position = 3, databaseAsset = "bible/Daniel.sqlite"),
         BibleBook(id = "Dusri_Somurt", displayName = "Dusri Somurt", englishName = "Deuteronomy", testament = Testament.OLD_TESTAMENT, position = 4, databaseAsset = "bible/Dusri_Somurt.sqlite"),
         BibleBook(id = "Esther", displayName = "Esther", englishName = "Esther", testament = Testament.OLD_TESTAMENT, position = 5, databaseAsset = "bible/Esther.sqlite"),
@@ -60,7 +60,7 @@ object BibleCatalog {
         BibleBook(id = "efezkarank", displayName = "Efezkarank", englishName = "Ephesians", testament = Testament.NEW_TESTAMENT, position = 48, databaseAsset = "bible/efezkarank.sqlite"),
         BibleBook(id = "filemonak", displayName = "Filemonak", englishName = "Philemon", testament = Testament.NEW_TESTAMENT, position = 49, databaseAsset = "bible/filemonak.sqlite"),
         BibleBook(id = "filipkarank", displayName = "Filipkarank", englishName = "Philippians", testament = Testament.NEW_TESTAMENT, position = 50, databaseAsset = "bible/filipkarank.sqlite"),
-        BibleBook(id = "galasiekarank", displayName = "Galasiek", englishName = "Galatians", testament = Testament.NEW_TESTAMENT, position = 51, databaseAsset = "bible/galasiekarank.sqlite"),
+        BibleBook(id = "galasiekarank", displayName = "Galasiekarank Pauluchem Potr", englishName = "Galatians", testament = Testament.NEW_TESTAMENT, position = 51, databaseAsset = "bible/galasiekarank.sqlite"),
         BibleBook(id = "hebrevank", displayName = "Hebrevank", englishName = "Hebrews", testament = Testament.NEW_TESTAMENT, position = 52, databaseAsset = "bible/hebrevank.sqlite"),
         BibleBook(id = "jakob", displayName = "Jakobachem", englishName = "James", testament = Testament.NEW_TESTAMENT, position = 53, databaseAsset = "bible/jakob.sqlite"),
         BibleBook(id = "juanv", displayName = "Juanva", englishName = "John", testament = Testament.NEW_TESTAMENT, position = 54, databaseAsset = "bible/juanv.sqlite"),

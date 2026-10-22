@@ -29,10 +29,11 @@ import com.biblia.povitrpustok.ui.components.englishBookNameVisible
 
 /**
  * One search result row (implementation plan §26): book name, chapter:verse
- * reference, and a plain-text snippet. The book name comes from the static
- * [BibleCatalog] (no database access); the snippet is the FTS5 text_plain
- * window — raw HTML is never displayed and canonical verses.text is never
- * touched by search rendering.
+ * reference, and a plain-text snippet. [bookName] is the resolved name from
+ * [com.biblia.povitrpustok.domain.repository.BookNameRepository]; the static
+ * [BibleCatalog] is only the fallback (F-12), so the row never waits on a
+ * lookup. The snippet is the FTS5 text_plain window — raw HTML is never
+ * displayed and canonical verses.text is never touched by search rendering.
  */
 @Composable
 fun SearchResultItem(

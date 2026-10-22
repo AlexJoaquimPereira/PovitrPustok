@@ -274,4 +274,24 @@ class SearchViewModelTest {
         assertEquals("dev", handle.get<String>("search_query"))
         assertEquals(null, handle.get<String>("search_book_filter"))
     }
+
+    @Test
+    fun book_names_cover_result_ids_with_a_catalog_fallback() = runTest(dispatcher.scheduler) {
+        val repository = FakeSearchRepository().apply {
+            results = listOf(result(bookId = "jakob"))
+        }
+        val viewModel = SearchViewModel(
+            repository,
+            BibleSearchQueryParser(),
+            SavedStateHandle(),
+            FakeBookNameRepository()
+        )
+        runCurrent()
+
+        viewModel.onQueryChange("subhagi")
+        advanceTimeBy(300)
+        advanceUntilIdle()
+
+        assertEquals("Jakobachem", viewModel.uiState.value.bookNames["jakob"])
+    }
 }

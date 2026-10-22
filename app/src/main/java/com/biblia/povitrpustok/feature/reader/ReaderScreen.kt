@@ -148,7 +148,10 @@ private fun ReaderTopBar(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    overflow = TextOverflow.Ellipsis,
+                                    // The chapter/verse label is the critical
+                                    // information: the English name yields first.
+                                    modifier = Modifier.weight(1f, fill = false)
                                 )
                             }
                         Text(

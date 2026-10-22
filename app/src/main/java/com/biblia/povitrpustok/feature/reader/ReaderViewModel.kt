@@ -3,6 +3,7 @@ package com.biblia.povitrpustok.feature.reader
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.biblia.povitrpustok.core.result.BibleDataException
+import com.biblia.povitrpustok.domain.model.BibleCatalog
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.ReaderPassageSpec
 import com.biblia.povitrpustok.domain.repository.BibleRepository
@@ -78,7 +79,21 @@ class ReaderViewModel @Inject constructor(
         lastRequest = LoadRequest(bookId, chapterPosition, targetVerseId, passageStart, passageEnd, passages)
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            // F-12: never a blank top-bar title, even when a first load
+            // fails. Keep the resolved corpus name when the book is the
+            // same one already displayed.
+            val catalogName = BibleCatalog.byId(bookId)?.displayName.orEmpty()
+            _uiState.update { state ->
+                if (state.book?.id == bookId) {
+                    state.copy(isLoading = true, errorMessage = null)
+                } else {
+                    state.copy(
+                        isLoading = true,
+                        errorMessage = null,
+                        bookDisplayName = catalogName
+                    )
+                }
+            }
             try {
                 val book = repository.getBook(bookId)
                 val displayName = bookNames.displayName(bookId)
@@ -179,7 +194,10 @@ class ReaderViewModel @Inject constructor(
                 selectedVerseId = null,
                 highlightedVerseId = null,
                 passage = null,
-                passageChapters = emptyList()
+                passageChapters = emptyList(),
+                // A failed load of a different book must not keep the old
+                // book's English secondary name next to the new title (F-12).
+                book = it.book?.takeIf { book -> book.id == bookId }
             )
         }
     }

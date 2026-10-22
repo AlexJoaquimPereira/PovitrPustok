@@ -1,6 +1,5 @@
 package com.biblia.povitrpustok.feature.search
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -32,7 +30,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -44,7 +41,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -168,16 +164,18 @@ fun SearchScreen(
 
                 state.query.isBlank() -> EmptyState(
                     title = stringResource(R.string.search_empty),
+                    modifier = Modifier.weight(1f),
                     testTag = "search.empty"
                 )
 
                 state.results.isEmpty() && !state.isSearching -> EmptyState(
                     title = stringResource(R.string.search_no_results),
+                    modifier = Modifier.weight(1f),
                     testTag = "search.no_results"
                 )
 
                 else -> LazyColumn(
-                    modifier = Modifier.fillMaxSize().testTag("search.results"),
+                    modifier = Modifier.weight(1f).fillMaxWidth().testTag("search.results"),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
                 ) {
                     items(state.results, key = { "${it.bookId}-${it.chapterId}-${it.verseId}" }) { result ->

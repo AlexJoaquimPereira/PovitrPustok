@@ -9,6 +9,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -30,13 +31,15 @@ class BookmarksViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            bookmarkRepository.observeBookmarks().collect { bookmarks ->
+            // Emit the list immediately with catalog-fallback names, then
+            // refine with corpus names. A slow lookup never delays the list
+            // and a newer emission wins (F-12, S5).
+            bookmarkRepository.observeBookmarks().collectLatest { bookmarks ->
+                _uiState.value = BookmarksUiState(bookmarks = bookmarks, isLoading = false)
                 val names = bookNames.displayNames(bookmarks.map { it.bookId }.distinct())
-                _uiState.value = BookmarksUiState(
-                    bookmarks = bookmarks,
-                    bookNames = names,
-                    isLoading = false
-                )
+                _uiState.update { state ->
+                    if (state.bookmarks == bookmarks) state.copy(bookNames = names) else state
+                }
             }
         }
     }

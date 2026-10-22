@@ -30,8 +30,13 @@ class BookChaptersViewModel @Inject constructor(
 
     fun load(bookId: String) {
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(
+            _uiState.update { state ->
+                // A load for another book must not keep the previous book's
+                // chapters or English name behind the new title (F-12).
+                val sameBook = state.bookId == bookId
+                state.copy(
+                    book = if (sameBook) state.book else null,
+                    chapters = if (sameBook) state.chapters else emptyList(),
                     bookId = bookId,
                     // F-12: never blank while the corpus title is loading.
                     displayName = BibleCatalog.byId(bookId)?.displayName.orEmpty(),
@@ -51,7 +56,12 @@ class BookChaptersViewModel @Inject constructor(
                 )
             } catch (e: BibleDataException) {
                 _uiState.update {
-                    it.copy(isLoading = false, errorMessage = e.message ?: "Failed to load chapters.")
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = e.message ?: "Failed to load chapters.",
+                        book = null,
+                        chapters = emptyList()
+                    )
                 }
             }
         }

@@ -150,6 +150,32 @@ class ReaderViewModelTest {
     }
 
     @Test
+    fun display_name_is_resolved_and_survives_a_failed_first_load() =
+        runTest(dispatcher.scheduler) {
+            val bookId = "jakob"
+            val ch1 = chapter(bookId, number = 1, position = 1)
+            val repository = FakeRepository(
+                chapterLists = mapOf(bookId to listOf(ch1)),
+                contents = mapOf(bookId to mapOf(1 to content(bookId, ch1)))
+            )
+            val viewModel = ReaderViewModel(
+                repository,
+                FakeBookmarkRepository(),
+                FakeBookNameRepository(mapOf("jakob" to "Jakobachem Potr"))
+            )
+
+            viewModel.load(bookId, 1)
+            advanceUntilIdle()
+            assertEquals("Jakobachem Potr", viewModel.uiState.value.bookDisplayName)
+
+            // F-12: a failing first load for another book still shows a name.
+            viewModel.load("Utpoti", 999)
+            advanceUntilIdle()
+            assertNotNull(viewModel.uiState.value.errorMessage)
+            assertEquals("Utpoti", viewModel.uiState.value.bookDisplayName)
+        }
+
+    @Test
     fun error_state_reports_missing_chapter() = runTest(dispatcher.scheduler) {
         val viewModel = ReaderViewModel(FakeRepository(), FakeBookmarkRepository(), FakeBookNameRepository())
         viewModel.load("jakob", 999)

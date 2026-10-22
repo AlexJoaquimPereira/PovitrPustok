@@ -6,7 +6,7 @@ import com.biblia.povitrpustok.core.database.AssetBibleDatabaseProvider
 import com.biblia.povitrpustok.domain.model.BibleCatalog
 import com.biblia.povitrpustok.testutil.CorpusAvailabilityRule
 import java.text.Normalizer
-import kotlin.math.min
+import java.util.Locale
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertTrue
@@ -26,12 +26,12 @@ import org.robolectric.RobolectricTestRunner
  * "name changes between screens" defect, so this test compares them after
  * folding case, diacritics, and punctuation.
  *
- * The comparison is deliberately tolerant: the corpus legitimately differs
- * in ways that are not a different book — "PUSTOK" vs "Pustok",
- * "PUSTOKAM" vs "Pustok", the "PAULUCHEM POTR" suffix, and one extra
- * consonant in "MHONN’NNEÔ". It therefore accepts a prefix match in either
- * direction or an edit distance of at most 2, and treats an absent corpus
- * title as the documented catalog fallback (e.g. 2 Kings).
+ * The comparison is exact. The only tolerated differences are listed in
+ * [ACCEPTED_CORPUS_VARIANTS] (formal Gospel headings and "POTR" suffixes
+ * that are deliberately not part of the short catalog name) and
+ * [BOOKS_WITHOUT_CORPUS_TITLE] (the corpus has no title block, so the
+ * catalog name is the documented fallback). An allowlist entry that is no
+ * longer needed fails the test, so the list cannot rot.
  */
 @RunWith(RobolectricTestRunner::class)
 class BookTitleParityTest {
@@ -58,11 +58,25 @@ class BookTitleParityTest {
     @Test
     fun every_corpus_title_still_matches_its_catalog_display_name() = runBlocking {
         val mismatches = mutableListOf<String>()
+        val staleAllowlist = mutableListOf<String>()
 
         BibleCatalog.books.forEach { book ->
-            val corpusTitle = titles.getDisplayName(book.id) ?: return@forEach
-            if (!namesAgree(corpusTitle, book.displayName)) {
-                mismatches += "${book.id}: corpus \"$corpusTitle\" vs catalog \"${book.displayName}\""
+            val corpusTitle = titles.getDisplayName(book.id)
+            if (corpusTitle == null) {
+                if (book.id !in BOOKS_WITHOUT_CORPUS_TITLE) {
+                    mismatches += "${book.id}: catalog \"${book.displayName}\" has no corpus title"
+                }
+                return@forEach
+            }
+
+            val corpus = fold(corpusTitle)
+            val catalog = fold(book.displayName)
+            val accepted = ACCEPTED_CORPUS_VARIANTS[book.id]
+            when {
+                corpus == catalog -> if (accepted != null) staleAllowlist += book.id
+                accepted == corpus -> Unit
+                else -> mismatches +=
+                    "${book.id}: corpus \"$corpusTitle\" vs catalog \"${book.displayName}\""
             }
         }
 
@@ -70,40 +84,51 @@ class BookTitleParityTest {
             "catalog and corpus book names drifted:\n" + mismatches.joinToString("\n"),
             mismatches.isEmpty()
         )
-    }
-
-    private fun namesAgree(corpusTitle: String, catalogName: String): Boolean {
-        val corpus = fold(corpusTitle)
-        val catalog = fold(catalogName)
-        if (corpus.isEmpty() || catalog.isEmpty()) return false
-        return corpus.startsWith(catalog) ||
-            catalog.startsWith(corpus) ||
-            editDistance(corpus, catalog) <= MAX_EDIT_DISTANCE
+        assertTrue(
+            "obsolete allowlist entries (corpus now equals the catalog):\n" +
+                staleAllowlist.joinToString("\n"),
+            staleAllowlist.isEmpty()
+        )
     }
 
     /** Case-, diacritic-, and punctuation-insensitive form for comparison only. */
     private fun fold(text: String): String =
         Normalizer.normalize(text, Normalizer.Form.NFD)
-            .lowercase()
+            .lowercase(Locale.ROOT)
             .filter { it.isLetterOrDigit() }
 
-    private fun editDistance(a: String, b: String): Int {
-        var previous = IntArray(b.length + 1) { it }
-        var current = IntArray(b.length + 1)
-        for (i in 1..a.length) {
-            current[0] = i
-            for (j in 1..b.length) {
-                val substitution = previous[j - 1] + if (a[i - 1] == b[j - 1]) 0 else 1
-                current[j] = min(substitution, min(previous[j] + 1, current[j - 1] + 1))
-            }
-            val swap = previous
-            previous = current
-            current = swap
-        }
-        return previous[b.length]
-    }
-
     private companion object {
-        const val MAX_EDIT_DISTANCE = 2
+        /**
+         * Books whose corpus heading legitimately carries more than the short
+         * catalog name (formal Gospel title, "POTR"/"POTR"-style suffix, or a
+         * documented corpus spelling). Values are the folded corpus title.
+         */
+        val ACCEPTED_CORPUS_VARIANTS: Map<String, String> = mapOf(
+            "Fuddareanchem_Pustok" to "fuddareanchempustok",
+            "Itihasachem_Poilem_Pustok" to "itihasachempoilempustokam",
+            "Mhonnneo" to "mhonnnneo",
+            "Razanchem_Poilem_Pustok" to "razanchempoilempustokam",
+            "efezkarank" to "efezkarankpauluchempotr",
+            "filemonak" to "filemonakpauluchempotr",
+            "filipkarank" to "filipkarankpauluchempotr",
+            "hebrevank" to "hebrevankpotr",
+            "jakob" to "jakobachempotr",
+            "juanv" to "juanvapormannemjezukristachemxubhvortoman",
+            "juanv1" to "juanvachempoilempotr",
+            "juanv2" to "juanvachemdusrempotr",
+            "juanv3" to "juanvachemtisrempotr",
+            "juanvak_prokasovnni" to "juanvakprokasovnni",
+            "judas" to "judasachempotr",
+            "koloskarank" to "koloskarankpauluchempotr",
+            "lukas" to "lukapormannemjezukristachemxubhvortoman",
+            "mark" to "markupormannemjezukristachemxubhvortoman",
+            "matev" to "matevapormannemjezukristachemxubhvortoman",
+            "pedru1" to "pedruchempoilempotr",
+            "pedru2" to "pedruchemdusrempotr",
+            "tilak" to "titakpauluchempotr"
+        )
+
+        /** Books with no `title` introduction block (catalog fallback is the name). */
+        val BOOKS_WITHOUT_CORPUS_TITLE = setOf("Razanchem_Dusrem_Pustok")
     }
 }

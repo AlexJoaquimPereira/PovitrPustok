@@ -89,7 +89,13 @@ class SearchViewModel @Inject constructor(
         _uiState.update { it.copy(isSearching = true, error = null, warning = null) }
         if (expression == null) {
             _uiState.update {
-                it.copy(results = emptyList(), isSearching = false, resultCount = null, warning = null)
+                it.copy(
+                    results = emptyList(),
+                    bookNames = emptyMap(),
+                    isSearching = false,
+                    resultCount = null,
+                    warning = null
+                )
             }
             return
         }
@@ -99,11 +105,12 @@ class SearchViewModel @Inject constructor(
                 bookIds = bookId?.let { listOf(it) }
             )
             val partial = outcome.results.isNotEmpty() && outcome.failures.isNotEmpty()
-            val names = bookNames.displayNames(outcome.results.map { it.bookId }.distinct())
+            // Emit results first: the rows fall back to catalog names, so the
+            // list never waits for corpus name lookups (F-12, S5).
             _uiState.update {
                 it.copy(
                     results = outcome.results,
-                    bookNames = names,
+                    bookNames = emptyMap(),
                     isSearching = false,
                     resultCount = outcome.results.size,
                     error = if (outcome.results.isEmpty() && outcome.failures.isNotEmpty()) {
@@ -118,10 +125,15 @@ class SearchViewModel @Inject constructor(
                     }
                 )
             }
+            if (outcome.results.isNotEmpty()) {
+                val names = bookNames.displayNames(outcome.results.map { it.bookId }.distinct())
+                _uiState.update { it.copy(bookNames = names) }
+            }
         } catch (e: BibleDataException) {
             _uiState.update {
                 it.copy(
                     results = emptyList(),
+                    bookNames = emptyMap(),
                     isSearching = false,
                     error = e.message ?: "Search failed.",
                     warning = null,

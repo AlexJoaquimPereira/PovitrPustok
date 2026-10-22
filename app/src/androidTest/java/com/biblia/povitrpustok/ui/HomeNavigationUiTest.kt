@@ -110,6 +110,7 @@ class HomeNavigationUiTest {
 
         composeRule.onNodeWithTag("bookmarks.empty.action").performClick()
 
-        composeRule.onNodeWithText("Books").assertIsDisplayed()
+        // A Books-only node, not just the shared title string.
+        composeRule.onNodeWithText("Old Testament").assertIsDisplayed()
     }
 }

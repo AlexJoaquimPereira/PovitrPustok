@@ -14,8 +14,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,6 +39,7 @@ import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
 import com.biblia.povitrpustok.ui.components.BookName
+import com.biblia.povitrpustok.ui.components.BookNameLayout
 import com.biblia.povitrpustok.ui.components.EmptyState
 import com.biblia.povitrpustok.ui.components.ErrorState
 import com.biblia.povitrpustok.ui.components.LoadingState
@@ -75,7 +74,10 @@ fun BookChaptersScreen(
                         localName = state.displayName.ifBlank {
                             state.book?.displayName.orEmpty()
                         },
-                        englishName = state.book?.englishName
+                        englishName = state.book?.englishName,
+                        // One line in the app bar: the English label yields
+                        // space (and ellipsizes) before the local name.
+                        layout = BookNameLayout.INLINE
                     )
                 },
                 navigationIcon = {

@@ -79,7 +79,15 @@ fun PovitrPustokNavHost() {
                     )
                 },
                 onBack = { navController.popBackStack() },
-                onOpenBooks = { navController.navigate(AppDestination.BOOKS) }
+                onOpenBooks = {
+                    // Replace the empty list rather than stacking Books on
+                    // top of it: Back from Books returns Home, and repeated
+                    // taps cannot pile up destinations (F-16).
+                    navController.navigate(AppDestination.BOOKS) {
+                        popUpTo(AppDestination.BOOKMARKS) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 

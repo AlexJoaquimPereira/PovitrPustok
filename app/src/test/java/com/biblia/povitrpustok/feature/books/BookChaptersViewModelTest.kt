@@ -10,6 +10,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.biblia.povitrpustok.core.database.AssetBibleDatabaseProvider
 import com.biblia.povitrpustok.data.bible.BibleRepositoryImpl
 import com.biblia.povitrpustok.domain.repository.BibleRepository
+import com.biblia.povitrpustok.domain.repository.BookNameRepository
 import org.junit.Rule
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -49,9 +50,10 @@ class BookChaptersViewModelTest {
 
     private fun settledState(
         timeoutMs: Long = 10_000,
+        names: BookNameRepository = FakeBookNameRepository(),
         load: (BookChaptersViewModel) -> Unit
     ): BookChaptersUiState {
-        val viewModel = BookChaptersViewModel(repository, FakeBookNameRepository())
+        val viewModel = BookChaptersViewModel(repository, names)
         load(viewModel)
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
@@ -72,6 +74,14 @@ class BookChaptersViewModelTest {
         assertEquals(5, s.chapters.size)
         assertEquals(listOf(1, 2, 3, 4, 5), s.chapters.map { it.position })
         assertNull(s.errorMessage)
+    }
+
+    @Test
+    fun display_name_uses_the_injected_name_repository() {
+        val s = settledState(names = FakeBookNameRepository(mapOf("jakob" to "Jakobachem Potr"))) {
+            it.load("jakob")
+        }
+        assertEquals("Jakobachem Potr", s.displayName)
     }
 
     @Test
