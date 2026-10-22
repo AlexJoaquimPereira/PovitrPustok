@@ -21,9 +21,14 @@ object ReaderPassageCodec {
             val range = part.substring(colon + 1)
             val dash = range.indexOf('-')
             if (dash < 0) return@mapNotNull null
-            val start = range.substring(0, dash).toIntOrNull()
-            val end = range.substring(dash + 1).toIntOrNull()
-            if (start == null && end == null) return@mapNotNull null
+            val startText = range.substring(0, dash)
+            val endText = range.substring(dash + 1)
+            val start = startText.toIntOrNull()
+            val end = endText.toIntOrNull()
+            // An empty side is an open end; a non-empty non-number is
+            // malformed. Both empty means the whole chapter.
+            if (startText.isNotEmpty() && start == null) return@mapNotNull null
+            if (endText.isNotEmpty() && end == null) return@mapNotNull null
             ReaderPassageSpec(chapter, start, end, openEnd = end == null && start != null)
         }
     }
