@@ -188,7 +188,7 @@ fun ReaderScreen(
                     targetState = state,
                     // Only chapter changes animate; selection/highlight state
                     // updates recompose in place.
-                    contentKey = { it.chapter?.id },
+                    contentKey = { it.book?.id to it.chapter?.id },
                     transitionSpec = {
                         val forward = (targetState.chapter?.position ?: 0) >=
                             (initialState.chapter?.position ?: 0)

@@ -1,5 +1,7 @@
 package com.biblia.povitrpustok.feature.reader
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -137,14 +139,14 @@ fun VerseBlock(
     val document = rememberDocument(verse.html)
     val palette = LocalScripturePalette.current
     val gutterWidth = with(LocalDensity.current) { (VerseGutterWidth.value * fontScale).dp }
-    val background by androidx.compose.animation.animateColorAsState(
+    val background by animateColorAsState(
         targetValue = when {
             isTarget -> palette.target
             isSelected -> palette.selection
             isBookmarked -> palette.bookmarked
             else -> Color.Transparent
         },
-        animationSpec = androidx.compose.animation.core.tween(STATE_COLOR_MS),
+        animationSpec = tween(STATE_COLOR_MS),
         label = "verse-state-color"
     )
     val stateDescription = verseStateDescription(isTarget, isSelected, isBookmarked)
