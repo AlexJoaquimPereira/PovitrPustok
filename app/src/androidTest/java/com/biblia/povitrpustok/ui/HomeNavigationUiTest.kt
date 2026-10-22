@@ -196,8 +196,9 @@ class HomeNavigationUiTest {
         composeRule.onNode(hasSetTextAction()).performTextInput("Juanv 1")
         composeRule.onNodeWithText("Go").performClick()
 
+        // Gate on loaded content, not on the always-present action bar.
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodesWithTag("reader.actionbar").fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodesWithTag("reader.verse.1").fetchSemanticsNodes().isNotEmpty()
         }
         // A chapter-only reference is not a filtered passage: no banner.
         composeRule.onNodeWithTag("reader.passage_banner").assertDoesNotExist()
