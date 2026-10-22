@@ -55,6 +55,9 @@ from typing import Iterable
 OUT_DIR = "biblios_db"
 
 NUM_TAG = re.compile(r"^_(\d+)$")
+# Combined source records such as <_14-15> are one verse range, not a verse
+# numbered 15 (which silently dropped verse 14).
+NUM_RANGE_TAG = re.compile(r"^_(\d+)-(\d+)$")
 INTRO_TAG = re.compile(r"^_intro$", re.I)
 TITLE_TAG = re.compile(r"^_title$", re.I)
 
@@ -72,8 +75,11 @@ TITLE_TAG = re.compile(r"^_title$", re.I)
 #   HTML attributes / ordinary alphanumeric words
 VERSE_MARKER = re.compile(
     r"(?<![0-9A-Za-z.:/])"
-    r"(?P<number>[0-9]{1,3})"
-    r"(?P<suffix>[A-Za-z]+)?"
+    r"(?:"
+    r"(?P<start>[0-9]{1,3})\s*-\s*(?P<end>[0-9]{1,3})"
+    r"|"
+    r"(?P<number>[0-9]{1,3})(?P<suffix>[A-Za-z]+)?"
+    r")"
     r"(?=\s)"
 )
 
@@ -393,12 +399,33 @@ def normalize_html_for_plain_text(source: str) -> str:
 # Verse detection
 # ---------------------------------------------------------------------------
 
+def verse_tag_bounds(tag: str) -> tuple[int, int] | None:
+    """(start, end) for a numeric verse tag, including combined ranges."""
+    combined = NUM_RANGE_TAG.match(tag)
+    if combined:
+        return int(combined.group(1)), int(combined.group(2))
+    single = NUM_TAG.match(tag)
+    if single:
+        value = int(single.group(1))
+        return value, value
+    return None
+
+
 def marker_matches(text: str) -> list[re.Match[str]]:
     return list(VERSE_LOCATOR_RE.finditer(text))
 
 
 def marker_number(match: re.Match[str]) -> int:
-    return int(match.group("number"))
+    number = match.group("number")
+    return int(number if number is not None else match.group("start"))
+
+
+def marker_bounds(match: re.Match[str]) -> tuple[int, int]:
+    """(start, end) for a single marker or a combined range locator."""
+    if match.group("start") is not None:
+        return int(match.group("start")), int(match.group("end"))
+    value = int(match.group("number"))
+    return value, value
 
 
 def remove_first_marker(text: str, match: re.Match[str]) -> str:
@@ -596,10 +623,11 @@ def split_stream_into_verses(stream: str, start_position: int) -> list[VerseReco
         fragment = independently_renderable_fragment(stream, content_start, content_end)
         if not fragment.strip():
             continue
+        start, end = marker_bounds(match)
         records.append(
             VerseRecord(
-                verse_start=marker_number(match),
-                verse_end=None,
+                verse_start=start,
+                verse_end=None if end == start else end,
                 text=fragment.lstrip(),
                 source_position=start_position + len(records),
             )
@@ -614,6 +642,24 @@ def parse_source_block(
 ) -> list[VerseRecord]:
     """Parse a numeric XML child while preserving HTML context."""
     text = fragment.html
+    combined = NUM_RANGE_TAG.match(fragment.tag)
+    if combined:
+        start = int(combined.group(1))
+        end = int(combined.group(2))
+        if start < 1 or end < start:
+            raise ValueError(f"invalid combined verse tag {fragment.tag}")
+        # The source repeats the range as plain text ("14-15  Amcho...").
+        body = re.sub(r"^\s*\d+\s*-\s*\d+\s*", "", text, count=1)
+        return [
+            VerseRecord(
+                verse_start=start,
+                verse_end=end,
+                text=body.lstrip(),
+                source_position=source_position,
+                raw_locator=f"{start}-{end}",
+            )
+        ]
+
     explicit_match = NUM_TAG.match(fragment.tag)
     explicit_number = int(explicit_match.group(1)) if explicit_match else None
     if explicit_number is None:
@@ -729,7 +775,7 @@ def parse_chapter(
     fragments, title_blocks = collect_chapter_fragments(chapter)
 
     numeric_fragments = [
-        f for f in fragments if NUM_TAG.match(f.tag)
+        f for f in fragments if verse_tag_bounds(f.tag) is not None
     ]
 
     # Full source stream is always available as a fallback.
@@ -741,8 +787,11 @@ def parse_chapter(
     # do not account for them, the child hierarchy is not a reliable verse
     # boundary. Use stream parsing.
     child_numbers = [
-        int(NUM_TAG.match(f.tag).group(1))
+        number
         for f in numeric_fragments
+        for number in (
+            lambda bounds: [bounds[0]] if bounds[0] == bounds[1] else [bounds[0], bounds[1]]
+        )(verse_tag_bounds(f.tag))
     ]
 
     stream_numbers = [marker_number(m) for m in all_matches]
@@ -766,7 +815,7 @@ def parse_chapter(
         position = 0
 
         for fragment in fragments:
-            if not NUM_TAG.match(fragment.tag):
+            if verse_tag_bounds(fragment.tag) is None:
                 # Ignore title handled above and non-numeric tail/text fragments
                 # for explicit mode. If they contain verse markers, switch to
                 # stream mode to avoid losing them.
@@ -808,8 +857,9 @@ def parse_chapter(
         # top of the chapter.
         later_numbers = []
         for f in fragments:
-            if f.child_index > child_index and NUM_TAG.match(f.tag):
-                later_numbers.append(int(NUM_TAG.match(f.tag).group(1)))
+            bounds = verse_tag_bounds(f.tag)
+            if f.child_index > child_index and bounds is not None:
+                later_numbers.append(bounds[0])
         if later_numbers:
             before_verse = later_numbers[0]
 

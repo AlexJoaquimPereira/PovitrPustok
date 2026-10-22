@@ -82,32 +82,39 @@ class PsalmRealDataTest {
     }
 
     @Test
-    fun psalm_112_starts_at_verse_2_in_the_database() = runBlocking {
+    fun psalm_112_starts_at_verse_1_after_the_prefix_repair() = runBlocking {
         val db = provider.openBook(PsalmPoetry.PSALMS_BOOK_ID)
         val psalm112 = db.getChapter(PsalmPoetry.PSALMS_BOOK_ID, 112)
         val verses = db.getVerses(psalm112!!.id)
-        assertEquals("database first verse_start is 2 (Issue 9: corpus data)", 2, verses.first().verseStart)
+        assertEquals(
+            "the regenerated corpus keeps the verse-1 prefix as its own record",
+            1,
+            verses.first().verseStart
+        )
         // DB-vs-display assertion: the Reader renders the database value.
         val headings = db.getHeadings(psalm112.id)
         val items = ReaderContentBuilder.build(psalm112, headings, verses)
         val displayedFirst = items.filterIsInstance<ReaderContentItem.Verse>().first()
         assertEquals(
             "the reader must display the database verse_start verbatim",
-            2,
+            1,
             displayedFirst.verse.verseStart
         )
     }
 
     @Test
-    fun psalm_numbering_offset_is_a_corpus_fact_across_psalms() = runBlocking {
+    fun only_psalm_92_lacks_a_verse_1_record() = runBlocking {
         val db = provider.openBook(PsalmPoetry.PSALMS_BOOK_ID)
         val chapters = db.getChapters(PsalmPoetry.PSALMS_BOOK_ID)
-        val missingVerse1 = chapters.count { chapter ->
+        val missingVerse1 = chapters.filter { chapter ->
             db.getVerses(chapter.id).none { it.verseStart == 1 }
         }
-        // 147 of 150 psalms have no verse_start=1 record (current corpus;
-        // Psalms 55, 67 and 135 retain verse 1)
-        assertEquals("147 psalms lack a verse 1 record in the DB", 147, missingVerse1)
+        assertEquals(
+            "after the prefix repair only Psalm 92 starts at verse 2 in the source",
+            1,
+            missingVerse1.size
+        )
+        assertEquals(92, missingVerse1.single().number)
     }
 
     @Test

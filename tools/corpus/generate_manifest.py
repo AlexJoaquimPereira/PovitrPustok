@@ -22,7 +22,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_ASSETS = REPO_ROOT / "app/src/main/assets/bible"
 DEFAULT_MANIFEST = Path(__file__).resolve().parent / "corpus-manifest.json"
-CORPUS_VERSION = "konkani-catholic-2026.10.21"
+CORPUS_VERSION = "konkani-catholic-2026.10.22"
 GENERATOR = "tools/corpus/import_corpus.py"
 
 

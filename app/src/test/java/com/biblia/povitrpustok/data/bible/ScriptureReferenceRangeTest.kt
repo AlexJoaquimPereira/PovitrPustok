@@ -115,11 +115,14 @@ class ScriptureReferenceRangeTest {
     }
 
     @Test
-    fun verse_absorbed_only_in_text_is_a_controlled_not_found() = runBlocking {
-        // James 1 has no verse-7 row and verse 6's range metadata ends at 6;
-        // the combined text must not be guessed from HTML.
+    fun verse_inside_a_combined_source_range_resolves() = runBlocking {
+        // The regenerated corpus keeps the source's combined 7-8 record as a
+        // real range, so verse 7 is covered instead of being guessed from text.
         val resolution = resolver.resolve("James 1:7")
-        assertTrue("expected NotFound, got $resolution", resolution is ScriptureResolution.NotFound)
+        assertTrue("expected Resolved, got $resolution", resolution is ScriptureResolution.Resolved)
+        val reference = (resolution as ScriptureResolution.Resolved).reference
+        assertEquals(7, reference.verseStart)
+        assertEquals(8, reference.verseEnd)
     }
 
     @Test
@@ -166,9 +169,18 @@ class ScriptureReferenceRangeTest {
     }
 
     @Test
-    fun range_end_in_a_corpus_gap_is_not_found() = runBlocking {
-        // James 1 has no record for verse 7 (only an inline text marker).
+    fun range_ending_inside_a_combined_record_resolves() = runBlocking {
         val resolution = resolver.resolve("James 1:6-7")
+        assertTrue("expected Resolved, got $resolution", resolution is ScriptureResolution.Resolved)
+        val reference = (resolution as ScriptureResolution.Resolved).reference
+        assertEquals(6, reference.verseStart)
+        assertEquals(7, reference.verseEnd)
+    }
+
+    @Test
+    fun a_genuine_corpus_gap_is_still_a_controlled_not_found() = runBlocking {
+        // Psalm 92 genuinely starts at verse 2 in the source.
+        val resolution = resolver.resolve("Psalm 92:1")
         assertTrue("expected NotFound, got $resolution", resolution is ScriptureResolution.NotFound)
     }
 
@@ -223,5 +235,19 @@ class ScriptureReferenceRangeTest {
         // Esther 3:2 is ambiguous; that must win over the impossible end 999.
         val resolution = resolver.resolve("Esther 3:2-999")
         assertTrue("expected AmbiguousVerse, got $resolution", resolution is ScriptureResolution.AmbiguousVerse)
+    }
+
+    @Test
+    fun daily_reading_references_with_combined_records_resolve() = runBlocking {
+        // Regressions: Ephesians 3 uses a combined <_14-15> source record and
+        // Psalm 112 previously lost its verse-1 prefix.
+        listOf(
+            "Ephesians 3:14",
+            "Ephesians 3:14-21",
+            "Psalm 112:1-2, 5-6, 7-8, 9"
+        ).forEach { reference ->
+            val resolution = resolver.resolve(reference)
+            assertTrue("expected Resolved for '$reference', got $resolution", resolution is ScriptureResolution.Resolved)
+        }
     }
 }

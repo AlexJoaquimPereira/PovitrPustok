@@ -51,17 +51,22 @@ class BibleVerseEndMappingTest {
         val verses = database.getVerses(chapter.id)
         assertTrue("James 1 must contain verses", verses.isNotEmpty())
 
-        // Prove the branch under test is actually exercised: the corpus stores NULL.
+        // Prove both branches are exercised: most rows store NULL, while the
+        // regenerated corpus also preserves at least one real source range.
         val nullRows = countNullVerseEnd("jakob", verses.map { it.id })
-        assertEquals(
-            "every James 1 row must have a NULL stored verse_end",
-            verses.size,
-            nullRows
+        assertTrue("expected NULL verse_end rows", nullRows > 0)
+        assertTrue(
+            "expected at least one preserved source range in James 1",
+            nullRows < verses.size
         )
 
         assertTrue(
-            "a plain verse must report verseEnd == verseStart, not 0",
-            verses.all { it.verseEnd == it.verseStart }
+            "verseEnd must never fall below verseStart",
+            verses.all { it.verseEnd >= it.verseStart }
+        )
+        assertTrue(
+            "source ranges must stay ranges",
+            verses.any { it.verseEnd > it.verseStart }
         )
         assertTrue("verse numbers must remain positive", verses.all { it.verseStart >= 1 && it.verseEnd >= 1 })
 
