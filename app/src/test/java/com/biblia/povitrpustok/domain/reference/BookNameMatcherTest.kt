@@ -45,6 +45,28 @@ class BookNameMatcherTest {
         assertEquals("tesalonikarank1", BookNameMatcher.match("1 THESSALONIANS")!!.id)
     }
 
+    /**
+     * F-12: renaming the catalog to the corpus titles must not break the
+     * short Konkani names users previously saw and could type.
+     */
+    @Test
+    fun previous_short_display_names_still_resolve() {
+        assertEquals("korintkarant1", BookNameMatcher.match("Poilem")!!.id)
+        assertEquals("korintkarant2", BookNameMatcher.match("Dusrem")!!.id)
+        assertEquals("romkarank", BookNameMatcher.match("Romkarant")!!.id)
+        assertEquals("tesalonikarank1", BookNameMatcher.match("Tesalonikarank Poilem")!!.id)
+        assertEquals("tesalonikarank2", BookNameMatcher.match("Tesalonikarank Dusrem")!!.id)
+        assertEquals("timotak1", BookNameMatcher.match("Timotak Poilem")!!.id)
+        assertEquals("timotak2", BookNameMatcher.match("Timotak Dusrem")!!.id)
+
+        // The new long forms match through the catalog display name.
+        assertEquals(
+            "korintkarant1",
+            BookNameMatcher.match("Korintkarank Pauluchem Poilem Potr")!!.id
+        )
+        assertEquals("romkarank", BookNameMatcher.match("Romkarank Pauluchem Potr")!!.id)
+    }
+
     @Test
     fun matching_is_case_insensitive() {
         assertEquals("jakob", BookNameMatcher.match("JAMES")!!.id)

@@ -34,7 +34,16 @@ object BookNameMatcher {
         // Corpus metadata for these books lacks proper English names, so the
         // lectionary forms are provided as aliases (catalog data untouched).
         "1 thessalonians" to "tesalonikarank1",
-        "2 thessalonians" to "tesalonikarank2"
+        "2 thessalonians" to "tesalonikarank2",
+        // F-12: the catalog now carries the full corpus title, so the short
+        // forms shown before that change stay valid reference input.
+        "poilem" to "korintkarant1",
+        "dusrem" to "korintkarant2",
+        "romkarant" to "romkarank",
+        "tesalonikarank poilem" to "tesalonikarank1",
+        "tesalonikarank dusrem" to "tesalonikarank2",
+        "timotak poilem" to "timotak1",
+        "timotak dusrem" to "timotak2"
     )
 
     fun match(rawName: String): BibleBook? {
