@@ -389,7 +389,7 @@ fun ReaderContent(
                     isSelected = item.verse.id == state.selectedVerseId,
                     onSelect = { onVerseSelected(item.verse.id) },
                     onLongPress = { onVerseLongPress(item.verse.id) },
-                    modifier = itemWidth.testTag("reader.verse.${item.verse.verseStart}")
+                    modifier = itemWidth.testTag("reader.verse.${item.verse.id}")
                 )
             }
         }

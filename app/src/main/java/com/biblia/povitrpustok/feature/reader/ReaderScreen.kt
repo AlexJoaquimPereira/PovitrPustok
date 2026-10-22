@@ -78,14 +78,13 @@ fun ReaderScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is ReaderEvent.BookmarkChanged -> {
-                    val name = viewModel.uiState.value.bookDisplayName
                     val message = context.getString(
                         if (event.added) {
                             R.string.reader_bookmark_added
                         } else {
                             R.string.reader_bookmark_removed
                         },
-                        name,
+                        event.bookName,
                         event.chapterNumber,
                         event.verseStart
                     )
@@ -94,7 +93,7 @@ fun ReaderScreen(
                         actionLabel = context.getString(R.string.reader_bookmark_undo)
                     )
                     if (result == SnackbarResult.ActionPerformed) {
-                        viewModel.toggleBookmarkFor(event.verseId, notify = false)
+                        viewModel.undoBookmarkChange(event)
                     }
                 }
             }

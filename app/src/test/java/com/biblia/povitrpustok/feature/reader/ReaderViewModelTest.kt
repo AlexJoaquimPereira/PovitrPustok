@@ -175,14 +175,56 @@ class ReaderViewModelTest {
             advanceUntilIdle()
 
             assertEquals(1, events.size)
-            assertTrue((events.single() as ReaderEvent.BookmarkChanged).added)
+            val event = events.single() as ReaderEvent.BookmarkChanged
+            assertTrue(event.added)
+            assertEquals(bookId, event.bookId)
+            assertEquals(ch1.id, event.chapterId)
             assertTrue(bookmarks.isBookmarked(bookId, ch1.id, verseId))
 
             // Undo reverses the same verse, without a second confirmation.
-            viewModel.toggleBookmarkFor(verseId, notify = false)
+            viewModel.undoBookmarkChange(event)
             advanceUntilIdle()
             assertEquals(1, events.size)
             assertFalse(bookmarks.isBookmarked(bookId, ch1.id, verseId))
+        }
+
+    @Test
+    fun undo_works_after_navigating_to_another_chapter() =
+        runTest(dispatcher.scheduler) {
+            val bookId = "jakob"
+            val ch1 = chapter(bookId, number = 1, position = 1)
+            val ch2 = chapter(bookId, number = 2, position = 2)
+            val repository = FakeRepository(
+                chapterLists = mapOf(bookId to listOf(ch1, ch2)),
+                contents = mapOf(
+                    bookId to mapOf(
+                        1 to content(bookId, ch1),
+                        2 to content(bookId, ch2)
+                    )
+                )
+            )
+            val bookmarks = FakeBookmarkRepository()
+            val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository())
+            viewModel.load(bookId, 1)
+            advanceUntilIdle()
+
+            val events = mutableListOf<ReaderEvent>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.events.collect { events += it }
+            }
+
+            viewModel.toggleBookmarkFor(1000L)
+            advanceUntilIdle()
+            val event = events.single() as ReaderEvent.BookmarkChanged
+            assertTrue(bookmarks.isBookmarked(bookId, ch1.id, 1000L))
+
+            // The snackbar action can arrive after the user navigates on.
+            viewModel.selectChapter(2)
+            advanceUntilIdle()
+            viewModel.undoBookmarkChange(event)
+            advanceUntilIdle()
+
+            assertFalse(bookmarks.isBookmarked(bookId, ch1.id, 1000L))
         }
 
     @Test

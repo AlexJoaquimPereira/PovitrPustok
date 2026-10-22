@@ -22,7 +22,7 @@
     <string name="reference_invalid">%1$s</string>
     <string name="reader_add_bookmark">Add bookmark</string>
     <string name="reader_remove_bookmark">Remove bookmark</string>
-    <string name="reader_bookmark_added">Bookmarked %1$s %2$d:%3$d</string>
+    <string name="reader_bookmark_added">Bookmarked · %1$s %2$d:%3$d</string>
     <string name="reader_bookmark_removed">Bookmark removed · %1$s %2$d:%3$d</string>
     <string name="reader_bookmark_undo">Undo</string>
     <string name="bookmarks_title">Bookmarks</string>

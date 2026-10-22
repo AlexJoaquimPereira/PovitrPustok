@@ -296,11 +296,46 @@ class ReaderViewModel @Inject constructor(
                 if (notify) {
                     _events.tryEmit(
                         ReaderEvent.BookmarkChanged(
-                            verseId = verseId,
-                            added = !bookmarked,
+                            bookId = bookId,
+                            chapterId = chapter.id,
+                            chapterPosition = chapter.position,
                             chapterNumber = chapter.number,
-                            verseStart = verse.verseStart
+                            verseId = verseId,
+                            verseStart = verse.verseStart,
+                            verseEnd = verse.verseEnd,
+                            added = !bookmarked,
+                            bookName = state.bookDisplayName
                         )
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * F-09 Undo: reverses the exact toggle carried by [event], using the ids
+     * captured at that moment. It deliberately does not consult the current
+     * chapter, so navigating away before the snackbar action cannot turn
+     * Undo into a silent no-op.
+     */
+    fun undoBookmarkChange(event: ReaderEvent.BookmarkChanged) {
+        viewModelScope.launch {
+            bookmarkToggleMutex.withLock {
+                if (event.added) {
+                    bookmarkRepository.removeBookmark(
+                        bookId = event.bookId,
+                        chapterId = event.chapterId,
+                        verseId = event.verseId
+                    )
+                } else {
+                    bookmarkRepository.addBookmark(
+                        bookId = event.bookId,
+                        chapterId = event.chapterId,
+                        chapterPosition = event.chapterPosition,
+                        chapterNumber = event.chapterNumber,
+                        verseId = event.verseId,
+                        verseStart = event.verseStart,
+                        verseEnd = event.verseEnd
                     )
                 }
             }
