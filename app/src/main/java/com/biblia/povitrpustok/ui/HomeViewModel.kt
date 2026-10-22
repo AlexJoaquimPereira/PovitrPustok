@@ -8,6 +8,7 @@ import com.biblia.povitrpustok.domain.repository.BookmarkRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -30,7 +31,9 @@ class HomeViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            bookmarkRepository.observeReadingState().collect { state ->
+            bookmarkRepository.observeReadingState()
+                .catch { emit(null) }
+                .collect { state ->
                 if (state != null && BibleCatalog.byId(state.bookId) == null) {
                     bookmarkRepository.clearReadingState()
                     _readingState.value = null
