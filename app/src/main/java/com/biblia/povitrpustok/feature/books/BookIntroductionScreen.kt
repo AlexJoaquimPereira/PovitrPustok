@@ -33,6 +33,9 @@ import com.biblia.povitrpustok.core.html.BibleHtmlDocument
 import com.biblia.povitrpustok.core.html.BibleHtmlParser
 import com.biblia.povitrpustok.core.html.BibleHtmlText
 import com.biblia.povitrpustok.domain.model.IntroductionBlock
+import com.biblia.povitrpustok.ui.components.EmptyState
+import com.biblia.povitrpustok.ui.components.ErrorState
+import com.biblia.povitrpustok.ui.components.LoadingState
 
 /**
  * Lightweight book-introduction screen (implementation plan §11, §12).
@@ -69,20 +72,15 @@ fun BookIntroductionScreen(
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             when {
-                state.isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                state.errorMessage != null -> Text(
-                    text = state.errorMessage.orEmpty(),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp),
-                    textAlign = TextAlign.Center
+                state.isLoading -> LoadingState(testTag = "introduction.loading")
+                state.errorMessage != null -> ErrorState(
+                    message = state.errorMessage.orEmpty(),
+                    onRetry = viewModel::retry,
+                    testTag = "introduction.error"
                 )
-                state.blocks.isEmpty() -> Text(
-                    text = stringResource(R.string.no_introduction),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp),
-                    textAlign = TextAlign.Center
+                state.blocks.isEmpty() -> EmptyState(
+                    title = stringResource(R.string.no_introduction),
+                    testTag = "introduction.empty"
                 )
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize(),

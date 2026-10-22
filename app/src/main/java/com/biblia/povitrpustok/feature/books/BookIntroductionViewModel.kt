@@ -25,7 +25,10 @@ class BookIntroductionViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(BookIntroductionUiState())
     val uiState: StateFlow<BookIntroductionUiState> = _uiState.asStateFlow()
 
+    private var lastBookId: String? = null
+
     fun load(bookId: String) {
+        lastBookId = bookId
         viewModelScope.launch {
             _uiState.update {
                 it.copy(bookId = bookId, isLoading = true, errorMessage = null)
@@ -43,5 +46,10 @@ class BookIntroductionViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    /** Repeats the last load after a failure (F-16: no dead ends). */
+    fun retry() {
+        lastBookId?.let(::load)
     }
 }

@@ -102,4 +102,14 @@ class HomeNavigationUiTest {
             .assertIsDisplayed()
             .assertHeightIsAtLeast(48.dp)
     }
+
+    @Test
+    fun empty_bookmarks_offers_browse_books() {
+        composeRule.onNodeWithTag("home.bookmarks").performClick()
+        composeRule.onNodeWithText("No bookmarks yet.").assertIsDisplayed()
+
+        composeRule.onNodeWithTag("bookmarks.empty.action").performClick()
+
+        composeRule.onNodeWithText("Books").assertIsDisplayed()
+    }
 }

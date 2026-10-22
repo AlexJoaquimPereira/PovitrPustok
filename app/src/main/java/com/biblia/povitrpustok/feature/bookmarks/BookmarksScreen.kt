@@ -35,6 +35,10 @@ import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.BibleCatalog
 import com.biblia.povitrpustok.domain.model.Bookmark
 import com.biblia.povitrpustok.domain.model.ReaderDestination
+import com.biblia.povitrpustok.ui.components.BookName
+import com.biblia.povitrpustok.ui.components.BookNameLayout
+import com.biblia.povitrpustok.ui.components.EmptyState
+import com.biblia.povitrpustok.ui.components.LoadingState
 
 /**
  * Bookmarks screen (Phase 9, plan §9–§11).
@@ -49,6 +53,7 @@ import com.biblia.povitrpustok.domain.model.ReaderDestination
 fun BookmarksScreen(
     onOpenBookmark: (ReaderDestination) -> Unit,
     onBack: () -> Unit,
+    onOpenBooks: () -> Unit,
     viewModel: BookmarksViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -70,13 +75,14 @@ fun BookmarksScreen(
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             when {
-                state.isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+                state.isLoading -> LoadingState(testTag = "bookmarks.loading")
 
-                state.bookmarks.isEmpty() -> Text(
-                    text = stringResource(R.string.bookmarks_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.Center).padding(horizontal = 32.dp)
+                state.bookmarks.isEmpty() -> EmptyState(
+                    title = stringResource(R.string.bookmarks_empty),
+                    body = stringResource(R.string.bookmarks_empty_body),
+                    actionLabel = stringResource(R.string.bookmarks_browse_books),
+                    onAction = onOpenBooks,
+                    testTag = "bookmarks.empty"
                 )
 
                 else -> LazyColumn(
@@ -86,6 +92,10 @@ fun BookmarksScreen(
                     items(state.bookmarks, key = { it.id }) { bookmark ->
                         BookmarkRow(
                             bookmark = bookmark,
+                            localName = state.bookNames[bookmark.bookId]
+                                ?: BibleCatalog.byId(bookmark.bookId)?.displayName
+                                ?: bookmark.bookId,
+                            englishName = BibleCatalog.byId(bookmark.bookId)?.englishName,
                             onClick = { onOpenBookmark(bookmark.toReaderDestination()) },
                             onDelete = { viewModel.removeBookmark(bookmark.id) }
                         )
@@ -99,11 +109,12 @@ fun BookmarksScreen(
 @Composable
 private fun BookmarkRow(
     bookmark: Bookmark,
+    localName: String,
+    englishName: String?,
     onClick: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val bookName = BibleCatalog.byId(bookmark.bookId)?.displayName ?: bookmark.bookId
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -112,10 +123,11 @@ private fun BookmarkRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = bookName,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface
+            BookName(
+                localName = localName,
+                englishName = englishName,
+                layout = BookNameLayout.INLINE,
+                style = MaterialTheme.typography.titleSmall
             )
             Text(
                 text = if (bookmark.verseStart == bookmark.verseEnd) {

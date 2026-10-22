@@ -40,6 +40,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
+import com.biblia.povitrpustok.ui.components.BookName
+import com.biblia.povitrpustok.ui.components.EmptyState
+import com.biblia.povitrpustok.ui.components.ErrorState
+import com.biblia.povitrpustok.ui.components.LoadingState
 
 /**
  * Chapter-selection screen for one book (implementation plan §8, §9, §10).
@@ -66,7 +70,14 @@ fun BookChaptersScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = state.book?.displayName.orEmpty()) },
+                title = {
+                    BookName(
+                        localName = state.displayName.ifBlank {
+                            state.book?.displayName.orEmpty()
+                        },
+                        englishName = state.book?.englishName
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -88,38 +99,16 @@ fun BookChaptersScreen(
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             when {
-                state.isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                state.errorMessage != null -> Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 32.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = state.errorMessage.orEmpty(),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center
-                    )
-                    Button(
-                        onClick = { viewModel.load(bookId) },
-                        modifier = Modifier.padding(top = 16.dp)
-                    ) {
-                        Text(text = stringResource(R.string.reader_retry))
-                    }
-                }
-                state.chapters.isEmpty() -> Box(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = stringResource(R.string.chapters_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                }
+                state.isLoading -> LoadingState(testTag = "chapters.loading")
+                state.errorMessage != null -> ErrorState(
+                    message = state.errorMessage.orEmpty(),
+                    onRetry = { viewModel.load(bookId) },
+                    testTag = "chapters.error"
+                )
+                state.chapters.isEmpty() -> EmptyState(
+                    title = stringResource(R.string.chapters_empty),
+                    testTag = "chapters.empty"
+                )
                 else -> Column(modifier = Modifier.fillMaxSize()) {
                     TextButton(
                         onClick = onIntroductionSelected,

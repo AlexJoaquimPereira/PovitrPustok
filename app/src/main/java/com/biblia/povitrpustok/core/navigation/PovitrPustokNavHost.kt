@@ -78,7 +78,8 @@ fun PovitrPustokNavHost() {
                         )
                     )
                 },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onOpenBooks = { navController.navigate(AppDestination.BOOKS) }
             )
         }
 

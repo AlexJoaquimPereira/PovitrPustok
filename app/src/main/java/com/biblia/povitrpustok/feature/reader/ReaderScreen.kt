@@ -2,6 +2,7 @@ package com.biblia.povitrpustok.feature.reader
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -20,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -28,6 +30,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.ReaderPassageCodec
+import com.biblia.povitrpustok.ui.components.englishBookNameVisible
 
 /**
  * Reader screen (implementation plan §17, §42).
@@ -111,7 +114,9 @@ private fun ReaderTopBar(
         title = {
             Column {
                 Text(
-                    text = state.book?.displayName.orEmpty(),
+                    text = state.bookDisplayName.ifBlank {
+                        state.book?.displayName.orEmpty()
+                    },
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -121,25 +126,39 @@ private fun ReaderTopBar(
                     state.verses.firstOrNull { it.id == id }
                 }
                 if (chapter != null) {
-                    Text(
-                        text = if (selectedVerse != null) {
-                            // The top-bar bookmark applies to this verse (Issue 6).
-                            stringResource(
-                                R.string.reader_selected_verse,
-                                chapter.number,
-                                selectedVerse.verseStart
-                            )
-                        } else {
-                            stringResource(
-                                R.string.reader_chapter_number,
-                                chapter.number
-                            )
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    val chapterLabel = if (selectedVerse != null) {
+                        // The top-bar bookmark applies to this verse (Issue 6).
+                        stringResource(
+                            R.string.reader_selected_verse,
+                            chapter.number,
+                            selectedVerse.verseStart
+                        )
+                    } else {
+                        stringResource(
+                            R.string.reader_chapter_number,
+                            chapter.number
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        state.book?.englishName
+                            ?.takeIf { englishBookNameVisible() }
+                            ?.let { english ->
+                                Text(
+                                    text = "($english) · ",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        Text(
+                            text = chapterLabel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
         },

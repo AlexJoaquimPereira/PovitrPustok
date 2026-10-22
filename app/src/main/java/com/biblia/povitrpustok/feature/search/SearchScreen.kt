@@ -51,6 +51,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.BibleCatalog
 import com.biblia.povitrpustok.domain.model.SearchResult
+import com.biblia.povitrpustok.ui.components.EmptyState
+import com.biblia.povitrpustok.ui.components.ErrorState
 
 /**
  * Minimal search screen (implementation plan §25–§26).
@@ -122,6 +124,7 @@ fun SearchScreen(
 
             BookFilterRow(
                 selectedBookId = state.selectedBookId,
+                bookNames = state.bookNames,
                 onSelect = viewModel::onBookFilterChange,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
@@ -157,27 +160,21 @@ fun SearchScreen(
             }
 
             when {
-                state.error != null -> Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 32.dp, vertical = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = state.error.orEmpty(),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center
-                    )
-                    TextButton(onClick = viewModel::retry) {
-                        Text(stringResource(R.string.reader_retry))
-                    }
-                }
+                state.error != null -> ErrorState(
+                    message = state.error.orEmpty(),
+                    onRetry = viewModel::retry,
+                    testTag = "search.error"
+                )
 
-                state.query.isBlank() -> CenteredHint(stringResource(R.string.search_empty))
+                state.query.isBlank() -> EmptyState(
+                    title = stringResource(R.string.search_empty),
+                    testTag = "search.empty"
+                )
 
-                state.results.isEmpty() && !state.isSearching ->
-                    CenteredHint(stringResource(R.string.search_no_results))
+                state.results.isEmpty() && !state.isSearching -> EmptyState(
+                    title = stringResource(R.string.search_no_results),
+                    testTag = "search.no_results"
+                )
 
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize().testTag("search.results"),
@@ -187,7 +184,8 @@ fun SearchScreen(
                         SearchResultItem(
                             result = result,
                             query = state.query,
-                            onClick = { onOpenResult(result) }
+                            onClick = { onOpenResult(result) },
+                            bookName = state.bookNames[result.bookId]
                         )
                         HorizontalDivider(
                             color = MaterialTheme.colorScheme.outlineVariant
@@ -201,27 +199,11 @@ fun SearchScreen(
 
 private const val SEARCH_LIMIT = 50
 
-@Composable
-private fun CenteredHint(text: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 32.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
 /** Compact book filter: "All Bible" plus every catalog book (by id). */
 @Composable
 private fun BookFilterRow(
     selectedBookId: String?,
+    bookNames: Map<String, String>,
     onSelect: (String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -234,7 +216,9 @@ private fun BookFilterRow(
         )
         Box {
             TextButton(onClick = { expanded = true }) {
-                val bookName = selectedBookId?.let { BibleCatalog.byId(it)?.displayName }
+                val bookName = selectedBookId?.let { id ->
+                    bookNames[id] ?: BibleCatalog.byId(id)?.displayName
+                }
                 Text(
                     text = bookName ?: stringResource(R.string.search_all_bible),
                     style = MaterialTheme.typography.bodyMedium
@@ -250,7 +234,7 @@ private fun BookFilterRow(
                 )
                 BibleCatalog.books.forEach { book ->
                     DropdownMenuItem(
-                        text = { Text(book.displayName) },
+                        text = { Text(bookNames[book.id] ?: book.displayName) },
                         onClick = {
                             expanded = false
                             onSelect(book.id)

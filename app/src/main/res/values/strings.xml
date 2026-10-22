@@ -14,7 +14,7 @@
     <string name="back">Back</string>
     <string name="reference_entry_title">Go to reference</string>
     <string name="reference_entry_label">Reference</string>
-    <string name="reference_entry_hint">e.g. James 1:5</string>
+    <string name="reference_entry_hint">e.g. Juanv 1:5 or James 1:5</string>
     <string name="reference_entry_go">Go</string>
     <string name="reference_ambiguous">Multiple chapters match. Choose one:</string>
     <string name="reference_ambiguous_verse">Multiple source verses match. Choose one:</string>
@@ -24,6 +24,8 @@
     <string name="reader_remove_bookmark">Remove bookmark</string>
     <string name="bookmarks_title">Bookmarks</string>
     <string name="bookmarks_empty">No bookmarks yet.</string>
+    <string name="bookmarks_empty_body">Tap the bookmark icon while reading to save a place.</string>
+    <string name="bookmarks_browse_books">Browse books</string>
     <string name="bookmarks_remove">Remove bookmark</string>
     <string name="bookmark_reference">%1$d:%2$d</string>
     <string name="bookmark_reference_range">%1$d:%2$d–%3$d</string>

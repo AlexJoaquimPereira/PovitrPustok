@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.BibleCatalog
 import com.biblia.povitrpustok.domain.model.SearchResult
+import com.biblia.povitrpustok.ui.components.englishBookNameVisible
 
 /**
  * One search result row (implementation plan §26): book name, chapter:verse
@@ -38,10 +39,12 @@ fun SearchResultItem(
     result: SearchResult,
     query: String = "",
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    bookName: String? = null
 ) {
     val book = remember(result.bookId) { BibleCatalog.byId(result.bookId) }
-    val bookName = book?.displayName
+    val displayName = bookName ?: book?.displayName ?: result.bookId
+    val showEnglish = englishBookNameVisible()
     val highlight = SpanStyle(
         color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.SemiBold
@@ -57,11 +60,14 @@ fun SearchResultItem(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = bookName ?: result.bookId,
+                text = displayName,
                 style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
             )
-            book?.englishName?.let { english ->
+            book?.englishName?.takeIf { showEnglish }?.let { english ->
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = "($english)",
