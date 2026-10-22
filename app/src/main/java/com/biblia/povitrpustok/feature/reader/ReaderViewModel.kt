@@ -380,6 +380,9 @@ class ReaderViewModel @Inject constructor(
     fun showFullChapter() {
         val bookId = this.bookId ?: return
         val position = _uiState.value.chapter?.position ?: return
+        // Leave passage mode optimistically: the banner must not hover over
+        // the reload spinner while the whole chapter is being fetched.
+        _uiState.update { it.copy(passage = null, passageChapters = emptyList()) }
         load(bookId, position)
     }
 

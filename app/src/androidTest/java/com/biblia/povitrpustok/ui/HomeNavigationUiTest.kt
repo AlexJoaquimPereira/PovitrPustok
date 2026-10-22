@@ -183,5 +183,23 @@ class HomeNavigationUiTest {
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule.onAllNodesWithTag("reader.passage_banner").fetchSemanticsNodes().isEmpty()
         }
+        // Verse 1 was filtered out by the verse-16 passage; it is proof that
+        // the whole chapter actually loaded rather than an error clearing it.
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("reader.verse.1").fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    @Test
+    fun chapter_only_reference_has_no_passage_banner() {
+        composeRule.onNodeWithTag("home.reference").performClick()
+        composeRule.onNode(hasSetTextAction()).performTextInput("Juanv 1")
+        composeRule.onNodeWithText("Go").performClick()
+
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("reader.actionbar").fetchSemanticsNodes().isNotEmpty()
+        }
+        // A chapter-only reference is not a filtered passage: no banner.
+        composeRule.onNodeWithTag("reader.passage_banner").assertDoesNotExist()
     }
 }

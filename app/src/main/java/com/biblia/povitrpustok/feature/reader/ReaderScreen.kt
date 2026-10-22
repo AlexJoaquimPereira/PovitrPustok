@@ -151,7 +151,7 @@ fun ReaderScreen(
         }
     ) { innerPadding ->
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            if (state.passage != null || state.passageChapters.isNotEmpty()) {
+            if (shouldShowPassageBanner(state)) {
                 PassageBanner(
                     state = state,
                     onShowFullChapter = viewModel::showFullChapter
@@ -386,6 +386,31 @@ private fun ChapterPickerSheet(
         }
         Spacer(modifier = Modifier.height(12.dp))
     }
+}
+
+/**
+ * F-05: a banner is only meaningful when content is actually filtered. A
+ * single whole-chapter part (chapter-only references use one) must not
+ * claim a restriction that does not exist.
+ */
+private fun shouldShowPassageBanner(state: ReaderUiState): Boolean {
+    val parts = state.passageChapters
+    if (parts.isNotEmpty()) {
+        if (parts.size > 1) return true
+        val part = parts.first()
+        return !coversWholeChapter(part.passage.ranges, part.verses)
+    }
+    val passage = state.passage ?: return false
+    return !coversWholeChapter(passage.ranges, state.verses)
+}
+
+private fun coversWholeChapter(
+    ranges: List<IntRange>,
+    verses: List<com.biblia.povitrpustok.domain.model.Verse>
+): Boolean {
+    val first = verses.firstOrNull()?.verseStart ?: return false
+    val last = verses.lastOrNull()?.let { it.verseEnd ?: it.verseStart } ?: return false
+    return ranges.size == 1 && ranges.first().first <= first && ranges.first().last >= last
 }
 
 /**
