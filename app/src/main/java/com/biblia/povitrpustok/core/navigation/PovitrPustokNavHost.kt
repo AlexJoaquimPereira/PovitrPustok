@@ -1,5 +1,10 @@
 package com.biblia.povitrpustok.core.navigation
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -24,12 +29,32 @@ import com.biblia.povitrpustok.ui.HomeScreen
  * NavController/back stack; every destination takes compact typed
  * identifiers only.
  */
+/** Navigation motion (F-19): 200 ms fade plus a small slide; never long. */
+private const val NAV_FADE_MS = 200
+private const val NAV_SLIDE_MS = 220
+private const val NAV_SLIDE_DIVISOR = 16
+
 @Composable
 fun PovitrPustokNavHost() {
     val navController = rememberNavController()
     NavHost(
         navController = navController,
-        startDestination = AppDestination.HOME
+        startDestination = AppDestination.HOME,
+        // F-19: short, declarative transitions. Compose honours the system
+        // animation scale, including 0 (instant).
+        enterTransition = {
+            fadeIn(tween(NAV_FADE_MS)) +
+                slideInHorizontally(tween(NAV_SLIDE_MS)) { it / NAV_SLIDE_DIVISOR }
+        },
+        exitTransition = { fadeOut(tween(NAV_FADE_MS)) },
+        popEnterTransition = {
+            fadeIn(tween(NAV_FADE_MS)) +
+                slideInHorizontally(tween(NAV_SLIDE_MS)) { -it / NAV_SLIDE_DIVISOR }
+        },
+        popExitTransition = {
+            fadeOut(tween(NAV_FADE_MS)) +
+                slideOutHorizontally(tween(NAV_SLIDE_MS)) { it / NAV_SLIDE_DIVISOR }
+        }
     ) {
         composable(AppDestination.HOME) {
             HomeScreen(

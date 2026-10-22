@@ -1,5 +1,13 @@
 package com.biblia.povitrpustok.feature.reader
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,6 +55,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.res.painterResource
@@ -62,6 +71,12 @@ import com.biblia.povitrpustok.domain.model.ReaderPassageCodec
 import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
 import com.biblia.povitrpustok.ui.components.BookName
 import com.biblia.povitrpustok.ui.components.BookNameLayout
+
+/** F-19: chapter changes slide 160 ms; the target scroll itself stays instant. */
+private const val READER_SLIDE_MS = 160
+private const val READER_FADE_MS = 120
+private const val READER_SLIDE_DIVISOR = 8
+private const val BOOKMARK_SCALE_MS = 120
 
 /**
  * Reader screen (implementation plan §17, §42).
@@ -169,18 +184,41 @@ fun ReaderScreen(
                         message = errorMessage,
                         onRetry = viewModel::retry
                     )
-                state.chapter != null -> ReaderContent(
-                    state = state,
-                    onTargetApplied = viewModel::onTargetApplied,
-                    onHighlightCleared = viewModel::clearHighlight,
-                    onVerseSelected = viewModel::onVerseSelected,
-                    onVerseLongPress = { verseId ->
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.toggleBookmarkFor(verseId)
+                state.chapter != null -> AnimatedContent(
+                    targetState = state,
+                    // Only chapter changes animate; selection/highlight state
+                    // updates recompose in place.
+                    contentKey = { it.chapter?.id },
+                    transitionSpec = {
+                        val forward = (targetState.chapter?.position ?: 0) >=
+                            (initialState.chapter?.position ?: 0)
+                        (
+                            fadeIn(tween(READER_FADE_MS)) +
+                                slideInHorizontally(tween(READER_SLIDE_MS)) {
+                                    if (forward) it / READER_SLIDE_DIVISOR else -it / READER_SLIDE_DIVISOR
+                                }
+                            ) togetherWith (
+                            fadeOut(tween(READER_FADE_MS)) +
+                                slideOutHorizontally(tween(READER_SLIDE_MS)) {
+                                    if (forward) -it / READER_SLIDE_DIVISOR else it / READER_SLIDE_DIVISOR
+                                }
+                            )
                     },
-                    onNext = viewModel::next,
-                    onPrevious = viewModel::previous
-                )
+                    label = "reader-chapter"
+                ) { target ->
+                    ReaderContent(
+                        state = target,
+                        onTargetApplied = viewModel::onTargetApplied,
+                        onHighlightCleared = viewModel::clearHighlight,
+                        onVerseSelected = viewModel::onVerseSelected,
+                        onVerseLongPress = { verseId ->
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.toggleBookmarkFor(verseId)
+                        },
+                        onNext = viewModel::next,
+                        onPrevious = viewModel::previous
+                    )
+                }
                 else -> ReaderLoadingState()
             }
             }
@@ -286,6 +324,11 @@ private fun ReaderActionBar(
 
         val selected = state.selectedVerseId
         val isBookmarked = selected != null && state.bookmarkedVerseIds.contains(selected)
+        val bookmarkScale by animateFloatAsState(
+            targetValue = if (isBookmarked) 1.12f else 1f,
+            animationSpec = tween(BOOKMARK_SCALE_MS),
+            label = "bookmark-scale"
+        )
         IconButton(
             onClick = onToggleBookmark,
             enabled = selected != null,
@@ -302,7 +345,8 @@ private fun ReaderActionBar(
                     MaterialTheme.colorScheme.primary
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant
-                }
+                },
+                modifier = Modifier.scale(bookmarkScale)
             )
         }
     }

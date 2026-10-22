@@ -137,12 +137,16 @@ fun VerseBlock(
     val document = rememberDocument(verse.html)
     val palette = LocalScripturePalette.current
     val gutterWidth = with(LocalDensity.current) { (VerseGutterWidth.value * fontScale).dp }
-    val background = when {
-        isTarget -> palette.target
-        isSelected -> palette.selection
-        isBookmarked -> palette.bookmarked
-        else -> Color.Transparent
-    }
+    val background by androidx.compose.animation.animateColorAsState(
+        targetValue = when {
+            isTarget -> palette.target
+            isSelected -> palette.selection
+            isBookmarked -> palette.bookmarked
+            else -> Color.Transparent
+        },
+        animationSpec = androidx.compose.animation.core.tween(STATE_COLOR_MS),
+        label = "verse-state-color"
+    )
     val stateDescription = verseStateDescription(isTarget, isSelected, isBookmarked)
     Row(
         modifier = modifier
@@ -443,6 +447,9 @@ private fun passageRangeLabel(state: ReaderUiState, chapter: Chapter): String? {
     }
     return labels.joinToString(", ")
 }
+
+/** F-19: state colours cross-fade briefly; never a hard cut. */
+private const val STATE_COLOR_MS = 150
 
 /** Horizontal distance (dp) a swipe must exceed to navigate chapters. */
 private val SWIPE_THRESHOLD_DP = 96.dp
