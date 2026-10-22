@@ -68,8 +68,18 @@ class BookmarksViewModelTest {
         assertEquals(5L, state.bookmarks[0].verseId)
         assertNotNull(state.bookmarks[0].toReaderDestination())
 
-        viewModel.removeBookmark(state.bookmarks[0].id)
+        val removed = state.bookmarks[0]
+        viewModel.removeBookmark(removed.id)
         awaitCondition { viewModel.uiState.value.bookmarks.isEmpty() }
         assertEquals(0, repository.observeBookmarks().first().size)
+
+        // F-09 Undo: re-add from the removed bookmark's stored fields.
+        viewModel.restoreBookmark(removed)
+        awaitCondition { viewModel.uiState.value.bookmarks.size == 1 }
+        val restored = repository.observeBookmarks().first().single()
+        assertEquals(removed.bookId, restored.bookId)
+        assertEquals(removed.chapterId, restored.chapterId)
+        assertEquals(removed.verseId, restored.verseId)
+        assertEquals(removed.verseStart, restored.verseStart)
     }
 }

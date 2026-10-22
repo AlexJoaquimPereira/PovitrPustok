@@ -20,12 +20,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -38,6 +44,7 @@ import com.biblia.povitrpustok.ui.components.BookName
 import com.biblia.povitrpustok.ui.components.BookNameLayout
 import com.biblia.povitrpustok.ui.components.EmptyState
 import com.biblia.povitrpustok.ui.components.LoadingState
+import kotlinx.coroutines.launch
 
 /**
  * Bookmarks screen (Phase 9, plan §9–§11).
@@ -56,8 +63,12 @@ fun BookmarksScreen(
     viewModel: BookmarksViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.bookmarks_title)) },
@@ -96,7 +107,20 @@ fun BookmarksScreen(
                                 ?: bookmark.bookId,
                             englishName = BibleCatalog.byId(bookmark.bookId)?.englishName,
                             onClick = { onOpenBookmark(bookmark.toReaderDestination()) },
-                            onDelete = { viewModel.removeBookmark(bookmark.id) }
+                            onDelete = {
+                                viewModel.removeBookmark(bookmark.id)
+                                // F-09: deletion is reversible from the
+                                // stored fields; no schema change needed.
+                                scope.launch {
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = context.getString(R.string.bookmarks_removed),
+                                        actionLabel = context.getString(R.string.reader_bookmark_undo)
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.restoreBookmark(bookmark)
+                                    }
+                                }
+                            }
                         )
                     }
                 }

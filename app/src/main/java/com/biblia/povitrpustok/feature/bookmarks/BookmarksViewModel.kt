@@ -3,6 +3,7 @@ package com.biblia.povitrpustok.feature.bookmarks
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.biblia.povitrpustok.domain.repository.BookNameRepository
+import com.biblia.povitrpustok.domain.model.Bookmark
 import com.biblia.povitrpustok.domain.repository.BookmarkRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -47,6 +48,25 @@ class BookmarksViewModel @Inject constructor(
     fun removeBookmark(id: Long) {
         viewModelScope.launch {
             bookmarkRepository.removeBookmarkById(id)
+        }
+    }
+
+    /**
+     * F-09 Undo: re-adds a removed bookmark from the fields it already
+     * carried. The DAO's unique index still prevents duplicates if the user
+     * re-bookmarks the same place while the snackbar is visible.
+     */
+    fun restoreBookmark(bookmark: Bookmark) {
+        viewModelScope.launch {
+            bookmarkRepository.addBookmark(
+                bookId = bookmark.bookId,
+                chapterId = bookmark.chapterId,
+                chapterPosition = bookmark.chapterPosition,
+                chapterNumber = bookmark.chapterNumber,
+                verseId = bookmark.verseId,
+                verseStart = bookmark.verseStart,
+                verseEnd = bookmark.verseEnd
+            )
         }
     }
 }
