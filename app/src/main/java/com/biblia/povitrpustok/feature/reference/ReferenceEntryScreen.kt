@@ -34,6 +34,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -201,6 +204,7 @@ private fun AmbiguousMessage(
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .semantics { role = Role.Button }
                         .clickable { onCandidateSelected(chapter) }
                         .heightIn(min = 48.dp)
                         .padding(vertical = 14.dp)
@@ -230,6 +234,7 @@ private fun AmbiguousVerseMessage(
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .semantics { role = Role.Button }
                         .clickable { onCandidateSelected(verse) }
                         .heightIn(min = 48.dp)
                         .padding(vertical = 14.dp)

@@ -12,6 +12,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -39,6 +40,8 @@ class ReferenceEntryViewModel @Inject constructor(
     )
     val uiState: StateFlow<ReferenceEntryUiState> = _uiState.asStateFlow()
 
+    private var resolveJob: Job? = null
+
     private val _pendingNavigation = MutableStateFlow<ReaderDestination?>(null)
     val pendingNavigation: StateFlow<ReaderDestination?> = _pendingNavigation.asStateFlow()
 
@@ -49,7 +52,8 @@ class ReferenceEntryViewModel @Inject constructor(
 
     fun resolve() {
         val query = _uiState.value.query
-        viewModelScope.launch {
+        resolveJob?.cancel()
+        resolveJob = viewModelScope.launch {
             _uiState.update { it.copy(isResolving = true) }
             try {
                 val resolution = resolver.resolve(query)
@@ -57,9 +61,15 @@ class ReferenceEntryViewModel @Inject constructor(
                 if (resolution is ScriptureResolution.Resolved) {
                     _pendingNavigation.value = resolution.reference.toReaderDestination()
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: BibleDataException) {
                 _uiState.update {
                     it.copy(isResolving = false, resolution = ScriptureResolution.Invalid(e.message ?: "Failed to resolve reference."))
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isResolving = false, resolution = ScriptureResolution.Invalid("Failed to resolve reference."))
                 }
             }
         }
