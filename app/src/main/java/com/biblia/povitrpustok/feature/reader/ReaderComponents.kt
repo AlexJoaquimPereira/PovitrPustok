@@ -2,6 +2,7 @@ package com.biblia.povitrpustok.feature.reader
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
@@ -42,6 +43,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -121,6 +123,7 @@ fun VerseBlock(
     isBookmarked: Boolean = false,
     isSelected: Boolean = false,
     onSelect: (() -> Unit)? = null,
+    onLongPress: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val document = rememberDocument(verse.html)
@@ -144,7 +147,16 @@ fun VerseBlock(
                 }
             )
             .then(
-                if (onSelect != null) Modifier.clickable(onClick = onSelect) else Modifier
+                when {
+                    // F-09: long-press bookmarks the verse directly; tap
+                    // still selects it for the top-bar action.
+                    onLongPress != null -> Modifier.combinedClickable(
+                        onClick = { onSelect?.invoke() },
+                        onLongClick = onLongPress
+                    )
+                    onSelect != null -> Modifier.clickable(onClick = onSelect)
+                    else -> Modifier
+                }
             )
             .background(background, MaterialTheme.shapes.small)
             // F-06: markers live in the gutter/end padding, drawn after the
@@ -179,7 +191,7 @@ fun VerseBlock(
         VerseNumber(
             verseStart = verse.verseStart,
             verseEnd = verse.verseEnd,
-            modifier = Modifier.width(gutterWidth).padding(top = 2.dp)
+            modifier = Modifier.widthIn(min = gutterWidth).padding(top = 2.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
         // Issue 8: Psalm verses without their own alignment render as a
@@ -245,6 +257,8 @@ fun VerseNumber(
         style = VerseNumberStyle,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.End,
+        maxLines = 1,
+        softWrap = false,
         modifier = modifier
     )
 }
@@ -256,6 +270,7 @@ fun ReaderContent(
     onTargetApplied: () -> Unit = {},
     onHighlightCleared: () -> Unit = {},
     onVerseSelected: (Long) -> Unit = {},
+    onVerseLongPress: (Long) -> Unit = {},
     onNext: () -> Unit = {},
     onPrevious: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -309,8 +324,11 @@ fun ReaderContent(
         val index = items.indexOfFirst { it is ReaderContentItem.Verse && it.verse.id == targetId }
         if (index >= 0) {
             listState.scrollToItem(index)
+            // Only consume a target that was actually rendered: a verse
+            // filtered out by a passage range must not become a phantom
+            // selection the bookmark action can act on.
+            onTargetApplied()
         }
-        onTargetApplied()
     }
 
     // Temporary highlight (Phase 8): cleared after a short duration.
@@ -370,7 +388,8 @@ fun ReaderContent(
                     isBookmarked = state.bookmarkedVerseIds.contains(item.verse.id),
                     isSelected = item.verse.id == state.selectedVerseId,
                     onSelect = { onVerseSelected(item.verse.id) },
-                    modifier = itemWidth
+                    onLongPress = { onVerseLongPress(item.verse.id) },
+                    modifier = itemWidth.testTag("reader.verse.${item.verse.verseStart}")
                 )
             }
         }

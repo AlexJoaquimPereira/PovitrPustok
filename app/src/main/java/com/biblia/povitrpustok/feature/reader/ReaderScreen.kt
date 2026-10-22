@@ -9,12 +9,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -23,7 +25,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -63,8 +69,40 @@ fun ReaderScreen(
         )
     }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
+
+    // F-09: confirm every long-press toggle and offer an immediate Undo.
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is ReaderEvent.BookmarkChanged -> {
+                    val name = viewModel.uiState.value.bookDisplayName
+                    val message = context.getString(
+                        if (event.added) {
+                            R.string.reader_bookmark_added
+                        } else {
+                            R.string.reader_bookmark_removed
+                        },
+                        name,
+                        event.chapterNumber,
+                        event.verseStart
+                    )
+                    val result = snackbarHostState.showSnackbar(
+                        message = message,
+                        actionLabel = context.getString(R.string.reader_bookmark_undo)
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.toggleBookmarkFor(event.verseId, notify = false)
+                    }
+                }
+            }
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             ReaderTopBar(
                 state = state,
@@ -90,6 +128,10 @@ fun ReaderScreen(
                     onTargetApplied = viewModel::onTargetApplied,
                     onHighlightCleared = viewModel::clearHighlight,
                     onVerseSelected = viewModel::onVerseSelected,
+                    onVerseLongPress = { verseId ->
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        viewModel.toggleBookmarkFor(verseId)
+                    },
                     onNext = viewModel::next,
                     onPrevious = viewModel::previous
                 )
@@ -182,7 +224,13 @@ private fun ReaderTopBar(
                 val isBookmarked = state.bookmarkedVerseIds.contains(state.selectedVerseId)
                 IconButton(onClick = onToggleBookmark) {
                     Icon(
-                        imageVector = Icons.Filled.Star,
+                        painter = painterResource(
+                            if (isBookmarked) {
+                                R.drawable.ic_bookmark
+                            } else {
+                                R.drawable.ic_bookmark_border
+                            }
+                        ),
                         contentDescription = stringResource(
                             if (isBookmarked) R.string.reader_remove_bookmark else R.string.reader_add_bookmark
                         ),

@@ -12,8 +12,12 @@ import com.biblia.povitrpustok.domain.repository.BookmarkRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -41,6 +45,13 @@ class ReaderViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(ReaderUiState())
     val uiState: StateFlow<ReaderUiState> = _uiState.asStateFlow()
+
+    /** One-shot confirmations (F-09); the screen shows them as snackbars. */
+    private val _events = MutableSharedFlow<ReaderEvent>(
+        extraBufferCapacity = 4,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    val events: SharedFlow<ReaderEvent> = _events.asSharedFlow()
 
     private var bookId: String? = null
     private var loadJob: Job? = null
@@ -248,8 +259,18 @@ class ReaderViewModel @Inject constructor(
      * using only ids already present in the loaded chapter.
      */
     fun toggleBookmark() {
+        val verseId = _uiState.value.selectedVerseId ?: return
+        toggleBookmarkFor(verseId)
+    }
+
+    /**
+     * Long-press entry point (F-09): bookmarks or unbookmarks [verseId]
+     * directly, without requiring a prior selection, and emits one
+     * confirmation event for the snackbar. [notify] is false for Undo so a
+     * reversal does not immediately raise another confirmation.
+     */
+    fun toggleBookmarkFor(verseId: Long, notify: Boolean = true) {
         val state = _uiState.value
-        val verseId = state.selectedVerseId ?: return
         val chapter = state.chapter ?: return
         val verse = state.verses.firstOrNull { it.id == verseId } ?: return
         val bookId = state.book?.id ?: return
@@ -270,6 +291,16 @@ class ReaderViewModel @Inject constructor(
                         verseId = verse.id,
                         verseStart = verse.verseStart,
                         verseEnd = verse.verseEnd
+                    )
+                }
+                if (notify) {
+                    _events.tryEmit(
+                        ReaderEvent.BookmarkChanged(
+                            verseId = verseId,
+                            added = !bookmarked,
+                            chapterNumber = chapter.number,
+                            verseStart = verse.verseStart
+                        )
                     )
                 }
             }

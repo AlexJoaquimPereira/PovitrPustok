@@ -10,7 +10,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.biblia.povitrpustok.MainActivity
@@ -112,5 +114,29 @@ class HomeNavigationUiTest {
 
         // A Books-only node, not just the shared title string.
         composeRule.onNodeWithText("Old Testament").assertIsDisplayed()
+    }
+
+    @Test
+    fun long_press_bookmarks_a_verse_and_offers_undo() {
+        composeRule.onNodeWithTag("home.bible").performClick()
+        composeRule.onNodeWithText("Utpoti").performScrollTo().performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("chapters.cell.1").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("chapters.cell.1").performClick()
+
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("reader.verse.1").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("reader.verse.1")
+            .performScrollTo()
+            .performTouchInput { longClick() }
+
+        composeRule.onNodeWithText("Undo").assertIsDisplayed().performClick()
+        // The undo removes the bookmark again, so the suite leaves the app
+        // database as it found it for the empty-bookmarks test.
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithText("Undo").fetchSemanticsNodes().isEmpty()
+        }
     }
 }

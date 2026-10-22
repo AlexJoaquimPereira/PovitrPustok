@@ -16,7 +16,9 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -148,6 +150,40 @@ class ReaderViewModelTest {
         assertFalse(state.isLoading)
         assertNull(state.errorMessage)
     }
+
+    @Test
+    fun long_press_toggles_a_bookmark_and_emits_one_confirmation() =
+        runTest(dispatcher.scheduler) {
+            val bookId = "jakob"
+            val ch1 = chapter(bookId, number = 1, position = 1)
+            val repository = FakeRepository(
+                chapterLists = mapOf(bookId to listOf(ch1)),
+                contents = mapOf(bookId to mapOf(1 to content(bookId, ch1)))
+            )
+            val bookmarks = FakeBookmarkRepository()
+            val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository())
+            viewModel.load(bookId, 1)
+            advanceUntilIdle()
+
+            val events = mutableListOf<ReaderEvent>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.events.collect { events += it }
+            }
+
+            val verseId = 1000L // content(): chapter.id * 1000
+            viewModel.toggleBookmarkFor(verseId)
+            advanceUntilIdle()
+
+            assertEquals(1, events.size)
+            assertTrue((events.single() as ReaderEvent.BookmarkChanged).added)
+            assertTrue(bookmarks.isBookmarked(bookId, ch1.id, verseId))
+
+            // Undo reverses the same verse, without a second confirmation.
+            viewModel.toggleBookmarkFor(verseId, notify = false)
+            advanceUntilIdle()
+            assertEquals(1, events.size)
+            assertFalse(bookmarks.isBookmarked(bookId, ch1.id, verseId))
+        }
 
     @Test
     fun display_name_is_resolved_and_survives_a_failed_first_load() =
