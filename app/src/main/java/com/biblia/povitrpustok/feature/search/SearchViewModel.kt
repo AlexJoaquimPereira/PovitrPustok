@@ -146,8 +146,9 @@ class SearchViewModel @Inject constructor(
         } catch (e: BibleDataException) {
             _uiState.update {
                 it.copy(
-                    results = emptyList(),
-                    bookNames = emptyMap(),
+                    // Keep the last good rows in state; the error surface
+                    // is a presentation layer over them (S4).
+                    results = it.results,
                     isSearching = false,
                     error = e.message ?: "Search failed.",
                     warning = null,
