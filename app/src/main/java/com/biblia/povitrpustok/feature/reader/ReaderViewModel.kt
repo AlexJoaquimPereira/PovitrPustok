@@ -266,10 +266,10 @@ class ReaderViewModel @Inject constructor(
     /**
      * Long-press entry point (F-09): bookmarks or unbookmarks [verseId]
      * directly, without requiring a prior selection, and emits one
-     * confirmation event for the snackbar. [notify] is false for Undo so a
-     * reversal does not immediately raise another confirmation.
+     * confirmation event for the snackbar. Undo is a separate, targeted
+     * operation ([undoBookmarkChange]) that raises no confirmation.
      */
-    fun toggleBookmarkFor(verseId: Long, notify: Boolean = true) {
+    fun toggleBookmarkFor(verseId: Long) {
         val state = _uiState.value
         val chapter = state.chapter ?: return
         val verse = state.verses.firstOrNull { it.id == verseId } ?: return
@@ -293,21 +293,19 @@ class ReaderViewModel @Inject constructor(
                         verseEnd = verse.verseEnd
                     )
                 }
-                if (notify) {
-                    _events.tryEmit(
-                        ReaderEvent.BookmarkChanged(
-                            bookId = bookId,
-                            chapterId = chapter.id,
-                            chapterPosition = chapter.position,
-                            chapterNumber = chapter.number,
-                            verseId = verseId,
-                            verseStart = verse.verseStart,
-                            verseEnd = verse.verseEnd,
-                            added = !bookmarked,
-                            bookName = state.bookDisplayName
-                        )
+                _events.tryEmit(
+                    ReaderEvent.BookmarkChanged(
+                        bookId = bookId,
+                        chapterId = chapter.id,
+                        chapterPosition = chapter.position,
+                        chapterNumber = chapter.number,
+                        verseId = verseId,
+                        verseStart = verse.verseStart,
+                        verseEnd = verse.verseEnd,
+                        added = !bookmarked,
+                        bookName = state.bookDisplayName
                     )
-                }
+                )
             }
         }
     }
