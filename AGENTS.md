@@ -109,6 +109,8 @@ ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest
 The emulator boots in ~16 s. Its system image also lacks FTS5, so it closes UI/device regression
 testing but **not** the FTS5 verification item.
 
+- If an install fails with `INSTALL_FAILED_INSUFFICIENT_STORAGE`, the AVD's 5.8 GB data
+  partition has filled up from repeated test installs; relaunch the AVD with `-wipe-data`.
 - On some OEM phones, Gradle's default install fails with a signature/user-profile conflict; use
   `adb install --user 0 -r -t app/build/outputs/apk/debug/app-debug.apk` first.
 - `adb devices` may list multiple transports; always set `ANDROID_SERIAL` for deterministic runs.
