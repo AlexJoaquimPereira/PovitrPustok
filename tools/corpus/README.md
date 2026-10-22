@@ -10,6 +10,7 @@ counts, schema fingerprint); it contains no scripture.
 tools/corpus/
   import_corpus.py       # deterministic XML -> per-book SQLite generator
   generate_manifest.py   # writes/verifies corpus-manifest.json (hashes only)
+  audit_corpus.py        # read-only importer-defect audit (anchors, verse 1)
   fetch_corpus.sh        # CI: download private ZIP, verify, extract
   corpus-manifest.json   # committed provenance/checksum manifest
 ```
@@ -34,6 +35,22 @@ python3 tools/corpus/generate_manifest.py --check
 The importer is deterministic: the same XML and Python/SQLite versions produce
 byte-identical databases. The current corpus reproduces
 `konkani-catholic-2026.10.21`.
+
+## Corpus audit (required before shipping a regenerated corpus)
+
+```bash
+python3 tools/corpus/audit_corpus.py
+```
+
+Read-only scan of every asset. It reports two importer defects: chapters whose
+headings are all pinned to the first verse (the John-1 "all titles at the top"
+artifact) and chapters whose first verse record starts after verse 1. It exits
+non-zero while issues remain, so a clean run is the release gate. The current
+corpus is **not** clean: only John was regenerated after the anchor/prefix
+repair, so 72 books still need regeneration from the private source (the audit
+lists every affected chapter). Never commit the regenerated `.sqlite` files;
+regenerate `corpus-manifest.json` and ship them through the private artifact
+store.
 
 ## CI (option C: private artifact store)
 

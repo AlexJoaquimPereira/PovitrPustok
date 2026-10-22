@@ -561,8 +561,11 @@ def split_stream_into_verses(stream: str, start_position: int) -> list[VerseReco
     verse receives the corresponding opening tag. This prevents fragments such
     as "<p>verse text" in one record and "</p>next verse" in another.
 
-    Content before the first explicit locator is NOT automatically assigned to
-    verse 1. This matters for scholarly/source-specific numbering.
+    A prefix before the first explicit locator is kept as its own verse-1
+    record when the first marker is exactly 2 (the John 1 repair): dropping
+    it would silently lose Scripture. When the first marker is already verse
+    1, the prefix is formatting only; a stream whose first marker is 3 or
+    later is left unchanged and needs a source-specific audit.
     """
     matches = marker_matches(stream)
     if not matches:
