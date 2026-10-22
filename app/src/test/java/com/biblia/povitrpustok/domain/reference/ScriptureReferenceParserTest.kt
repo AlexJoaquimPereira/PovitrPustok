@@ -258,4 +258,23 @@ class ScriptureReferenceParserTest {
             reference.segments
         )
     }
+
+    @Test
+    fun three_chapter_range_includes_the_middle_chapter() {
+        val reference = valid("John 1:1-3:5")
+        assertEquals(
+            listOf(
+                ScriptureSegment(1, 1, null, openEnd = true),
+                ScriptureSegment(2, null, null),
+                ScriptureSegment(3, null, 5)
+            ),
+            reference.segments
+        )
+    }
+
+    @Test
+    fun bare_chapter_range_is_invalid_instead_of_becoming_verses() {
+        val reason = invalid("John 1-3")
+        assertTrue(reason, reason.contains("Chapter ranges"))
+    }
 }

@@ -77,6 +77,11 @@ object ScriptureReferenceParser {
         return parseLocator(book, locator)
     }
 
+    private val BARE_CHAPTER_RANGE = Regex("""^\d+-\d+[A-Za-z]*$""")
+
+    /** Books whose whole text is one chapter (bare ranges are verses there). */
+    private val SINGLE_CHAPTER_BOOKS = setOf("Obadia", "filemonak", "juanv2", "juanv3", "judas")
+
     private fun parseLocator(book: String?, locator: String): Result {
         // Semicolons are another enumeration separator in lectionary feeds.
         // Groups can change chapter: "John 3:16, 4:2" is two segments.
@@ -107,6 +112,11 @@ object ScriptureReferenceParser {
                 }
                 currentChapter = secondChapter
                 segments += ScriptureSegment(firstChapter, firstVerse, null, openEnd = true)
+                // A range spanning more than two chapters includes the whole
+                // intermediate chapters; they must never be silently skipped.
+                for (chapter in (firstChapter + 1) until secondChapter) {
+                    segments += ScriptureSegment(chapter, null, null)
+                }
                 segments += ScriptureSegment(secondChapter, null, secondVerse)
                 continue
             }
@@ -136,6 +146,15 @@ object ScriptureReferenceParser {
                         currentChapter = chapterOnly
                         segments += ScriptureSegment(chapterOnly, null, null)
                         continue
+                    }
+                    if (BARE_CHAPTER_RANGE.matches(group)) {
+                        // "Philemon 9-10" is a verse range in its only
+                        // chapter, but "John 1-3" is a chapter range that
+                        // must not silently become chapter 1, verses 1-3.
+                        val knownBook = book?.let { BookNameMatcher.match(it) }?.id
+                        if (knownBook != null && knownBook !in SINGLE_CHAPTER_BOOKS) {
+                            return Result.Invalid("Chapter ranges are not supported: '$group'.")
+                        }
                     }
                     // Bare verse enumeration for a single-chapter book.
                     currentChapter = 1
