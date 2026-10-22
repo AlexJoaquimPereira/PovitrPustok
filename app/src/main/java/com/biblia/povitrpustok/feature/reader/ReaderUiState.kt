@@ -21,6 +21,11 @@ import com.biblia.povitrpustok.domain.model.Verse
  */
 data class ReaderUiState(
     val book: BibleBook? = null,
+    /**
+     * Resolved display name for the loaded book (F-12): corpus title first,
+     * catalog fallback. Used by the reader top bar so it is never blank.
+     */
+    val bookDisplayName: String = "",
     val chapter: Chapter? = null,
     val chapters: List<Chapter> = emptyList(),
     val headings: List<Heading> = emptyList(),

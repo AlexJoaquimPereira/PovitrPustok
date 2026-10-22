@@ -1,5 +1,7 @@
 package com.biblia.povitrpustok.feature.bookmarks
 
+import com.biblia.povitrpustok.testutil.FakeBookNameRepository
+
 import android.content.Context
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
@@ -57,7 +59,7 @@ class BookmarksViewModelTest {
             verseId = 5, verseStart = 5, verseEnd = 5
         )
 
-        val viewModel = BookmarksViewModel(repository)
+        val viewModel = BookmarksViewModel(repository, FakeBookNameRepository())
         awaitCondition { viewModel.uiState.value.bookmarks.size == 1 }
 
         val state = viewModel.uiState.value

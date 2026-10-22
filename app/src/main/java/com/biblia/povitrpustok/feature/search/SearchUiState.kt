@@ -13,5 +13,10 @@ data class SearchUiState(
     /** Non-blocking partial-result notice (SEARCH-02); null when complete. */
     val warning: String? = null,
     val selectedBookId: String? = null,
-    val resultCount: Int? = null
+    val resultCount: Int? = null,
+    /**
+     * Resolved display names for the result book ids (F-12), keyed by book
+     * id. Kept in state so rows never resolve/block on a name themselves.
+     */
+    val bookNames: Map<String, String> = emptyMap()
 )

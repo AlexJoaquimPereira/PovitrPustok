@@ -1,5 +1,7 @@
 package com.biblia.povitrpustok.feature.reader
 
+import com.biblia.povitrpustok.testutil.FakeBookNameRepository
+
 import com.biblia.povitrpustok.core.result.BibleBookNotFoundException
 import com.biblia.povitrpustok.core.result.BibleChapterNotFoundException
 import com.biblia.povitrpustok.domain.model.BibleBook
@@ -107,7 +109,7 @@ class ReaderViewModelTest {
             contents = mapOf(bookId to mapOf(1 to content(bookId, ch1))),
             gate = gate
         )
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
 
         viewModel.load(bookId, 1)
         runCurrent()
@@ -134,7 +136,7 @@ class ReaderViewModelTest {
             chapterLists = mapOf(bookId to listOf(ch1)),
             contents = mapOf(bookId to mapOf(1 to content(bookId, ch1)))
         )
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
         viewModel.load(bookId, 1)
         advanceUntilIdle()
 
@@ -149,7 +151,7 @@ class ReaderViewModelTest {
 
     @Test
     fun error_state_reports_missing_chapter() = runTest(dispatcher.scheduler) {
-        val viewModel = ReaderViewModel(FakeRepository(), FakeBookmarkRepository())
+        val viewModel = ReaderViewModel(FakeRepository(), FakeBookmarkRepository(), FakeBookNameRepository())
         viewModel.load("jakob", 999)
         advanceUntilIdle()
 
@@ -161,7 +163,7 @@ class ReaderViewModelTest {
 
     @Test
     fun error_state_reports_unknown_book() = runTest(dispatcher.scheduler) {
-        val viewModel = ReaderViewModel(FakeRepository(), FakeBookmarkRepository())
+        val viewModel = ReaderViewModel(FakeRepository(), FakeBookmarkRepository(), FakeBookNameRepository())
         viewModel.load("not-a-book", 1)
         advanceUntilIdle()
 
@@ -180,7 +182,7 @@ class ReaderViewModelTest {
             chapterLists = mapOf(bookId to listOf(ch1, ch2)),
             contents = mapOf(bookId to mapOf(1 to content1))
         )
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
 
         viewModel.load(bookId, 1, passageStart = 1, passageEnd = 1)
         advanceUntilIdle()
@@ -211,7 +213,7 @@ class ReaderViewModelTest {
             chapterLists = mapOf(bookId to listOf(ch1)),
             contents = mapOf(bookId to mapOf(1 to chapterContent))
         ).apply { failure = IllegalStateException("boom") }
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
         val verseId = chapterContent.verses.first().id
 
         viewModel.load(bookId, 1, targetVerseId = verseId, passageStart = 1, passageEnd = 1)
@@ -238,7 +240,7 @@ class ReaderViewModelTest {
             contents = mapOf(bookId to mapOf(1 to chapterContent))
         )
         val bookmarks = FakeBookmarkRepository()
-        val viewModel = ReaderViewModel(repository, bookmarks)
+        val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository())
 
         viewModel.load(bookId, 1)
         advanceUntilIdle()
@@ -268,7 +270,7 @@ class ReaderViewModelTest {
             contents = mapOf(bookId to mapOf(1 to content(bookId, ch1), 2 to content(bookId, ch2))),
             gate = gate
         )
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
 
         viewModel.load(bookId, 1)
         runCurrent() // first load is suspended on the gate
@@ -289,7 +291,7 @@ class ReaderViewModelTest {
     @Test
     fun unexpected_runtime_failure_is_a_controlled_error() = runTest(dispatcher.scheduler) {
         val repository = FakeRepository().apply { failure = IllegalStateException("boom") }
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
 
         viewModel.load("jakob", 1)
         advanceUntilIdle()
@@ -316,7 +318,7 @@ class ReaderViewModelTest {
                 )
             )
         )
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
         viewModel.load(bookId, 2)
         advanceUntilIdle()
         assertEquals(2, viewModel.uiState.value.chapter!!.position)
@@ -351,7 +353,7 @@ class ReaderViewModelTest {
             chapterLists = mapOf(bookId to listOf(ch1, ch2)),
             contents = mapOf(bookId to mapOf(1 to content(bookId, ch1), 2 to content(bookId, ch2)))
         )
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
         viewModel.load(bookId, 1)
         advanceUntilIdle()
         viewModel.selectChapter(2)
@@ -374,7 +376,7 @@ class ReaderViewModelTest {
                 )
             )
         )
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
 
         viewModel.load(bookId, 26)
         advanceUntilIdle()

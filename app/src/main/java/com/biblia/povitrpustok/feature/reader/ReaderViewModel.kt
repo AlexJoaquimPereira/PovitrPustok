@@ -6,6 +6,7 @@ import com.biblia.povitrpustok.core.result.BibleDataException
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.ReaderPassageSpec
 import com.biblia.povitrpustok.domain.repository.BibleRepository
+import com.biblia.povitrpustok.domain.repository.BookNameRepository
 import com.biblia.povitrpustok.domain.repository.BookmarkRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -33,7 +34,8 @@ import kotlinx.coroutines.sync.withLock
 @HiltViewModel
 class ReaderViewModel @Inject constructor(
     private val repository: BibleRepository,
-    private val bookmarkRepository: BookmarkRepository
+    private val bookmarkRepository: BookmarkRepository,
+    private val bookNames: BookNameRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ReaderUiState())
@@ -79,6 +81,7 @@ class ReaderViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 val book = repository.getBook(bookId)
+                val displayName = bookNames.displayName(bookId)
                 val chapters = repository.getChapters(bookId)
 
                 if (passages.isNotEmpty()) {
@@ -114,6 +117,7 @@ class ReaderViewModel @Inject constructor(
                     }
                     _uiState.value = ReaderUiState(
                         book = book,
+                        bookDisplayName = displayName,
                         chapter = firstContent.chapter,
                         chapters = chapters,
                         headings = firstContent.headings,
@@ -139,6 +143,7 @@ class ReaderViewModel @Inject constructor(
                 }
                 _uiState.value = ReaderUiState(
                     book = book,
+                    bookDisplayName = displayName,
                     chapter = content.chapter,
                     chapters = chapters,
                     headings = content.headings,

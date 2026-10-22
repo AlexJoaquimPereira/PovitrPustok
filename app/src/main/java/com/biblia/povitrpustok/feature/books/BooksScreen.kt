@@ -36,6 +36,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.BibleCatalog
+import com.biblia.povitrpustok.domain.model.BookDisplayName
+import com.biblia.povitrpustok.ui.components.englishBookNameVisible
 import com.biblia.povitrpustok.domain.model.Testament
 
 /**
@@ -185,13 +187,15 @@ fun BookListItem(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
-        Text(
-            text = "($englishName)",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(start = 12.dp)
-        )
+        if (englishBookNameVisible()) {
+            Text(
+                text = "($englishName)",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 12.dp)
+            )
+        }
     }
 }

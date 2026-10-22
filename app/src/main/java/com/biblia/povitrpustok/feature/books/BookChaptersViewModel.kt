@@ -3,7 +3,9 @@ package com.biblia.povitrpustok.feature.books
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.biblia.povitrpustok.core.result.BibleDataException
+import com.biblia.povitrpustok.domain.model.BibleCatalog
 import com.biblia.povitrpustok.domain.repository.BibleRepository
+import com.biblia.povitrpustok.domain.repository.BookNameRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +21,8 @@ import kotlinx.coroutines.launch
  */
 @HiltViewModel
 class BookChaptersViewModel @Inject constructor(
-    private val repository: BibleRepository
+    private val repository: BibleRepository,
+    private val bookNames: BookNameRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BookChaptersUiState())
@@ -28,7 +31,13 @@ class BookChaptersViewModel @Inject constructor(
     fun load(bookId: String) {
         viewModelScope.launch {
             _uiState.update {
-                it.copy(bookId = bookId, isLoading = true, errorMessage = null)
+                it.copy(
+                    bookId = bookId,
+                    // F-12: never blank while the corpus title is loading.
+                    displayName = BibleCatalog.byId(bookId)?.displayName.orEmpty(),
+                    isLoading = true,
+                    errorMessage = null
+                )
             }
             try {
                 val book = repository.getBook(bookId)
@@ -36,6 +45,7 @@ class BookChaptersViewModel @Inject constructor(
                 _uiState.value = BookChaptersUiState(
                     book = book,
                     bookId = bookId,
+                    displayName = bookNames.displayName(bookId),
                     chapters = chapters,
                     isLoading = false
                 )

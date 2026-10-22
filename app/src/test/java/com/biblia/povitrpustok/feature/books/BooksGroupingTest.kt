@@ -57,6 +57,6 @@ class BooksGroupingTest {
         assertTrue(newTestament.any { it.id == "tesalonikarank2" })
         assertEquals(Testament.NEW_TESTAMENT, BibleCatalog.byId("tesalonikarank1")!!.testament)
         // short display names preserved
-        assertEquals("Poilem", BibleCatalog.byId("korintkarant1")!!.displayName)
+        assertEquals("Korintkarank Pauluchem Poilem Potr", BibleCatalog.byId("korintkarant1")!!.displayName)
     }
 }

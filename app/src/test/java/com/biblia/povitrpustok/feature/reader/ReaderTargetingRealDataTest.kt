@@ -1,5 +1,7 @@
 package com.biblia.povitrpustok.feature.reader
 
+import com.biblia.povitrpustok.testutil.FakeBookNameRepository
+
 import com.biblia.povitrpustok.testutil.CorpusAvailabilityRule
 
 import android.content.Context
@@ -62,7 +64,7 @@ class ReaderTargetingRealDataTest {
     fun real_verse_id_targets_the_exact_verse() {
         val firstVerse = runBlocking { repository.getChapter("jakob", 1).verses.first() }
 
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
         viewModel.load("jakob", 1, targetVerseId = firstVerse.id)
         val state = settled(viewModel)
 
@@ -73,7 +75,7 @@ class ReaderTargetingRealDataTest {
 
     @Test
     fun bogus_verse_id_never_crashes_and_renders_normally() {
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
         viewModel.load("jakob", 1, targetVerseId = 9_999_999L)
         val state = settled(viewModel)
 

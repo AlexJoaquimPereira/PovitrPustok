@@ -2,6 +2,7 @@ package com.biblia.povitrpustok.feature.bookmarks
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.biblia.povitrpustok.domain.repository.BookNameRepository
 import com.biblia.povitrpustok.domain.repository.BookmarkRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -20,7 +21,8 @@ import kotlinx.coroutines.launch
  */
 @HiltViewModel
 class BookmarksViewModel @Inject constructor(
-    private val bookmarkRepository: BookmarkRepository
+    private val bookmarkRepository: BookmarkRepository,
+    private val bookNames: BookNameRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BookmarksUiState())
@@ -29,7 +31,12 @@ class BookmarksViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             bookmarkRepository.observeBookmarks().collect { bookmarks ->
-                _uiState.value = BookmarksUiState(bookmarks = bookmarks, isLoading = false)
+                val names = bookNames.displayNames(bookmarks.map { it.bookId }.distinct())
+                _uiState.value = BookmarksUiState(
+                    bookmarks = bookmarks,
+                    bookNames = names,
+                    isLoading = false
+                )
             }
         }
     }

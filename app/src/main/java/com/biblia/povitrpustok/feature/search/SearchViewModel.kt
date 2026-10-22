@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.biblia.povitrpustok.core.result.BibleDataException
 import com.biblia.povitrpustok.domain.repository.BibleSearchRepository
+import com.biblia.povitrpustok.domain.repository.BookNameRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +35,8 @@ import kotlinx.coroutines.launch
 class SearchViewModel @Inject constructor(
     private val searchRepository: BibleSearchRepository,
     private val queryParser: BibleSearchQueryParser,
-    private val savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle,
+    private val bookNames: BookNameRepository
 ) : ViewModel() {
 
     // DIST-01: the query and book filter survive process recreation; the
@@ -97,9 +99,11 @@ class SearchViewModel @Inject constructor(
                 bookIds = bookId?.let { listOf(it) }
             )
             val partial = outcome.results.isNotEmpty() && outcome.failures.isNotEmpty()
+            val names = bookNames.displayNames(outcome.results.map { it.bookId }.distinct())
             _uiState.update {
                 it.copy(
                     results = outcome.results,
+                    bookNames = names,
                     isSearching = false,
                     resultCount = outcome.results.size,
                     error = if (outcome.results.isEmpty() && outcome.failures.isNotEmpty()) {

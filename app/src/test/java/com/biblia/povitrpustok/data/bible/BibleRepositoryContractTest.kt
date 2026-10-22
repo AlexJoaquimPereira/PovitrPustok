@@ -193,7 +193,7 @@ class BibleRepositoryContractTest {
         assertEquals("1 Thessalonians", tesalonikarank1.englishName)
 
         val korintkarant1 = repository.getBook("korintkarant1")
-        assertEquals("Poilem", korintkarant1.displayName)
+        assertEquals("Korintkarank Pauluchem Poilem Potr", korintkarant1.displayName)
 
         // books.position follows importer filename order
         val byPosition = BibleCatalog.books.sortedBy { it.position }.map { it.id }

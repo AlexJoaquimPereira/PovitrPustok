@@ -1,5 +1,7 @@
 package com.biblia.povitrpustok.feature.books
 
+import com.biblia.povitrpustok.testutil.FakeBookNameRepository
+
 import com.biblia.povitrpustok.testutil.CorpusAvailabilityRule
 
 import android.content.Context
@@ -49,7 +51,7 @@ class BookChaptersViewModelTest {
         timeoutMs: Long = 10_000,
         load: (BookChaptersViewModel) -> Unit
     ): BookChaptersUiState {
-        val viewModel = BookChaptersViewModel(repository)
+        val viewModel = BookChaptersViewModel(repository, FakeBookNameRepository())
         load(viewModel)
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {

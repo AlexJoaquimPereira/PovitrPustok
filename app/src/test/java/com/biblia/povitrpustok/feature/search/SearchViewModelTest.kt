@@ -1,5 +1,7 @@
 package com.biblia.povitrpustok.feature.search
 
+import com.biblia.povitrpustok.testutil.FakeBookNameRepository
+
 import androidx.lifecycle.SavedStateHandle
 import com.biblia.povitrpustok.core.result.BibleDatabaseAccessException
 import com.biblia.povitrpustok.domain.model.SearchFailure
@@ -90,7 +92,7 @@ class SearchViewModelTest {
         val repository = FakeSearchRepository().apply {
             results = listOf(result())
         }
-        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle())
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle(), FakeBookNameRepository())
         runCurrent() // start the debounce collector before emitting
 
         // rapid keystrokes: only the last query is searched, after debounce
@@ -116,7 +118,7 @@ class SearchViewModelTest {
     @Test
     fun empty_query_never_touches_the_repository() = runTest(dispatcher.scheduler) {
         val repository = FakeSearchRepository()
-        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle())
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle(), FakeBookNameRepository())
         runCurrent()
 
         viewModel.onQueryChange("   ")
@@ -131,7 +133,7 @@ class SearchViewModelTest {
     @Test
     fun no_results_yields_empty_state() = runTest(dispatcher.scheduler) {
         val repository = FakeSearchRepository()
-        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle())
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle(), FakeBookNameRepository())
         runCurrent()
 
         viewModel.onQueryChange("zzzqqqxxx")
@@ -149,7 +151,7 @@ class SearchViewModelTest {
         val repository = FakeSearchRepository().apply {
             failure = BibleDatabaseAccessException("boom")
         }
-        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle())
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle(), FakeBookNameRepository())
         runCurrent()
 
         viewModel.onQueryChange("dev")
@@ -167,7 +169,7 @@ class SearchViewModelTest {
         val repository = FakeSearchRepository().apply {
             results = listOf(result())
         }
-        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle())
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle(), FakeBookNameRepository())
         runCurrent()
 
         viewModel.onQueryChange("dev")
@@ -189,7 +191,7 @@ class SearchViewModelTest {
             results = listOf(result())
             failures = listOf(SearchFailure("Amos", "bad index"))
         }
-        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle())
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle(), FakeBookNameRepository())
         runCurrent()
 
         viewModel.onQueryChange("dev")
@@ -207,7 +209,7 @@ class SearchViewModelTest {
         val repository = FakeSearchRepository().apply {
             failures = listOf(SearchFailure("Amos", "bad index"), SearchFailure("Esther", "bad index"))
         }
-        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle())
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle(), FakeBookNameRepository())
         runCurrent()
 
         viewModel.onQueryChange("dev")
@@ -227,7 +229,7 @@ class SearchViewModelTest {
             this.gate = gate
             results = listOf(result(bookId = "jakob", position = 2))
         }
-        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle())
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle(), FakeBookNameRepository())
         runCurrent()
 
         viewModel.onQueryChange("first")
@@ -253,7 +255,7 @@ class SearchViewModelTest {
             mapOf("search_query" to "subhagi", "search_book_filter" to "jakob")
         )
         val repository = FakeSearchRepository()
-        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), handle)
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), handle, FakeBookNameRepository())
         runCurrent()
 
         assertEquals("subhagi", viewModel.uiState.value.query)

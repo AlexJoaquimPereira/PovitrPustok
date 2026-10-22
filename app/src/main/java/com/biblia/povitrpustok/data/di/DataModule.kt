@@ -7,6 +7,7 @@ import com.biblia.povitrpustok.core.database.BibleDatabaseProvider
 import com.biblia.povitrpustok.data.app.AppDatabase
 import com.biblia.povitrpustok.data.app.BookmarkRepositoryImpl
 import com.biblia.povitrpustok.data.bible.BibleRepositoryImpl
+import com.biblia.povitrpustok.data.bible.BookNameRepositoryImpl
 import com.biblia.povitrpustok.data.bible.BibleSearchRepositoryImpl
 import com.biblia.povitrpustok.data.bible.BookTitleRepositoryImpl
 import com.biblia.povitrpustok.data.bible.ScriptureReferenceResolverImpl
@@ -14,6 +15,7 @@ import com.biblia.povitrpustok.data.liturgy.CatholicReadingsApi
 import com.biblia.povitrpustok.data.liturgy.LiturgicalRepositoryImpl
 import com.biblia.povitrpustok.domain.repository.BibleRepository
 import com.biblia.povitrpustok.domain.repository.BibleSearchRepository
+import com.biblia.povitrpustok.domain.repository.BookNameRepository
 import com.biblia.povitrpustok.domain.repository.BookTitleRepository
 import com.biblia.povitrpustok.domain.repository.BookmarkRepository
 import com.biblia.povitrpustok.domain.repository.LiturgicalRepository
@@ -77,6 +79,12 @@ object DataModule {
     fun provideBookTitleRepository(
         provider: BibleDatabaseProvider
     ): BookTitleRepository = BookTitleRepositoryImpl(provider)
+
+    @Provides
+    @Singleton
+    fun provideBookNameRepository(
+        titles: BookTitleRepository
+    ): BookNameRepository = BookNameRepositoryImpl(titles)
 
     @Provides
     @Singleton

@@ -1,4 +1,4 @@
-package com.biblia.povitrpustok.feature.books
+package com.biblia.povitrpustok.domain.model
 
 import java.util.Locale
 
