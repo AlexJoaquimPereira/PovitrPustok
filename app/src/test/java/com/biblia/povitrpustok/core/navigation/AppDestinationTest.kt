@@ -30,7 +30,15 @@ class AppDestinationTest {
         assertEquals("reader/jakob/3?verseId=42", AppDestination.reader("jakob", 3, 42L))
         assertEquals(
             AppDestination.READER,
-            "reader/{bookId}/{chapterPosition}?verseId={verseId}&verseStart={verseStart}&verseEnd={verseEnd}&passages={passages}"
+            "reader/{bookId}/{chapterPosition}?verseId={verseId}&verseStart={verseStart}&verseEnd={verseEnd}&passages={passages}&targetVerse={targetVerse}"
+        )
+    }
+
+    @Test
+    fun reader_target_verse_number_is_optional() {
+        assertEquals(
+            "reader/jakob/3?targetVerse=16",
+            AppDestination.reader("jakob", 3, targetVerseNumber = 16)
         )
     }
 

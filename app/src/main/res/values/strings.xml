@@ -56,6 +56,12 @@
     <string name="chapter_picker_current">Current chapter</string>
     <string name="verse_range">%1$d–%2$d</string>
     <string name="reader_verse_only">Verse %1$d</string>
+    <string name="reader_passage_label">Passage</string>
+    <string name="reader_passage_verses">Verses %1$s</string>
+    <string name="reader_passage_chapters">Passage · %1$d chapters</string>
+    <string name="reader_show_full_chapter">Show full chapter</string>
+    <string name="reader_target_missing">Verse not found — showing the chapter.</string>
+    <string name="reader_dismiss">Dismiss</string>
     <string name="search_title">Search</string>
     <string name="search_hint">Search the Bible</string>
     <string name="search_field_label">Search the Bible</string>

@@ -18,5 +18,11 @@ data class ReaderDestination(
     val verseStart: Int? = null,
     val verseEnd: Int? = null,
     /** Cross-chapter or non-continuous passage segments in source order. */
-    val passages: List<ReaderPassageSpec> = emptyList()
+    val passages: List<ReaderPassageSpec> = emptyList(),
+    /**
+     * Stable verse-number target for full-chapter navigation (F-05): the
+     * Reader opens the whole chapter, scrolls to this verse and highlights
+     * it. Unlike [verseId], a verse number survives corpus regeneration.
+     */
+    val targetVerseNumber: Int? = null
 )

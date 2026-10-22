@@ -74,7 +74,8 @@ fun PovitrPustokNavHost() {
                             destination.verseId,
                             destination.verseStart,
                             destination.verseEnd,
-                            destination.passages
+                            destination.passages,
+                            destination.targetVerseNumber
                         )
                     )
                 },
@@ -142,13 +143,15 @@ fun PovitrPustokNavHost() {
                 navArgument("verseId") { type = NavType.LongType; defaultValue = -1L },
                 navArgument("verseStart") { type = NavType.IntType; defaultValue = -1 },
                 navArgument("verseEnd") { type = NavType.IntType; defaultValue = -1 },
-                navArgument("passages") { type = NavType.StringType; defaultValue = "" }
+                navArgument("passages") { type = NavType.StringType; defaultValue = "" },
+                navArgument("targetVerse") { type = NavType.IntType; defaultValue = -1 }
             )
         ) { backStackEntry ->
             val arguments = backStackEntry.arguments
             val verseId = arguments?.getLong("verseId")?.takeIf { it >= 0 }
             val verseStart = arguments?.getInt("verseStart")?.takeIf { it >= 0 }
             val verseEnd = arguments?.getInt("verseEnd")?.takeIf { it >= 0 }
+            val targetVerse = arguments?.getInt("targetVerse")?.takeIf { it >= 0 }
             ReaderScreen(
                 bookId = arguments?.getString("bookId").orEmpty(),
                 chapterPosition = arguments?.getInt("chapterPosition") ?: 1,
@@ -156,7 +159,8 @@ fun PovitrPustokNavHost() {
                 targetVerseId = verseId,
                 passageStart = verseStart,
                 passageEnd = verseEnd,
-                passagesSpec = arguments?.getString("passages").orEmpty()
+                passagesSpec = arguments?.getString("passages").orEmpty(),
+                targetVerseNumber = targetVerse
             )
         }
 

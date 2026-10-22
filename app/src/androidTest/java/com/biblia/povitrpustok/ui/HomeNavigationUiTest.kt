@@ -169,4 +169,19 @@ class HomeNavigationUiTest {
         }
         composeRule.onNodeWithTag("chapters.cell.1").assertIsDisplayed()
     }
+
+    @Test
+    fun reference_passage_banner_offers_the_full_chapter() {
+        composeRule.onNodeWithTag("home.reference").performClick()
+        composeRule.onNode(hasSetTextAction()).performTextInput("Juanv 1:16")
+        composeRule.onNodeWithText("Go").performClick()
+
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("reader.passage_banner").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("reader.show_full_chapter").performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("reader.passage_banner").fetchSemanticsNodes().isEmpty()
+        }
+    }
 }

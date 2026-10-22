@@ -63,6 +63,7 @@ class ReaderViewModel @Inject constructor(
         val bookId: String,
         val chapterPosition: Int,
         val targetVerseId: Long?,
+        val targetVerseNumber: Int?,
         val passageStart: Int?,
         val passageEnd: Int?,
         val passages: List<ReaderPassageSpec>
@@ -84,10 +85,19 @@ class ReaderViewModel @Inject constructor(
         targetVerseId: Long? = null,
         passageStart: Int? = null,
         passageEnd: Int? = null,
-        passages: List<ReaderPassageSpec> = emptyList()
+        passages: List<ReaderPassageSpec> = emptyList(),
+        targetVerseNumber: Int? = null
     ) {
         this.bookId = bookId
-        lastRequest = LoadRequest(bookId, chapterPosition, targetVerseId, passageStart, passageEnd, passages)
+        lastRequest = LoadRequest(
+            bookId,
+            chapterPosition,
+            targetVerseId,
+            targetVerseNumber,
+            passageStart,
+            passageEnd,
+            passages
+        )
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             // F-12: never a blank top-bar title, even when a first load
@@ -140,11 +150,10 @@ class ReaderViewModel @Inject constructor(
                                 )
                             )
                         }
-                    val target = targetVerseId?.let { id ->
-                        chapterContents.values.firstNotNullOfOrNull { content ->
-                            content.verses.firstOrNull { it.id == id }
+                    val target = chapterContents.values
+                        .firstNotNullOfOrNull { content ->
+                            content.verses.targetFor(targetVerseId, targetVerseNumber)
                         }
-                    }
                     _uiState.value = ReaderUiState(
                         book = book,
                         bookDisplayName = displayName,
@@ -154,7 +163,8 @@ class ReaderViewModel @Inject constructor(
                         verses = firstContent.verses,
                         isLoading = false,
                         targetVerseId = target?.id,
-                        targetMissing = targetVerseId != null && target == null,
+                        targetMissing = (targetVerseId != null || targetVerseNumber != null) &&
+                            target == null,
                         passageChapters = passageChapters
                     )
                     observeChapterBookmarks(bookId, firstContent.chapter.id)
@@ -163,9 +173,7 @@ class ReaderViewModel @Inject constructor(
                 }
 
                 val content = repository.getChapter(bookId, chapterPosition)
-                val target = targetVerseId?.let { id ->
-                    content.verses.firstOrNull { it.id == id }
-                }
+                val target = content.verses.targetFor(targetVerseId, targetVerseNumber)
                 val passage = if (passageStart != null && passageEnd != null && passageEnd >= passageStart) {
                     ReaderPassage(passageStart, passageEnd)
                 } else {
@@ -180,7 +188,8 @@ class ReaderViewModel @Inject constructor(
                     verses = content.verses,
                     isLoading = false,
                     targetVerseId = if (target != null) target.id else null,
-                    targetMissing = targetVerseId != null && target == null,
+                    targetMissing = (targetVerseId != null || targetVerseNumber != null) &&
+                        target == null,
                     passage = passage
                 )
                 observeChapterBookmarks(bookId, content.chapter.id)
@@ -224,6 +233,7 @@ class ReaderViewModel @Inject constructor(
                 bookId = request.bookId,
                 chapterPosition = request.chapterPosition,
                 targetVerseId = request.targetVerseId,
+                targetVerseNumber = request.targetVerseNumber,
                 passageStart = request.passageStart,
                 passageEnd = request.passageEnd,
                 passages = request.passages
@@ -360,6 +370,34 @@ class ReaderViewModel @Inject constructor(
     /** Ends the temporary highlight (e.g. after the highlight duration). */
     fun clearHighlight() {
         _uiState.update { it.copy(highlightedVerseId = null) }
+    }
+
+    /**
+     * F-05: leave passage mode and show the whole chapter at the same
+     * position. It deliberately goes through [load], so [retry] afterwards
+     * replays the full chapter rather than the previous passage.
+     */
+    fun showFullChapter() {
+        val bookId = this.bookId ?: return
+        val position = _uiState.value.chapter?.position ?: return
+        load(bookId, position)
+    }
+
+    /** Dismisses the "verse not found" inline notice. */
+    fun dismissTargetMissing() {
+        _uiState.update { it.copy(targetMissing = false) }
+    }
+
+    private fun List<com.biblia.povitrpustok.domain.model.Verse>.targetFor(
+        targetVerseId: Long?,
+        targetVerseNumber: Int?
+    ): com.biblia.povitrpustok.domain.model.Verse? = when {
+        targetVerseId != null -> firstOrNull { it.id == targetVerseId }
+        targetVerseNumber != null -> firstOrNull { verse ->
+            verse.verseStart <= targetVerseNumber &&
+                (verse.verseEnd ?: verse.verseStart) >= targetVerseNumber
+        }
+        else -> null
     }
 
     /** Sequential previous chapter by position (stays inside the book). */

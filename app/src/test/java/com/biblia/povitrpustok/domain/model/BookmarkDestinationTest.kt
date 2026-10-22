@@ -25,8 +25,10 @@ class BookmarkDestinationTest {
 
         assertEquals("jakob", destination.bookId)
         assertEquals("chapter position is the stable navigation identity", 3, destination.chapterPosition)
-        assertEquals(5, destination.verseStart)
-        assertEquals(6, destination.verseEnd)
+        // F-05: bookmarks open the full chapter at the verse, not a fragment.
+        assertEquals(5, destination.targetVerseNumber)
+        assertNull(destination.verseStart)
+        assertNull(destination.verseEnd)
         assertNull("corpus row ids must not be used for navigation", destination.verseId)
     }
 }

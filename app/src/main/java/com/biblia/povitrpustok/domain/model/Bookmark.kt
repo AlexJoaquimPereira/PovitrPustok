@@ -22,15 +22,17 @@ data class Bookmark(
 ) {
 
     /**
-     * Reader navigation destination for this bookmark, using only stable
-     * location fields. The passage range identifies the verse even if the
-     * corpus row ids changed since the bookmark was saved.
+     * Reader navigation destination for this bookmark (F-05): open the full
+     * chapter at the bookmarked verse instead of an isolated passage.
+     *
+     * Only stable location fields are used — [chapterPosition] and the verse
+     * number. Corpus row ids are never used, because the prepared assets are
+     * regenerated on app updates (BOOKMARK-01).
      */
     fun toReaderDestination(): ReaderDestination =
         ReaderDestination(
             bookId = bookId,
             chapterPosition = chapterPosition,
-            verseStart = verseStart,
-            verseEnd = verseEnd
+            targetVerseNumber = verseStart
         )
 }

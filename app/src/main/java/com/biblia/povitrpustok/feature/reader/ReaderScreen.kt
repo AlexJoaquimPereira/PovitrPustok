@@ -2,7 +2,9 @@ package com.biblia.povitrpustok.feature.reader
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -78,17 +80,27 @@ fun ReaderScreen(
     passageStart: Int? = null,
     passageEnd: Int? = null,
     passagesSpec: String = "",
+    targetVerseNumber: Int? = null,
     viewModel: ReaderViewModel = hiltViewModel()
 ) {
     val passages = remember(passagesSpec) { ReaderPassageCodec.decode(passagesSpec) }
-    LaunchedEffect(bookId, chapterPosition, targetVerseId, passageStart, passageEnd, passagesSpec) {
+    LaunchedEffect(
+        bookId,
+        chapterPosition,
+        targetVerseId,
+        targetVerseNumber,
+        passageStart,
+        passageEnd,
+        passagesSpec
+    ) {
         viewModel.load(
             bookId = bookId,
             chapterPosition = chapterPosition,
             targetVerseId = targetVerseId,
             passageStart = passageStart,
             passageEnd = passageEnd,
-            passages = passages
+            passages = passages,
+            targetVerseNumber = targetVerseNumber
         )
     }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -138,7 +150,17 @@ fun ReaderScreen(
             )
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            if (state.passage != null || state.passageChapters.isNotEmpty()) {
+                PassageBanner(
+                    state = state,
+                    onShowFullChapter = viewModel::showFullChapter
+                )
+            }
+            if (state.targetMissing) {
+                TargetMissingNotice(onDismiss = viewModel::dismissTargetMissing)
+            }
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             val errorMessage = state.errorMessage
             when {
                 state.isLoading -> ReaderLoadingState()
@@ -160,6 +182,7 @@ fun ReaderScreen(
                     onPrevious = viewModel::previous
                 )
                 else -> ReaderLoadingState()
+            }
             }
         }
     }
@@ -362,5 +385,100 @@ private fun ChapterPickerSheet(
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
+    }
+}
+
+/**
+ * F-05: passage mode is never contextless. The banner names the requested
+ * verses (or the number of chapters) and offers a one-tap way back to the
+ * whole chapter. Additive: filtering itself is unchanged.
+ */
+@Composable
+private fun PassageBanner(
+    state: ReaderUiState,
+    onShowFullChapter: () -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.fillMaxWidth().testTag("reader.passage_banner")
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = passageLabel(state),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(
+                onClick = onShowFullChapter,
+                modifier = Modifier
+                    .heightIn(min = 48.dp)
+                    .testTag("reader.show_full_chapter")
+            ) {
+                Text(text = stringResource(R.string.reader_show_full_chapter))
+            }
+        }
+    }
+}
+
+@Composable
+private fun passageLabel(state: ReaderUiState): String {
+    val parts = state.passageChapters
+    if (parts.size > 1) {
+        return stringResource(R.string.reader_passage_chapters, parts.size)
+    }
+    val ranges = parts.firstOrNull()?.passage?.ranges
+        ?: state.passage?.ranges
+        ?: return stringResource(R.string.reader_passage_label)
+    val labels = mutableListOf<String>()
+    for (range in ranges) {
+        labels += if (range.first == range.last) {
+            stringResource(R.string.reader_verse_only, range.first)
+        } else {
+            stringResource(R.string.verse_range, range.first, range.last)
+        }
+    }
+    return if (ranges.size == 1 && ranges.first().first == ranges.first().last) {
+        labels.first()
+    } else {
+        stringResource(R.string.reader_passage_verses, labels.joinToString(", "))
+    }
+}
+
+/** F-05: a stale target explains itself instead of silently showing the chapter. */
+@Composable
+private fun TargetMissingNotice(onDismiss: () -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.errorContainer,
+        modifier = Modifier.fillMaxWidth().testTag("reader.target_missing")
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.reader_target_missing),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .heightIn(min = 48.dp)
+                    .testTag("reader.target_missing_dismiss")
+            ) {
+                Text(text = stringResource(R.string.reader_dismiss))
+            }
+        }
     }
 }

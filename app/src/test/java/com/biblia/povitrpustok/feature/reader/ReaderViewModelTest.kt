@@ -228,6 +228,52 @@ class ReaderViewModelTest {
         }
 
     @Test
+    fun verse_number_target_opens_the_full_chapter_without_a_passage() =
+        runTest(dispatcher.scheduler) {
+            val bookId = "jakob"
+            val ch1 = chapter(bookId, number = 1, position = 1)
+            val repository = FakeRepository(
+                chapterLists = mapOf(bookId to listOf(ch1)),
+                contents = mapOf(bookId to mapOf(1 to content(bookId, ch1)))
+            )
+            val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+
+            viewModel.load(bookId, 1, targetVerseNumber = 1)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertNull("bookmark navigation must not create a passage", state.passage)
+            assertEquals(1000L, state.targetVerseId)
+            assertFalse(state.targetMissing)
+        }
+
+    @Test
+    fun show_full_chapter_leaves_passage_mode_and_retry_stays_full() =
+        runTest(dispatcher.scheduler) {
+            val bookId = "jakob"
+            val ch1 = chapter(bookId, number = 1, position = 1)
+            val repository = FakeRepository(
+                chapterLists = mapOf(bookId to listOf(ch1)),
+                contents = mapOf(bookId to mapOf(1 to content(bookId, ch1)))
+            )
+            val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+
+            viewModel.load(bookId, 1, passageStart = 1, passageEnd = 1)
+            advanceUntilIdle()
+            assertNotNull("expected passage mode", viewModel.uiState.value.passage)
+
+            viewModel.showFullChapter()
+            advanceUntilIdle()
+            assertNull(viewModel.uiState.value.passage)
+
+            // READER-01: retry replays the full chapter, not the old passage.
+            viewModel.retry()
+            advanceUntilIdle()
+            assertNull(viewModel.uiState.value.passage)
+            assertEquals(ch1, viewModel.uiState.value.chapter)
+        }
+
+    @Test
     fun display_name_is_resolved_and_survives_a_failed_first_load() =
         runTest(dispatcher.scheduler) {
             val bookId = "jakob"
