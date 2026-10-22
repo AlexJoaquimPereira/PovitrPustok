@@ -409,26 +409,39 @@ fun ReaderContent(
 }
 
 /**
- * F-04: "verses x-y" for the header of [chapter] when a passage is active.
- * Multi-chapter passages report each chapter's own span; a whole chapter has
- * no label (it would be noise).
+ * F-04: the passage context for the header of [chapter].
+ *
+ * A whole chapter has no label (it would be noise), and non-continuous
+ * passages list their actual ranges instead of collapsing the gaps into one
+ * misleading span.
  */
 @Composable
 private fun passageRangeLabel(state: ReaderUiState, chapter: Chapter): String? {
-    val ranges = state.passageChapters
-        .firstOrNull { it.chapter.id == chapter.id }
-        ?.passage
-        ?.ranges
+    val part = state.passageChapters.firstOrNull { it.chapter.id == chapter.id }
+    val ranges = part?.passage?.ranges
         ?: state.passage?.let { listOf(it.verseStart..it.verseEnd) }
         ?: return null
     if (ranges.isEmpty()) return null
-    val first = ranges.minOf { it.first }
-    val last = ranges.maxOf { it.last }
-    return if (first == last) {
-        stringResource(R.string.reader_verse_only, first)
-    } else {
-        stringResource(R.string.verse_range, first, last)
+
+    val verses = part?.verses ?: state.verses
+    val firstVerse = verses.firstOrNull()?.verseStart
+    val lastVerse = verses.lastOrNull()?.let { it.verseEnd ?: it.verseStart }
+    val wholeChapter = ranges.size == 1 &&
+        firstVerse != null &&
+        lastVerse != null &&
+        ranges.first().first <= firstVerse &&
+        ranges.first().last >= lastVerse
+    if (wholeChapter) return null
+
+    val labels = mutableListOf<String>()
+    for (range in ranges) {
+        labels += if (range.first == range.last) {
+            stringResource(R.string.reader_verse_only, range.first)
+        } else {
+            stringResource(R.string.verse_range, range.first, range.last)
+        }
     }
+    return labels.joinToString(", ")
 }
 
 /** Horizontal distance (dp) a swipe must exceed to navigate chapters. */

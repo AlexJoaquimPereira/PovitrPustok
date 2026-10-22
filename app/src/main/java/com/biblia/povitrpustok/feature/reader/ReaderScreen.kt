@@ -45,6 +45,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -56,6 +58,8 @@ import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.ReaderPassageCodec
 import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
+import com.biblia.povitrpustok.ui.components.BookName
+import com.biblia.povitrpustok.ui.components.BookNameLayout
 
 /**
  * Reader screen (implementation plan §17, §42).
@@ -182,14 +186,15 @@ private fun ReaderTopBar(state: ReaderUiState, onBack: () -> Unit) {
         modifier = Modifier.testTag("reader.topbar"),
         title = {
             // F-04: one line only; the chapter/verse context lives in the
-            // scrolling content header.
-            Text(
-                text = state.bookDisplayName.ifBlank {
+            // scrolling content header. The English name stays secondary
+            // (F-12) and yields space first.
+            BookName(
+                localName = state.bookDisplayName.ifBlank {
                     state.book?.displayName.orEmpty()
                 },
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                englishName = state.book?.englishName,
+                layout = BookNameLayout.INLINE,
+                style = MaterialTheme.typography.titleMedium
             )
         },
         navigationIcon = {
@@ -233,7 +238,10 @@ private fun ReaderActionBar(
         TextButton(
             onClick = onOpenChapterPicker,
             enabled = state.chapter != null && state.chapters.isNotEmpty(),
-            modifier = Modifier.weight(1.4f).testTag("reader.chapter_picker")
+            modifier = Modifier
+                .weight(1.4f)
+                .heightIn(min = 48.dp)
+                .testTag("reader.chapter_picker")
         ) {
             Text(
                 text = stringResource(R.string.chapter_selector_label, currentLabel),
@@ -312,6 +320,7 @@ private fun ChapterPickerSheet(
         ) {
             items(chapters, key = { it.id }) { chapter ->
                 val current = chapter.position == currentPosition
+                val currentDescription = stringResource(R.string.chapter_picker_current)
                 Surface(
                     onClick = { onSelect(chapter.position) },
                     color = if (current) {
@@ -323,6 +332,13 @@ private fun ChapterPickerSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 48.dp)
+                        .then(
+                            if (current) {
+                                Modifier.semantics { stateDescription = currentDescription }
+                            } else {
+                                Modifier
+                            }
+                        )
                         .testTag("reader.picker.cell.${chapter.position}")
                 ) {
                     Box(
