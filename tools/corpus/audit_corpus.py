@@ -26,7 +26,7 @@ import sys
 DEFAULT_ASSETS = "app/src/main/assets/bible"
 
 
-def audit(assets: str) -> int:
+def audit(assets: str, full: bool = False) -> int:
     files = sorted(f for f in os.listdir(assets) if f.endswith(".sqlite"))
     if not files:
         print(f"no .sqlite assets under {assets}", file=sys.stderr)
@@ -75,16 +75,17 @@ def audit(assets: str) -> int:
             db.close()
 
     print(f"scanned {len(files)} books under {assets}")
+    limit = None if full else 40
     print(f"heading-anchor issues: {len(anchor_issues)}")
-    for line in anchor_issues[:40]:
+    for line in anchor_issues[:limit]:
         print("  " + line)
-    if len(anchor_issues) > 40:
-        print(f"  ... {len(anchor_issues) - 40} more")
+    if limit is not None and len(anchor_issues) > limit:
+        print(f"  ... {len(anchor_issues) - limit} more (use --full)")
     print(f"verse-one coverage issues: {len(verse_one_issues)}")
-    for line in verse_one_issues[:40]:
+    for line in verse_one_issues[:limit]:
         print("  " + line)
-    if len(verse_one_issues) > 40:
-        print(f"  ... {len(verse_one_issues) - 40} more")
+    if limit is not None and len(verse_one_issues) > limit:
+        print(f"  ... {len(verse_one_issues) - limit} more (use --full)")
 
     return 1 if (anchor_issues or verse_one_issues) else 0
 
@@ -92,9 +93,14 @@ def audit(assets: str) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--assets", default=DEFAULT_ASSETS)
+    parser.add_argument("--full", action="store_true", help="print every affected chapter")
     args = parser.parse_args()
-    return audit(args.assets)
+    return audit(args.assets, full=args.full)
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except BrokenPipeError:
+        # Piping into head/less is a normal way to read the report.
+        raise SystemExit(0)

@@ -42,7 +42,7 @@ byte-identical databases. The current corpus reproduces
 python3 tools/corpus/audit_corpus.py
 ```
 
-Read-only scan of every asset. It reports two importer defects: chapters whose
+Read-only scan of every asset (`--full` prints every affected chapter). It reports two importer defects: chapters whose
 headings are all pinned to the first verse (the John-1 "all titles at the top"
 artifact) and chapters whose first verse record starts after verse 1. It exits
 non-zero while issues remain, so a clean run is the release gate. The current
