@@ -1,42 +1,61 @@
 package com.biblia.povitrpustok.feature.reader
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
+import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.ReaderPassageCodec
-import com.biblia.povitrpustok.ui.components.englishBookNameVisible
+import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
 
 /**
  * Reader screen (implementation plan §17, §42).
@@ -72,6 +91,7 @@ fun ReaderScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
+    var pickerOpen by rememberSaveable { mutableStateOf(false) }
 
     // F-09: confirm every long-press toggle and offer an immediate Undo.
     LaunchedEffect(viewModel) {
@@ -102,14 +122,15 @@ fun ReaderScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            ReaderTopBar(
+        topBar = { ReaderTopBar(state = state, onBack = onBack) },
+        bottomBar = {
+            // F-04: every frequent action lives in the thumb zone.
+            ReaderActionBar(
                 state = state,
-                onBack = onBack,
                 onPrevious = viewModel::previous,
                 onNext = viewModel::next,
-                onSelectChapter = viewModel::selectChapter,
-                onToggleBookmark = viewModel::toggleBookmark
+                onToggleBookmark = viewModel::toggleBookmark,
+                onOpenChapterPicker = { pickerOpen = true }
             )
         }
     ) { innerPadding ->
@@ -138,73 +159,38 @@ fun ReaderScreen(
             }
         }
     }
+
+    if (pickerOpen) {
+        ChapterPickerSheet(
+            chapters = state.chapters,
+            currentPosition = state.chapter?.position,
+            onSelect = { position ->
+                pickerOpen = false
+                if (position != state.chapter?.position) {
+                    viewModel.selectChapter(position)
+                }
+            },
+            onDismiss = { pickerOpen = false }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ReaderTopBar(
-    state: ReaderUiState,
-    onBack: () -> Unit,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit,
-    onSelectChapter: (Int) -> Unit,
-    onToggleBookmark: () -> Unit
-) {
+private fun ReaderTopBar(state: ReaderUiState, onBack: () -> Unit) {
     TopAppBar(
         modifier = Modifier.testTag("reader.topbar"),
         title = {
-            Column {
-                Text(
-                    text = state.bookDisplayName.ifBlank {
-                        state.book?.displayName.orEmpty()
-                    },
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                val chapter = state.chapter
-                val selectedVerse = state.selectedVerseId?.let { id ->
-                    state.verses.firstOrNull { it.id == id }
-                }
-                if (chapter != null) {
-                    val chapterLabel = if (selectedVerse != null) {
-                        // The top-bar bookmark applies to this verse (Issue 6).
-                        stringResource(
-                            R.string.reader_selected_verse,
-                            chapter.number,
-                            selectedVerse.verseStart
-                        )
-                    } else {
-                        stringResource(
-                            R.string.reader_chapter_number,
-                            chapter.number
-                        )
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        state.book?.englishName
-                            ?.takeIf { englishBookNameVisible() }
-                            ?.let { english ->
-                                Text(
-                                    text = "($english) · ",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    // The chapter/verse label is the critical
-                                    // information: the English name yields first.
-                                    modifier = Modifier.weight(1f, fill = false)
-                                )
-                            }
-                        Text(
-                            text = chapterLabel,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-            }
+            // F-04: one line only; the chapter/verse context lives in the
+            // scrolling content header.
+            Text(
+                text = state.bookDisplayName.ifBlank {
+                    state.book?.displayName.orEmpty()
+                },
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         },
         navigationIcon = {
             IconButton(
@@ -216,58 +202,149 @@ private fun ReaderTopBar(
                     contentDescription = stringResource(R.string.back)
                 )
             }
-        },
-        actions = {
-            // Bookmark toggle for the currently selected (targeted) verse.
-            if (state.selectedVerseId != null) {
-                val isBookmarked = state.bookmarkedVerseIds.contains(state.selectedVerseId)
-                IconButton(onClick = onToggleBookmark) {
-                    Icon(
-                        painter = painterResource(
-                            if (isBookmarked) {
-                                R.drawable.ic_bookmark
-                            } else {
-                                R.drawable.ic_bookmark_border
-                            }
-                        ),
-                        contentDescription = stringResource(
-                            if (isBookmarked) R.string.reader_remove_bookmark else R.string.reader_add_bookmark
-                        ),
-                        tint = if (isBookmarked) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                }
-            }
-            if (state.chapters.isNotEmpty() && state.chapter != null) {
-                ChapterSelector(
-                    chapters = state.chapters,
-                    currentPosition = state.chapter!!.position,
-                    onSelect = onSelectChapter
-                )
-            }
-            // Day 1 interim: chapter stepping stays in the actions row until
-            // it moves to the reader's own navigation.
-            IconButton(
-                onClick = onPrevious,
-                enabled = state.canGoPrevious
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                    contentDescription = stringResource(R.string.reader_previous_chapter)
-                )
-            }
-            IconButton(
-                onClick = onNext,
-                enabled = state.canGoNext
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = stringResource(R.string.reader_next_chapter)
-                )
-            }
         }
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReaderActionBar(
+    state: ReaderUiState,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onToggleBookmark: () -> Unit,
+    onOpenChapterPicker: () -> Unit
+) {
+    BottomAppBar(modifier = Modifier.testTag("reader.actionbar")) {
+        IconButton(
+            onClick = onPrevious,
+            enabled = state.canGoPrevious,
+            modifier = Modifier.weight(1f).testTag("reader.previous")
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = stringResource(R.string.reader_previous_chapter)
+            )
+        }
+
+        val currentLabel = state.chapter
+            ?.let { chapterDisplayLabel(it, state.chapters) }
+            .orEmpty()
+        TextButton(
+            onClick = onOpenChapterPicker,
+            enabled = state.chapter != null && state.chapters.isNotEmpty(),
+            modifier = Modifier.weight(1.4f).testTag("reader.chapter_picker")
+        ) {
+            Text(
+                text = stringResource(R.string.chapter_selector_label, currentLabel),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        IconButton(
+            onClick = onNext,
+            enabled = state.canGoNext,
+            modifier = Modifier.weight(1f).testTag("reader.next")
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = stringResource(R.string.reader_next_chapter)
+            )
+        }
+
+        val selected = state.selectedVerseId
+        val isBookmarked = selected != null && state.bookmarkedVerseIds.contains(selected)
+        IconButton(
+            onClick = onToggleBookmark,
+            enabled = selected != null,
+            modifier = Modifier.weight(1f).testTag("reader.bookmark")
+        ) {
+            Icon(
+                painter = painterResource(
+                    if (isBookmarked) R.drawable.ic_bookmark else R.drawable.ic_bookmark_border
+                ),
+                contentDescription = stringResource(
+                    if (isBookmarked) R.string.reader_remove_bookmark else R.string.reader_add_bookmark
+                ),
+                tint = if (isBookmarked) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
+        }
+    }
+}
+
+/**
+ * F-04: the chapter picker is a grid sheet (five columns, three at 1.5x+)
+ * with the current chapter marked, instead of a 150-item dropdown. Selecting
+ * a chapter calls the unchanged [ReaderViewModel.selectChapter] path.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ChapterPickerSheet(
+    chapters: List<Chapter>,
+    currentPosition: Int?,
+    onSelect: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val columns = if (LocalDensity.current.fontScale >= 1.5f) 3 else 5
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        modifier = Modifier.testTag("reader.picker")
+    ) {
+        Text(
+            text = stringResource(R.string.chapter_picker_title),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+        )
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(columns),
+            modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(chapters, key = { it.id }) { chapter ->
+                val current = chapter.position == currentPosition
+                Surface(
+                    onClick = { onSelect(chapter.position) },
+                    color = if (current) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .testTag("reader.picker.cell.${chapter.position}")
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = chapterDisplayLabel(chapter, chapters),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (current) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+    }
 }

@@ -139,4 +139,30 @@ class HomeNavigationUiTest {
             composeRule.onAllNodesWithText("Undo").fetchSemanticsNodes().isEmpty()
         }
     }
+
+    @Test
+    fun reader_chrome_opens_the_chapter_picker_and_back_returns() {
+        composeRule.onNodeWithTag("home.bible").performClick()
+        composeRule.onNodeWithText("Utpoti").performScrollTo().performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("chapters.cell.1").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("chapters.cell.1").performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("reader.actionbar").fetchSemanticsNodes().isNotEmpty()
+        }
+
+        composeRule.onNodeWithTag("reader.chapter_picker").performClick()
+        composeRule.onNodeWithTag("reader.picker").assertIsDisplayed()
+        composeRule.onNodeWithTag("reader.picker.cell.2").performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("reader.picker").fetchSemanticsNodes().isEmpty()
+        }
+
+        composeRule.onNodeWithTag("reader.back").performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("chapters.cell.1").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("chapters.cell.1").assertIsDisplayed()
+    }
 }

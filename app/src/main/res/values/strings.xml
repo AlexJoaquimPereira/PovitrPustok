@@ -52,7 +52,9 @@
     <string name="reader_previous_chapter">Previous chapter</string>
     <string name="reader_next_chapter">Next chapter</string>
     <string name="chapter_selector_label">Ch %1$s</string>
+    <string name="chapter_picker_title">Choose a chapter</string>
     <string name="verse_range">%1$d–%2$d</string>
+    <string name="reader_verse_only">Verse %1$d</string>
     <string name="search_title">Search</string>
     <string name="search_hint">Search the Bible</string>
     <string name="search_field_label">Search the Bible</string>

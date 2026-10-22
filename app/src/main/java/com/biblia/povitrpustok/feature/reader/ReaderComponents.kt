@@ -22,15 +22,11 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -54,7 +50,6 @@ import com.biblia.povitrpustok.core.html.BibleHtmlDocument
 import com.biblia.povitrpustok.core.html.BibleHtmlParser
 import com.biblia.povitrpustok.core.html.BibleHtmlText
 import com.biblia.povitrpustok.domain.model.Chapter
-import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
 import com.biblia.povitrpustok.domain.model.Heading
 import com.biblia.povitrpustok.domain.model.Verse
 import com.biblia.povitrpustok.ui.theme.LocalScripturePalette
@@ -83,13 +78,26 @@ private fun rememberDocument(html: String): BibleHtmlDocument =
 
 /** Chapter number as a quiet overline; the corpus heading is the title (F-25). */
 @Composable
-fun ChapterHeader(chapter: Chapter, modifier: Modifier = Modifier) {
-    Text(
-        text = stringResource(R.string.reader_chapter_number, chapter.number).uppercase(),
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier
-    )
+fun ChapterHeader(
+    chapter: Chapter,
+    modifier: Modifier = Modifier,
+    verseRange: String? = null
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = stringResource(R.string.reader_chapter_number, chapter.number).uppercase(),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        // F-04: passage context belongs in the scrolling header, not the bar.
+        if (verseRange != null) {
+            Text(
+                text = verseRange,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
 
 /** One heading block; multiple headings render as separate blocks. */
@@ -376,7 +384,11 @@ fun ReaderContent(
         items(items, key = { it.key }) { item ->
             val itemWidth = Modifier.widthIn(max = ReadingColumnMaxWidth).fillMaxWidth()
             when (item) {
-                is ReaderContentItem.Header -> ChapterHeader(item.chapter, itemWidth)
+                is ReaderContentItem.Header -> ChapterHeader(
+                    chapter = item.chapter,
+                    modifier = itemWidth,
+                    verseRange = passageRangeLabel(state, item.chapter)
+                )
                 is ReaderContentItem.Heading -> HeadingBlock(
                     item.heading,
                     itemWidth.padding(top = 16.dp, bottom = 4.dp)
@@ -393,6 +405,29 @@ fun ReaderContent(
                 )
             }
         }
+    }
+}
+
+/**
+ * F-04: "verses x-y" for the header of [chapter] when a passage is active.
+ * Multi-chapter passages report each chapter's own span; a whole chapter has
+ * no label (it would be noise).
+ */
+@Composable
+private fun passageRangeLabel(state: ReaderUiState, chapter: Chapter): String? {
+    val ranges = state.passageChapters
+        .firstOrNull { it.chapter.id == chapter.id }
+        ?.passage
+        ?.ranges
+        ?: state.passage?.let { listOf(it.verseStart..it.verseEnd) }
+        ?: return null
+    if (ranges.isEmpty()) return null
+    val first = ranges.minOf { it.first }
+    val last = ranges.maxOf { it.last }
+    return if (first == last) {
+        stringResource(R.string.reader_verse_only, first)
+    } else {
+        stringResource(R.string.verse_range, first, last)
     }
 }
 
@@ -445,37 +480,3 @@ fun ReaderErrorState(
     }
 }
 
-/**
- * Basic chapter selector: displays `chapter.number`, selects by
- * `chapter.position` (plan §17). The chapter list stays domain objects.
- */
-@Composable
-fun ChapterSelector(
-    chapters: List<Chapter>,
-    currentPosition: Int,
-    onSelect: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val currentChapter = chapters.firstOrNull { it.position == currentPosition }
-    val currentLabel = currentChapter?.let { chapterDisplayLabel(it, chapters) }
-        ?: currentPosition.toString()
-    Box(modifier = modifier) {
-        TextButton(onClick = { expanded = true }) {
-            Text(text = stringResource(R.string.chapter_selector_label, currentLabel))
-        }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            chapters.forEach { chapter ->
-                DropdownMenuItem(
-                    text = { Text(text = chapterDisplayLabel(chapter, chapters)) },
-                    onClick = {
-                        expanded = false
-                        if (chapter.position != currentPosition) {
-                            onSelect(chapter.position)
-                        }
-                    }
-                )
-            }
-        }
-    }
-}
