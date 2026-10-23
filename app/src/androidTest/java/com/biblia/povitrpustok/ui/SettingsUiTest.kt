@@ -1,6 +1,10 @@
 package com.biblia.povitrpustok.ui
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -11,6 +15,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.biblia.povitrpustok.MainActivity
 import org.junit.Rule
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -47,6 +52,14 @@ class SettingsUiTest {
         composeRule.onNodeWithTag("settings.about.copyright").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithTag("settings.version").performScrollTo().assertIsDisplayed()
 
+        // The version is read from PackageManager; a blank fallback would
+        // still be "displayed", so assert there is real text.
+        val versionNode = composeRule.onNodeWithTag("settings.version").fetchSemanticsNode()
+        val versionText = versionNode.config.getOrNull(SemanticsProperties.Text)
+            ?.joinToString("")
+            .orEmpty()
+        assertTrue("version text must not be blank", versionText.isNotBlank())
+
         composeRule.onNodeWithTag("settings.back").performClick()
         composeRule.onNodeWithTag("home.bible").assertIsDisplayed()
     }
@@ -68,6 +81,12 @@ class SettingsUiTest {
 
         waitForSettings()
         composeRule.onNodeWithTag("settings.about.copyright").performScrollTo().assertIsDisplayed()
+
+        // Back returns to the Reader, not to Home.
+        composeRule.onNodeWithTag("settings.back").performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("reader.topbar").fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     @Test
@@ -95,6 +114,18 @@ class SettingsUiTest {
             .performScrollTo()
             .performClick()
         composeRule.onNodeWithTag("settings.scripture_size.MEDIUM").assertIsSelected()
+    }
+
+    @Test
+    fun red_letter_toggles_and_restores() {
+        openSettingsFromHome()
+
+        composeRule.onNodeWithTag("settings.red_letter").performScrollTo().assertIsOn()
+        composeRule.onNodeWithTag("settings.red_letter").performClick()
+        composeRule.onNodeWithTag("settings.red_letter").assertIsOff()
+
+        composeRule.onNodeWithTag("settings.red_letter").performClick()
+        composeRule.onNodeWithTag("settings.red_letter").assertIsOn()
     }
 
     @Test
