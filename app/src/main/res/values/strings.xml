@@ -46,6 +46,14 @@
     <string name="home_about_and_settings">About &amp; settings</string>
     <string name="daily_reading_title">Daily Reading</string>
     <string name="daily_reading_empty">No readings available for this day.</string>
+    <!-- Daily Reading date navigation, Gospel feature and freshness (F-18). -->
+    <string name="daily_previous_day">Previous day</string>
+    <string name="daily_next_day">Next day</string>
+    <string name="daily_today">Today</string>
+    <string name="daily_read_gospel">Read the Gospel</string>
+    <string name="daily_more_readings">MORE READINGS</string>
+    <string name="daily_saved_offline">Saved for offline · updated %1$s</string>
+    <string name="daily_update">Update</string>
     <string name="reading_first">First Reading</string>
     <string name="reading_psalm">Responsorial Psalm</string>
     <string name="reading_second">Second Reading</string>
