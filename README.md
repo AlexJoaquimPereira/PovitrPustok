@@ -15,7 +15,7 @@ the app never re-imports, rewrites or "fixes" it.
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 442 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 39 instrumented tests |
+| **Tests** | 442 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 40 instrumented tests |
 
 ---
 
@@ -350,7 +350,7 @@ PovitrPustok/
 │       │   │   └── ui/{theme, HomeScreen, HomeViewModel}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
 │       ├── test/                        # 442 JVM unit tests + HTML fixtures
-│       └── androidTest/                 # 39 instrumented tests
+│       └── androidTest/                 # 40 instrumented tests
 ├── gradle/libs.versions.toml            # version catalog
 ├── build.gradle.kts, settings.gradle.kts, gradle.properties
 ├── gradlew, gradlew.bat, gradle/wrapper/
