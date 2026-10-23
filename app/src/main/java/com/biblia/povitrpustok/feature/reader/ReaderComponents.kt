@@ -58,9 +58,9 @@ import com.biblia.povitrpustok.ui.theme.LocalScripturePalette
 import com.biblia.povitrpustok.ui.theme.PoetryColumnMaxWidth
 import com.biblia.povitrpustok.ui.theme.ReadingColumnMaxWidth
 import com.biblia.povitrpustok.ui.theme.VerseGutterWidth
-import com.biblia.povitrpustok.ui.theme.ScripturePoetryStyle
-import com.biblia.povitrpustok.ui.theme.ScriptureTextStyle
 import com.biblia.povitrpustok.ui.theme.VerseNumberStyle
+import com.biblia.povitrpustok.ui.theme.scripturePoetryTextStyle
+import com.biblia.povitrpustok.ui.theme.scriptureTextStyle
 import kotlinx.coroutines.delay
 
 /**
@@ -216,7 +216,7 @@ fun VerseBlock(
                 BibleHtmlText(
                     document = document,
                     modifier = Modifier.widthIn(max = PoetryColumnMaxWidth),
-                    style = ScripturePoetryStyle,
+                    style = scripturePoetryTextStyle(),
                     textAlign = TextAlign.Center
                 )
             }
@@ -224,7 +224,7 @@ fun VerseBlock(
             BibleHtmlText(
                 document = document,
                 modifier = Modifier.weight(1f),
-                style = ScriptureTextStyle
+                style = scriptureTextStyle()
             )
         }
     }

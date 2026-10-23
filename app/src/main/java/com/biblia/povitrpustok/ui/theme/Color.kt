@@ -38,6 +38,22 @@ val LightOnError = Color(0xFFFFFFFF)
 val LightErrorContainer = Color(0xFFFFDAD6)
 val LightOnErrorContainer = Color(0xFF410002)
 
+// Light extended surface family (additive; baseline tokens above are unchanged).
+// Derived from the same near-white neutral family so tonal surfaces never fall
+// back to the Material baseline purple.
+val LightSurfaceContainerLowest = Color(0xFFFFFFFF)
+val LightSurfaceContainerLow = Color(0xFFF5F4FA)
+val LightSurfaceContainer = Color(0xFFEFEEF5)
+val LightSurfaceContainerHigh = Color(0xFFE9E8EF)
+val LightSurfaceContainerHighest = Color(0xFFE3E2E9)
+val LightSurfaceBright = Color(0xFFFFFFFF)
+val LightSurfaceDim = Color(0xFFDDDCE3)
+val LightSurfaceTint = Color(0xFF0B57D0)
+val LightInverseSurface = Color(0xFF2F3036)
+val LightInverseOnSurface = Color(0xFFF1F0F7)
+val LightInversePrimary = Color(0xFFADC6FF)
+val LightScrim = Color(0xFF000000)
+
 // Dark (AMOLED) scheme.
 val DarkPrimary = Color(0xFFADC6FF)
 val DarkOnPrimary = Color(0xFF002E69)
@@ -63,3 +79,19 @@ val DarkError = Color(0xFFFFB4AB)
 val DarkOnError = Color(0xFF690005)
 val DarkErrorContainer = Color(0xFF93000A)
 val DarkOnErrorContainer = Color(0xFFFFDAD6)
+
+// Dark (AMOLED) extended surface family (additive; baseline tokens above are
+// unchanged). The container ramp starts at true black so elevated surfaces stay
+// near-black instead of the Material baseline purple.
+val DarkSurfaceContainerLowest = Color(0xFF000000)
+val DarkSurfaceContainerLow = Color(0xFF0A0A0A)
+val DarkSurfaceContainer = Color(0xFF121212)
+val DarkSurfaceContainerHigh = Color(0xFF1A1A1A)
+val DarkSurfaceContainerHighest = Color(0xFF222222)
+val DarkSurfaceBright = Color(0xFF2A2A2A)
+val DarkSurfaceDim = Color(0xFF000000)
+val DarkSurfaceTint = Color(0xFFADC6FF)
+val DarkInverseSurface = Color(0xFFE4E1E9)
+val DarkInverseOnSurface = Color(0xFF1A1B20)
+val DarkInversePrimary = Color(0xFF0B57D0)
+val DarkScrim = Color(0xFF000000)

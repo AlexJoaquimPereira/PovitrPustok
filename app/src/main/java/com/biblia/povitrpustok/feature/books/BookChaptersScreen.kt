@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -68,35 +69,39 @@ fun BookChaptersScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    BookName(
-                        localName = state.displayName.ifBlank {
-                            state.book?.displayName.orEmpty()
-                        },
-                        englishName = state.book?.englishName,
-                        // One line in the app bar: the English label yields
-                        // space (and ellipsizes) before the local name.
-                        layout = BookNameLayout.INLINE
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back)
+            Column {
+                TopAppBar(
+                    title = {
+                        BookName(
+                            localName = state.displayName.ifBlank {
+                                state.book?.displayName.orEmpty()
+                            },
+                            englishName = state.book?.englishName,
+                            // One line in the app bar: the English label yields
+                            // space (and ellipsizes) before the local name.
+                            layout = BookNameLayout.INLINE
                         )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back)
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = onOpenSearch) {
+                            Icon(
+                                imageVector = Icons.Filled.Search,
+                                contentDescription = stringResource(R.string.home_search)
+                            )
+                        }
                     }
-                },
-                actions = {
-                    IconButton(onClick = onOpenSearch) {
-                        Icon(
-                            imageVector = Icons.Filled.Search,
-                            contentDescription = stringResource(R.string.home_search)
-                        )
-                    }
-                }
-            )
+                )
+                // F-17: hairline separation between the bar and the grid.
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            }
         }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
