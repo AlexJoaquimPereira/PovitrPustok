@@ -67,7 +67,10 @@ fun PovitrPustokNavHost() {
                         AppDestination.reader(readingState.bookId, readingState.chapterPosition)
                     )
                 },
-                onOpenDailyReading = { navController.navigate(AppDestination.DAILY_READING) }
+                onOpenDailyReading = { navController.navigate(AppDestination.DAILY_READING) },
+                // Day 15 adds the About destination; Home already exposes the
+                // action so the footer does not become a dead click later.
+                onOpenAbout = {}
             )
         }
 
