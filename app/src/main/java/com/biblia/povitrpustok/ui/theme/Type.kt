@@ -14,6 +14,15 @@ import androidx.compose.ui.unit.sp
  * silently falls back to Material's Roboto defaults.
  */
 val Typography = Typography(
+    // Home masthead (F-11): one size above every screen title so the front
+    // door announces the app before anything else.
+    displaySmall = TextStyle(
+        fontFamily = FontFamily.Serif,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 36.sp,
+        lineHeight = 44.sp,
+        letterSpacing = (-0.25).sp
+    ),
     headlineMedium = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.SemiBold,
@@ -84,6 +93,19 @@ val Typography = Typography(
         lineHeight = 16.sp,
         letterSpacing = 0.2.sp
     )
+)
+
+/**
+ * Quiet editorial overline (F-11): uppercase, widely tracked, one size below
+ * body text. Used for the Home masthead line and card labels; callers pass
+ * already-uppercase strings, or apply `uppercase()` for label text.
+ */
+val OverlineTextStyle = TextStyle(
+    fontFamily = FontFamily.Default,
+    fontWeight = FontWeight.Medium,
+    fontSize = 11.sp,
+    lineHeight = 16.sp,
+    letterSpacing = 1.4.sp
 )
 
 /** Canonical Scripture style: 19/32 serif, 1.68 line height. */

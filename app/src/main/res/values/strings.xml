@@ -1,6 +1,12 @@
 <resources>
     <string name="app_name">Povitr Pustok</string>
     <string name="home_bible">Bible</string>
+    <string name="home_overline">KONKANI CATHOLIC BIBLE</string>
+    <string name="home_subtitle_bible">%1$d books</string>
+    <string name="home_subtitle_search">word or verse</string>
+    <string name="home_subtitle_bookmarks">saved verses</string>
+    <string name="home_subtitle_daily">today\'s Mass</string>
+    <string name="home_subtitle_reference">Juanv 3:16</string>
     <string name="home_search">Search</string>
     <string name="home_reference">Go to reference</string>
     <string name="books_title">Books</string>
