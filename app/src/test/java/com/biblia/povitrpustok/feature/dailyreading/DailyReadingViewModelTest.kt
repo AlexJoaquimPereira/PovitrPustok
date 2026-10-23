@@ -54,9 +54,14 @@ class DailyReadingViewModelTest {
         )
     ) : LiturgicalRepository {
         val requestedDates = mutableListOf<LocalDate>()
+        val forcedRefreshes = mutableListOf<Boolean>()
 
-        override suspend fun getLiturgicalDay(date: LocalDate): LiturgicalDayResult {
+        override suspend fun getLiturgicalDay(
+            date: LocalDate,
+            forceRefresh: Boolean
+        ): LiturgicalDayResult {
             requestedDates += date
+            forcedRefreshes += forceRefresh
             return result
         }
     }
@@ -121,7 +126,10 @@ class DailyReadingViewModelTest {
         val repository = object : LiturgicalRepository {
             val requested = mutableListOf<LocalDate>()
 
-            override suspend fun getLiturgicalDay(date: LocalDate): LiturgicalDayResult {
+            override suspend fun getLiturgicalDay(
+                date: LocalDate,
+                forceRefresh: Boolean
+            ): LiturgicalDayResult {
                 requested += date
                 if (date == firstDate) gate.await()
                 return LiturgicalDayResult.Success(
@@ -143,6 +151,84 @@ class DailyReadingViewModelTest {
         val state = viewModel.uiState.value
         assertTrue(state is DailyReadingUiState.Success)
         assertEquals(secondDate, (state as DailyReadingUiState.Success).day.date)
+    }
+
+    @Test
+    fun previous_and_next_day_load_that_date_and_today_returns() =
+        runTest(dispatcher.scheduler) {
+            val today = LocalDate.of(2026, 8, 15)
+            val repository = FakeLiturgicalRepository()
+            val viewModel = DailyReadingViewModel(repository, FakeResolver()) { today }
+            viewModel.load()
+            advanceUntilIdle()
+
+            viewModel.previousDay()
+            advanceUntilIdle()
+            assertEquals(today.minusDays(1), viewModel.selectedDate.value)
+            assertTrue(!viewModel.isToday())
+
+            viewModel.nextDay()
+            advanceUntilIdle()
+            assertEquals(today, viewModel.selectedDate.value)
+            assertTrue(viewModel.isToday())
+
+            viewModel.previousDay()
+            advanceUntilIdle()
+            viewModel.goToToday()
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(today, today.minusDays(1), today, today.minusDays(1), today),
+                repository.requestedDates
+            )
+        }
+
+    @Test
+    fun refresh_bypasses_the_cache_and_reports_freshness() =
+        runTest(dispatcher.scheduler) {
+            val today = LocalDate.of(2026, 8, 15)
+            val cachedAt = 1_760_000_000_000L
+            val repository = FakeLiturgicalRepository(
+                LiturgicalDayResult.Success(
+                    LiturgicalDay(today, "Ordinary Time", "Assumption", null, null, null, emptyList()),
+                    cachedAt = cachedAt
+                )
+            )
+            val viewModel = DailyReadingViewModel(repository, FakeResolver()) { today }
+            viewModel.load()
+            advanceUntilIdle()
+
+            val cached = viewModel.uiState.value as DailyReadingUiState.Success
+            assertEquals("cached payloads expose when they were saved", cachedAt, cached.cachedAt)
+
+            viewModel.refresh()
+            advanceUntilIdle()
+            assertEquals("first load uses the cache", false, repository.forcedRefreshes.first())
+            assertEquals("refresh must bypass the cache", true, repository.forcedRefreshes.last())
+        }
+
+    @Test
+    fun resume_does_not_reload_a_past_date() = runTest(dispatcher.scheduler) {
+        var today = LocalDate.of(2026, 8, 15)
+        val repository = FakeLiturgicalRepository()
+        val viewModel = DailyReadingViewModel(repository, FakeResolver()) { today }
+        viewModel.load()
+        advanceUntilIdle()
+        viewModel.previousDay()
+        advanceUntilIdle()
+        val requests = repository.requestedDates.size
+
+        today = LocalDate.of(2026, 8, 16)
+        viewModel.refreshIfDateChanged()
+        advanceUntilIdle()
+
+        assertEquals("a past day must not jump to today on resume", requests, repository.requestedDates.size)
+        assertEquals(LocalDate.of(2026, 8, 14), viewModel.selectedDate.value)
+    }
+
+    @Test
+    fun the_date_label_is_pinned_to_english() {
+        assertEquals("Sat, Aug 15, 2026", DailyReadingDates.format(LocalDate.of(2026, 8, 15)))
     }
 
     @Test

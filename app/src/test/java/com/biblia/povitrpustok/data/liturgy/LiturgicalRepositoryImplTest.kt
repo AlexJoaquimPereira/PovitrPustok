@@ -17,6 +17,8 @@ import okhttp3.ResponseBody
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -229,6 +231,64 @@ class LiturgicalRepositoryImplTest {
 
         assertTrue(result is LiturgicalDayResult.Error)
         assertEquals(LiturgicalErrorKind.MALFORMED_RESPONSE, (result as LiturgicalDayResult.Error).kind)
+    }
+
+    /** A day with a Gospel, so the repository returns Success rather than NO_DATA. */
+    private fun successfulApi(): FakeApi = FakeApi(
+        readings = ReadingsDto(
+            season = "Ordinary Time",
+            readings = ReadingsFieldsDto(gospel = "Luke 1:39-56")
+        ),
+        calendar = CalendarDto(season = "Ordinary Time")
+    )
+
+    @Test
+    fun a_cache_hit_reports_when_it_was_saved() = runBlocking {
+        val api = successfulApi()
+        val repository = newRepository(api)
+
+        val fresh = repository.getLiturgicalDay(date)
+        assertTrue(fresh is LiturgicalDayResult.Success)
+        assertNull("a network payload is not saved data", (fresh as LiturgicalDayResult.Success).cachedAt)
+
+        val cached = repository.getLiturgicalDay(date)
+        assertTrue(cached is LiturgicalDayResult.Success)
+        assertNotNull("a cache hit must carry its saved timestamp", (cached as LiturgicalDayResult.Success).cachedAt)
+        assertEquals("the cache must serve the day without another call", 1, api.readingsCalls)
+    }
+
+    @Test
+    fun a_forced_refresh_bypasses_the_cache() = runBlocking {
+        val api = successfulApi()
+        val repository = newRepository(api)
+
+        repository.getLiturgicalDay(date)
+        val refreshed = repository.getLiturgicalDay(date, forceRefresh = true)
+
+        assertTrue(refreshed is LiturgicalDayResult.Success)
+        assertNull("a forced refresh returned network data", (refreshed as LiturgicalDayResult.Success).cachedAt)
+        assertEquals("the forced path must hit the network again", 2, api.readingsCalls)
+    }
+
+    @Test
+    fun a_failed_forced_refresh_falls_back_to_the_original_cache() = runBlocking {
+        val api = successfulApi()
+        val repository = newRepository(api)
+        // The first call is network-fresh (no timestamp); the second reads it
+        // back from the cache, which is what the forced refresh can fall back to.
+        repository.getLiturgicalDay(date)
+        val cached = (repository.getLiturgicalDay(date) as LiturgicalDayResult.Success).cachedAt
+        assertNotNull(cached)
+
+        api.readingsFailure = IOException("offline")
+        val fallback = repository.getLiturgicalDay(date, forceRefresh = true)
+
+        assertTrue("offline must keep the promise", fallback is LiturgicalDayResult.Success)
+        assertEquals(
+            "the fallback keeps the original saved timestamp",
+            cached,
+            (fallback as LiturgicalDayResult.Success).cachedAt
+        )
     }
 
     @Test
