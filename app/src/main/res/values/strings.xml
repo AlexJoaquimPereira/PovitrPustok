@@ -83,4 +83,43 @@
     <string name="search_result_count">%1$d results</string>
     <string name="search_result_count_capped">Showing first %1$d results</string>
     <string name="corpus_copyright_notice">Bible text © Archdiocese of Goa and Daman. All rights reserved.</string>
+
+    <!-- Settings &amp; About (F-15). -->
+    <string name="settings_title">Settings &amp; About</string>
+    <string name="settings_section_reading">READING</string>
+    <string name="settings_section_about">ABOUT</string>
+    <string name="settings_scripture_size">Scripture size</string>
+    <string name="settings_scripture_size_caption">On top of your device text size.</string>
+    <string name="settings_scripture_size_small">Small</string>
+    <string name="settings_scripture_size_medium">Medium</string>
+    <string name="settings_scripture_size_large">Large</string>
+    <string name="settings_scripture_size_extra_large">Extra large</string>
+    <string name="settings_scripture_size_short_small">S</string>
+    <string name="settings_scripture_size_short_medium">M</string>
+    <string name="settings_scripture_size_short_large">L</string>
+    <string name="settings_scripture_size_short_extra_large">XL</string>
+    <string name="settings_preview">PREVIEW</string>
+    <string name="settings_preview_body">This is how Scripture will look in the reader. Adjust the size and spacing until it reads comfortably.</string>
+    <string name="settings_preview_red_letter_sample">Aa</string>
+    <string name="settings_preview_red_letter">Words of Jesus</string>
+    <string name="settings_line_spacing">Line spacing</string>
+    <string name="settings_line_spacing_compact">Compact</string>
+    <string name="settings_line_spacing_normal">Normal</string>
+    <string name="settings_line_spacing_relaxed">Relaxed</string>
+    <string name="settings_red_letter">Red letter</string>
+    <string name="settings_red_letter_caption">Words of Jesus appear in red where the Bible text marks them.</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_caption">System follows your device setting.</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_about_permission">Distribution of the Bible text requires permission from the rights holder.</string>
+    <string name="settings_about_version_label">App version</string>
+    <string name="settings_about_version_unknown">Unknown</string>
+    <string name="settings_about_daily_title">Daily Reading data</string>
+    <string name="settings_about_daily_body">Readings come from the Catholic Readings API. The app sends only the date it is asking for and collects no personal data.</string>
+    <string name="settings_about_daily_url">https://cpbjr.github.io/catholic-readings-api/</string>
+    <string name="settings_about_licenses_title">Open-source licenses</string>
+    <string name="settings_about_licenses_components">Kotlin · Jetpack Compose · AndroidX Navigation, Room, DataStore and WorkManager · Hilt · Retrofit and OkHttp · kotlinx.serialization · Coil · Timber</string>
+    <string name="settings_about_licenses_license">Apache License, Version 2.0 · apache.org/licenses/LICENSE-2.0</string>
 </resources>

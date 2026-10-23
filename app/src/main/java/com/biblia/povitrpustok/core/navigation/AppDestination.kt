@@ -40,6 +40,9 @@ object AppDestination {
 
     const val BOOKMARKS = "bookmarks"
 
+    /** Single Settings & About destination (F-15); entered from Home and the Reader. */
+    const val ABOUT = "about"
+
     fun bookChapters(bookId: String): String = "books/$bookId"
 
     fun bookIntroduction(bookId: String): String = "books/$bookId/introduction"

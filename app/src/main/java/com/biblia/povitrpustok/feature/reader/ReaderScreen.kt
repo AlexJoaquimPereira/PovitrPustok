@@ -28,7 +28,15 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -96,6 +104,7 @@ fun ReaderScreen(
     passageEnd: Int? = null,
     passagesSpec: String = "",
     targetVerseNumber: Int? = null,
+    onOpenAbout: () -> Unit = {},
     viewModel: ReaderViewModel = hiltViewModel()
 ) {
     val passages = remember(passagesSpec) { ReaderPassageCodec.decode(passagesSpec) }
@@ -153,7 +162,17 @@ fun ReaderScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = { ReaderTopBar(state = state, onBack = onBack) },
+        topBar = {
+            Column {
+                ReaderTopBar(
+                    state = state,
+                    onBack = onBack,
+                    onOpenAbout = onOpenAbout
+                )
+                // F-17: a hairline keeps the bar from blending into the page.
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            }
+        },
         bottomBar = {
             // F-04: every frequent action lives in the thumb zone.
             ReaderActionBar(
@@ -242,7 +261,12 @@ fun ReaderScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ReaderTopBar(state: ReaderUiState, onBack: () -> Unit) {
+private fun ReaderTopBar(
+    state: ReaderUiState,
+    onBack: () -> Unit,
+    onOpenAbout: () -> Unit
+) {
+    var menuOpen by remember { mutableStateOf(false) }
     TopAppBar(
         modifier = Modifier.testTag("reader.topbar"),
         title = {
@@ -267,6 +291,34 @@ private fun ReaderTopBar(state: ReaderUiState, onBack: () -> Unit) {
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = stringResource(R.string.back)
                 )
+            }
+        },
+        actions = {
+            // F-15: Settings & About must be reachable while reading, not
+            // only from Home.
+            Box {
+                IconButton(
+                    onClick = { menuOpen = true },
+                    modifier = Modifier.testTag("reader.menu")
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = stringResource(R.string.home_about_and_settings)
+                    )
+                }
+                DropdownMenu(
+                    expanded = menuOpen,
+                    onDismissRequest = { menuOpen = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.home_about_and_settings)) },
+                        onClick = {
+                            menuOpen = false
+                            onOpenAbout()
+                        },
+                        modifier = Modifier.testTag("reader.menu.about")
+                    )
+                }
             }
         }
     )

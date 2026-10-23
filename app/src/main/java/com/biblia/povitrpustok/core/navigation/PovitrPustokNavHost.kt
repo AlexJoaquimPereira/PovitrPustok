@@ -19,6 +19,7 @@ import com.biblia.povitrpustok.feature.dailyreading.DailyReadingScreen
 import com.biblia.povitrpustok.feature.reader.ReaderScreen
 import com.biblia.povitrpustok.feature.reference.ReferenceEntryScreen
 import com.biblia.povitrpustok.feature.search.SearchScreen
+import com.biblia.povitrpustok.feature.settings.SettingsScreen
 import com.biblia.povitrpustok.ui.HomeScreen
 
 /**
@@ -68,9 +69,7 @@ fun PovitrPustokNavHost() {
                     )
                 },
                 onOpenDailyReading = { navController.navigate(AppDestination.DAILY_READING) },
-                // Day 15 adds the About destination; Home already exposes the
-                // action so the footer does not become a dead click later.
-                onOpenAbout = {}
+                onOpenAbout = { navController.navigate(AppDestination.ABOUT) }
             )
         }
 
@@ -188,7 +187,14 @@ fun PovitrPustokNavHost() {
                 passageStart = verseStart,
                 passageEnd = verseEnd,
                 passagesSpec = arguments?.getString("passages").orEmpty(),
-                targetVerseNumber = targetVerse
+                targetVerseNumber = targetVerse,
+                onOpenAbout = { navController.navigate(AppDestination.ABOUT) }
+            )
+        }
+
+        composable(AppDestination.ABOUT) {
+            SettingsScreen(
+                onBack = { navController.popBackStack() }
             )
         }
 
