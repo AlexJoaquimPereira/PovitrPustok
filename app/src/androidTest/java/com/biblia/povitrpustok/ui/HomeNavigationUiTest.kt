@@ -59,6 +59,33 @@ class HomeNavigationUiTest {
     }
 
     @Test
+    fun continue_reading_card_names_the_book_and_says_just_now() {
+        composeRule.onNodeWithTag("home.bible").performClick()
+        composeRule.onNodeWithText("Utpoti").performScrollTo().performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("chapters.cell.1").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("chapters.cell.1").performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("reader.verse.1").fetchSemanticsNodes().isNotEmpty()
+        }
+
+        composeRule.onNodeWithTag("reader.back").performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("chapters.cell.1").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        composeRule.waitForIdle()
+        composeRule.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        composeRule.waitForIdle()
+
+        // A freshly opened chapter must not read "0 minutes ago".
+        composeRule.onNodeWithTag("home.continue").assertIsDisplayed()
+        composeRule.onNodeWithText("Just now").assertIsDisplayed()
+        composeRule.onNodeWithText("Utpoti").assertIsDisplayed()
+    }
+
+    @Test
     fun home_primary_action_opens_books() {
         // The one primary action is Bible: the front door, not a menu item.
         composeRule.onNodeWithTag("home.bible").assertIsDisplayed().performClick()
