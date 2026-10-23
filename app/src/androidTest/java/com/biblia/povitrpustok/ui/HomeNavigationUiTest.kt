@@ -1,6 +1,7 @@
 package com.biblia.povitrpustok.ui
 
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -55,6 +56,28 @@ class HomeNavigationUiTest {
             "home.daily",
             "home.notice",
         ).forEach { tag -> composeRule.onNodeWithTag(tag).assertIsDisplayed() }
+    }
+
+    @Test
+    fun home_primary_action_opens_books() {
+        // The one primary action is Bible: the front door, not a menu item.
+        composeRule.onNodeWithTag("home.bible").assertIsDisplayed().performClick()
+
+        // A Books-only node, not just a shared title string.
+        composeRule.onNodeWithText("Old Testament").assertIsDisplayed()
+    }
+
+    @Test
+    fun home_shows_the_masthead_and_one_node_per_destination_label() {
+        composeRule.onNodeWithTag("home.overline").assertIsDisplayed()
+        composeRule.onNodeWithTag("home.hero").assertIsDisplayed()
+        composeRule.onNodeWithTag("home.grid").assertIsDisplayed()
+
+        // F-11: the labels stay unique click targets; subtitles must not
+        // introduce a second match for any of them.
+        listOf("Bible", "Search", "Bookmarks").forEach { label ->
+            composeRule.onAllNodesWithText(label).assertCountEquals(1)
+        }
     }
 
     @Test

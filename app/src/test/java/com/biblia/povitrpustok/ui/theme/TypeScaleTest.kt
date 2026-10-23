@@ -49,6 +49,15 @@ class TypeScaleTest {
     }
 
     @Test
+    fun home_masthead_styles_are_pinned() {
+        assertEquals(36.sp, Typography.displaySmall.fontSize)
+        assertEquals(44.sp, Typography.displaySmall.lineHeight)
+        assertEquals(FontFamily.Serif, Typography.displaySmall.fontFamily)
+        assertEquals(11.sp, OverlineTextStyle.fontSize)
+        assertEquals(1.4.sp, OverlineTextStyle.letterSpacing)
+    }
+
+    @Test
     fun scripture_uses_a_serif_voice_and_ui_chrome_uses_sans() {
         assertEquals(FontFamily.Serif, Typography.titleMedium.fontFamily)
         assertEquals(FontFamily.Serif, Typography.bodyLarge.fontFamily)
