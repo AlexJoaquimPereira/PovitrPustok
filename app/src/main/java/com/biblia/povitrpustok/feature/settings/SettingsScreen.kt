@@ -53,6 +53,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -168,7 +169,11 @@ private fun SettingsTopBar(onBack: () -> Unit) {
             title = {
                 Text(
                     text = stringResource(R.string.settings_title),
-                    style = titleStyle
+                    style = titleStyle,
+                    // House rule for every bar: one line, ellipsized, never
+                    // wrapping inside the fixed-height app bar.
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             },
             navigationIcon = {

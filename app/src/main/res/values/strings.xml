@@ -120,6 +120,6 @@
     <string name="settings_about_daily_body">Readings come from the Catholic Readings API. The app sends only the date it is asking for and collects no personal data.</string>
     <string name="settings_about_daily_url">https://cpbjr.github.io/catholic-readings-api/</string>
     <string name="settings_about_licenses_title">Open-source licenses</string>
-    <string name="settings_about_licenses_components">Kotlin · Jetpack Compose · AndroidX Navigation, Room, DataStore and WorkManager · Hilt · Retrofit and OkHttp · kotlinx.serialization · Coil · Timber</string>
+    <string name="settings_about_licenses_components">Kotlin · Jetpack Compose · AndroidX Navigation, Lifecycle and Room · Hilt · Retrofit and OkHttp · Gson</string>
     <string name="settings_about_licenses_license">Apache License, Version 2.0 · apache.org/licenses/LICENSE-2.0</string>
 </resources>
