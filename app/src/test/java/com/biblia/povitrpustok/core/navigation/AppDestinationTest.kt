@@ -81,9 +81,11 @@ class AppDestinationTest {
             AppDestination.BOOK_INTRODUCTION,
             AppDestination.READER,
             AppDestination.SEARCH,
-            AppDestination.REFERENCE_ENTRY
+            AppDestination.REFERENCE_ENTRY,
+            AppDestination.ABOUT
         )
-        assertEquals(9, routes.size)
+        assertEquals(10, routes.size)
+        assertEquals("about", AppDestination.ABOUT)
     }
 
     @Test
