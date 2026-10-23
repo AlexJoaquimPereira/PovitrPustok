@@ -41,6 +41,7 @@
     <string name="bookmark_reference_range">%1$d:%2$d–%3$d</string>
     <string name="home_bookmarks">Bookmarks</string>
     <string name="home_continue_reading">Continue reading</string>
+    <string name="home_read_just_now">Just now</string>
     <string name="home_daily_reading">Daily Reading</string>
     <string name="daily_reading_title">Daily Reading</string>
     <string name="daily_reading_empty">No readings available for this day.</string>

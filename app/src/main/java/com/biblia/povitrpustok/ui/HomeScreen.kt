@@ -238,11 +238,19 @@ private fun ContinueReadingCard(
 ) {
     // Recomputed on every composition (rather than remembered) so the card
     // never shows a frozen span after the screen has been idle or resumed.
-    val relativeTime = DateUtils.getRelativeTimeSpanString(
-        updatedAt,
-        System.currentTimeMillis(),
-        DateUtils.MINUTE_IN_MILLIS
-    ).toString()
+    val now = System.currentTimeMillis()
+    val relativeTime = if (now - updatedAt < DateUtils.MINUTE_IN_MILLIS) {
+        // DateUtils would render a fresh chapter as "0 minutes ago".
+        stringResource(R.string.home_read_just_now)
+    } else {
+        // A clock change can leave updatedAt in the future; never claim the
+        // chapter will be read "in N minutes".
+        DateUtils.getRelativeTimeSpanString(
+            minOf(updatedAt, now),
+            now,
+            DateUtils.MINUTE_IN_MILLIS
+        ).toString()
+    }
     val contentColor = MaterialTheme.colorScheme.onSecondaryContainer
 
     Surface(
