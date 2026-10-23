@@ -2,6 +2,7 @@ package com.biblia.povitrpustok.ui
 
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -56,6 +57,29 @@ class HomeNavigationUiTest {
             "home.daily",
             "home.notice",
         ).forEach { tag -> composeRule.onNodeWithTag(tag).assertIsDisplayed() }
+    }
+
+    @Test
+    fun home_notice_is_a_tappable_about_row() {
+        // Day 14: the attribution line is the About entry point (the route
+        // arrives on Day 15; the click action must exist now).
+        composeRule.onNodeWithTag("home.notice").assertHasClickAction()
+    }
+
+    @Test
+    fun every_home_destination_is_reachable_by_scrolling() {
+        // Large fonts and landscape turn the grid into a single column that
+        // scrolls; nothing may become unreachable.
+        listOf(
+            "home.bible",
+            "home.search",
+            "home.bookmarks",
+            "home.daily",
+            "home.reference",
+            "home.notice",
+        ).forEach { tag ->
+            composeRule.onNodeWithTag(tag).performScrollTo().assertIsDisplayed()
+        }
     }
 
     @Test
