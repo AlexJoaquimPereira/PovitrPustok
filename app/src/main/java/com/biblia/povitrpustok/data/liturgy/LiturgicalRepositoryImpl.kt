@@ -49,20 +49,33 @@ class LiturgicalRepositoryImpl @Inject constructor(
      * polling: the caller (Daily Reading screen) fetches at most once per
      * day per app use.
      */
-    override suspend fun getLiturgicalDay(date: LocalDate): LiturgicalDayResult =
+    override suspend fun getLiturgicalDay(
+        date: LocalDate,
+        forceRefresh: Boolean
+    ): LiturgicalDayResult =
         withContext(Dispatchers.IO) {
             val dateKey = date.toString()
-            cacheDao.getByDateWithReadings(dateKey)?.let { cached ->
-                return@withContext LiturgicalDayResult.Success(LiturgicalCacheMapper.toDomain(cached))
+            if (!forceRefresh) {
+                cacheDao.getByDateWithReadings(dateKey)?.let { cached ->
+                    return@withContext LiturgicalDayResult.Success(
+                        day = LiturgicalCacheMapper.toDomain(cached),
+                        // F-18: the cache is not fresh data; say when it was saved.
+                        cachedAt = cached.day.fetchedAt
+                    )
+                }
             }
 
             fetchMutex.withLock {
                 // LITURGY-04: another load may have populated the cache while
                 // this coroutine waited; re-check before touching the network.
-                cacheDao.getByDateWithReadings(dateKey)?.let { cached ->
-                    return@withLock LiturgicalDayResult.Success(
-                        LiturgicalCacheMapper.toDomain(cached)
-                    )
+                // A forced refresh skips this so the user can actually retry.
+                if (!forceRefresh) {
+                    cacheDao.getByDateWithReadings(dateKey)?.let { cached ->
+                        return@withLock LiturgicalDayResult.Success(
+                            day = LiturgicalCacheMapper.toDomain(cached),
+                            cachedAt = cached.day.fetchedAt
+                        )
+                    }
                 }
 
                 when (val network = fetchFromNetwork(date)) {
@@ -83,7 +96,10 @@ class LiturgicalRepositoryImpl @Inject constructor(
                     is LiturgicalDayResult.Error -> {
                         val lateCache = cacheDao.getByDateWithReadings(dateKey)
                         if (lateCache != null) {
-                            LiturgicalDayResult.Success(LiturgicalCacheMapper.toDomain(lateCache))
+                            LiturgicalDayResult.Success(
+                                day = LiturgicalCacheMapper.toDomain(lateCache),
+                                cachedAt = lateCache.day.fetchedAt
+                            )
                         } else {
                             network
                         }

@@ -9,7 +9,15 @@ package com.biblia.povitrpustok.domain.model
  */
 sealed interface LiturgicalDayResult {
 
-    data class Success(val day: LiturgicalDay) : LiturgicalDayResult
+    /**
+     * [cachedAt] is the epoch millis at which this day was first fetched
+     * from the network, or `null` when the payload was just fetched (F-18).
+     * The UI uses it to say that offline data is saved rather than fresh.
+     */
+    data class Success(
+        val day: LiturgicalDay,
+        val cachedAt: Long? = null
+    ) : LiturgicalDayResult
 
     data class Error(val kind: LiturgicalErrorKind, val message: String) : LiturgicalDayResult
 }

@@ -19,6 +19,13 @@ interface LiturgicalRepository {
     /**
      * Returns the liturgical day for [date] (celebration + readings),
      * composed by the implementation from its external resources.
+     *
+     * [forceRefresh] bypasses a cached row and goes to the network (F-18:
+     * the "Update" action on stale offline data). A failed refresh may
+     * still fall back to the cache, which keeps the offline promise.
      */
-    suspend fun getLiturgicalDay(date: LocalDate): LiturgicalDayResult
+    suspend fun getLiturgicalDay(
+        date: LocalDate,
+        forceRefresh: Boolean = false
+    ): LiturgicalDayResult
 }
