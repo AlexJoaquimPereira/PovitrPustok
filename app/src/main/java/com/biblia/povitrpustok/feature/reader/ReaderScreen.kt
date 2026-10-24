@@ -70,7 +70,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.res.painterResource
@@ -729,7 +731,11 @@ private fun passageLabel(state: ReaderUiState): String {
 private fun TargetMissingNotice(onDismiss: () -> Unit) {
     Surface(
         color = MaterialTheme.colorScheme.errorContainer,
-        modifier = Modifier.fillMaxWidth().testTag("reader.target_missing")
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("reader.target_missing")
+            // Audit P3-2: announce the notice when it appears.
+            .semantics { liveRegion = LiveRegionMode.Polite }
     ) {
         Row(
             modifier = Modifier

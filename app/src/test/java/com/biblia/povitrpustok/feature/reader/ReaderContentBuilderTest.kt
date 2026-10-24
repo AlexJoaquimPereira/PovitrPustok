@@ -30,6 +30,21 @@ class ReaderContentBuilderTest {
         items.filterIsInstance<ReaderContentItem.Heading>().map { it.heading.id }
 
     @Test
+    fun a_passage_keeps_a_range_verse_that_contains_the_requested_verse() {
+        // Audit P2-3: the corpus can model 11-12 as one verse; a passage for
+        // verse 12 must keep it (and its heading).
+        val items = ReaderContentBuilder.build(
+            chapter,
+            headings = listOf(heading(1, 11, 1)),
+            verses = listOf(verse(100, 10), verse(101, 11, end = 12), verse(102, 13)),
+            passage = ReaderPassage(verseStart = 12, verseEnd = 12)
+        )
+
+        assertEquals(listOf(101L), verseIds(items))
+        assertEquals(listOf(1L), headingIds(items))
+    }
+
+    @Test
     fun headings_are_interleaved_not_grouped_at_top() {
         val items = ReaderContentBuilder.build(
             chapter,

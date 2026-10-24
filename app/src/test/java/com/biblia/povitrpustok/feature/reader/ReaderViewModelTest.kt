@@ -196,6 +196,45 @@ class ReaderViewModelTest {
         }
 
     @Test
+    fun a_verse_in_a_later_passage_chapter_can_be_bookmarked() =
+        runTest(dispatcher.scheduler) {
+            val bookId = "jakob"
+            val ch1 = chapter(bookId, number = 1, position = 1)
+            val ch2 = chapter(bookId, number = 2, position = 2)
+            val repository = FakeRepository(
+                chapterLists = mapOf(bookId to listOf(ch1, ch2)),
+                contents = mapOf(
+                    bookId to mapOf(1 to content(bookId, ch1), 2 to content(bookId, ch2))
+                )
+            )
+            val bookmarks = FakeBookmarkRepository()
+            val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository())
+
+            viewModel.load(
+                bookId = bookId,
+                chapterPosition = 1,
+                passages = listOf(
+                    ReaderPassageSpec(1, 1, 1),
+                    ReaderPassageSpec(2, 1, 1)
+                )
+            )
+            advanceUntilIdle()
+
+            // Audit P1-1: the verse lives in the second passage chapter.
+            viewModel.toggleBookmarkFor(2000L)
+            advanceUntilIdle()
+
+            assertTrue(
+                "the bookmark must be stored against chapter 2",
+                bookmarks.isBookmarked(bookId, ch2.id, 2000L)
+            )
+            assertFalse(
+                "it must not be stored against the first chapter",
+                bookmarks.isBookmarked(bookId, ch1.id, 2000L)
+            )
+        }
+
+    @Test
     fun passage_target_in_a_later_chapter_is_applied() =
         runTest(dispatcher.scheduler) {
             val bookId = "jakob"

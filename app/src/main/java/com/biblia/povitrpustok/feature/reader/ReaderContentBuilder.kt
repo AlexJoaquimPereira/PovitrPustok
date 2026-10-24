@@ -35,8 +35,15 @@ object ReaderContentBuilder {
         val requested = passage ?: return full
 
         val ranges = requested.ranges.ifEmpty { listOf(requested.verseStart..requested.verseEnd) }
+        // Audit P2-3: a source range verse (e.g. 11-12) contains every verse
+        // in its span, so a passage asking for verse 12 must keep it.
         val keptVerseIds = verses
-            .filter { verse -> ranges.any { verse.verseStart in it } }
+            .filter { verse ->
+                val end = verse.verseEnd.coerceAtLeast(verse.verseStart)
+                ranges.any { range ->
+                    verse.verseStart <= range.last && end >= range.first
+                }
+            }
             .map { it.id }
             .toSet()
 

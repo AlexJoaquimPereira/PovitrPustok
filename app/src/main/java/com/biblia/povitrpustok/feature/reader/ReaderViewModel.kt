@@ -102,6 +102,9 @@ class ReaderViewModel @Inject constructor(
             passages
         )
         loadJob?.cancel()
+        // F-06/audit: the previous chapter's bookmark ids must not stay live
+        // while the next chapter loads (row ids can collide).
+        bookmarkObservation?.cancel()
         loadJob = viewModelScope.launch {
             // F-12: never a blank top-bar title, even when a first load
             // fails. Keep the resolved corpus name when the book is the
@@ -309,9 +312,19 @@ class ReaderViewModel @Inject constructor(
      */
     fun toggleBookmarkFor(verseId: Long) {
         val state = _uiState.value
-        val chapter = state.chapter ?: return
-        val verse = state.verses.firstOrNull { it.id == verseId } ?: return
         val bookId = state.book?.id ?: return
+        // Audit P1-1: in passage mode only the first chapter lives in
+        // `verses`; a verse from a later passage chapter must still resolve,
+        // together with the chapter it actually belongs to.
+        val directVerse = state.verses.firstOrNull { it.id == verseId }
+        val passagePart = if (directVerse == null) {
+            state.passageChapters.firstOrNull { part -> part.verses.any { it.id == verseId } }
+        } else {
+            null
+        }
+        val chapter = if (directVerse != null) state.chapter else passagePart?.chapter
+        val verse = directVerse ?: passagePart?.verses?.firstOrNull { it.id == verseId }
+        if (chapter == null || verse == null) return
         viewModelScope.launch {
             // READER-05: decide inside the serialized critical section from
             // the persisted state, not the possibly-stale UI snapshot. Rapid
