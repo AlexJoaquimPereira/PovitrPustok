@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -108,29 +108,38 @@ fun BookmarksScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    items(state.bookmarks, key = { it.id }) { bookmark ->
-                        BookmarkRow(
-                            bookmark = bookmark,
-                            localName = state.bookNames[bookmark.bookId]
-                                ?: BibleCatalog.byId(bookmark.bookId)?.displayName
-                                ?: bookmark.bookId,
-                            englishName = BibleCatalog.byId(bookmark.bookId)?.englishName,
-                            onClick = { onOpenBookmark(bookmark.toReaderDestination()) },
-                            onDelete = {
-                                viewModel.removeBookmark(bookmark.id)
-                                // F-09: deletion is reversible from the
-                                // stored fields; no schema change needed.
-                                scope.launch {
-                                    val result = snackbarHostState.showSnackbar(
-                                        message = context.getString(R.string.bookmarks_removed),
-                                        actionLabel = context.getString(R.string.reader_bookmark_undo)
-                                    )
-                                    if (result == SnackbarResult.ActionPerformed) {
-                                        viewModel.restoreBookmark(bookmark)
+                    itemsIndexed(state.bookmarks, key = { _, bookmark -> bookmark.id }) { index, bookmark ->
+                        // F-28: divider between rows only, outside the
+                        // clickable row so it never joins the merged node.
+                        Column {
+                            BookmarkRow(
+                                bookmark = bookmark,
+                                localName = state.bookNames[bookmark.bookId]
+                                    ?: BibleCatalog.byId(bookmark.bookId)?.displayName
+                                    ?: bookmark.bookId,
+                                englishName = BibleCatalog.byId(bookmark.bookId)?.englishName,
+                                onClick = { onOpenBookmark(bookmark.toReaderDestination()) },
+                                onDelete = {
+                                    viewModel.removeBookmark(bookmark.id)
+                                    // F-09: deletion is reversible from the
+                                    // stored fields; no schema change needed.
+                                    scope.launch {
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = context.getString(R.string.bookmarks_removed),
+                                            actionLabel = context.getString(R.string.reader_bookmark_undo)
+                                        )
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            viewModel.restoreBookmark(bookmark)
+                                        }
                                     }
                                 }
+                            )
+                            if (index < state.bookmarks.lastIndex) {
+                                HorizontalDivider(
+                                    color = MaterialTheme.colorScheme.outlineVariant
+                                )
                             }
-                        )
+                        }
                     }
                 }
             }
