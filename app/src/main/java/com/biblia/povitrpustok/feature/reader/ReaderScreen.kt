@@ -1,5 +1,6 @@
 package com.biblia.povitrpustok.feature.reader
 
+import android.content.ClipData
 import android.content.Intent
 
 import androidx.compose.animation.AnimatedContent
@@ -62,7 +63,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -72,7 +74,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -140,7 +141,7 @@ fun ReaderScreen(
     var pickerOpen by rememberSaveable { mutableStateOf(false) }
     // F-23: long-press opens the verse actions instead of bookmarking blindly.
     var actionVerseId by rememberSaveable { mutableStateOf<Long?>(null) }
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
 
     // F-09: confirm every long-press toggle and offer an immediate Undo.
@@ -293,9 +294,18 @@ fun ReaderScreen(
             isBookmarked = state.bookmarkedVerseIds.contains(actionVerse.id),
             onDismiss = { actionVerseId = null },
             onCopy = {
-                clipboard.setText(AnnotatedString(shareText))
-                actionVerseId = null
                 scope.launch {
+                    // Compose 1.9's Clipboard API is suspend; copy first, then
+                    // dismiss, so the sheet never closes before the text lands.
+                    clipboard.setClipEntry(
+                        ClipEntry(
+                            ClipData.newPlainText(
+                                context.getString(R.string.reader_copy_verse),
+                                shareText
+                            )
+                        )
+                    )
+                    actionVerseId = null
                     snackbarHostState.showSnackbar(context.getString(R.string.reader_verse_copied))
                 }
             },
