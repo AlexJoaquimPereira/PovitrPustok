@@ -243,7 +243,28 @@ class DailyReadingViewModelTest {
 
         val state = viewModel.uiState.value
         assertTrue(state is DailyReadingUiState.Error)
-        assertEquals("No network.", (state as DailyReadingUiState.Error).message)
+        assertEquals(
+            "the reason must be typed, not English",
+            LiturgicalErrorKind.NETWORK,
+            (state as DailyReadingUiState.Error).kind
+        )
+    }
+
+    @Test
+    fun a_day_without_data_reports_no_data() = runTest(dispatcher.scheduler) {
+        val repository = FakeLiturgicalRepository(
+            LiturgicalDayResult.Error(LiturgicalErrorKind.NO_DATA, "No liturgical data available.")
+        )
+        val viewModel = DailyReadingViewModel(repository, FakeResolver()) { LocalDate.now() }
+
+        viewModel.load()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(
+            LiturgicalErrorKind.NO_DATA,
+            (state as DailyReadingUiState.Error).kind
+        )
     }
 
     @Test
