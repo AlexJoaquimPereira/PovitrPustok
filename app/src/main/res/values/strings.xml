@@ -34,6 +34,11 @@
     <string name="reader_bookmark_added">Bookmarked · %1$s %2$d:%3$d</string>
     <string name="reader_bookmark_removed">Bookmark removed · %1$s %2$d:%3$d</string>
     <string name="reader_bookmark_undo">Undo</string>
+    <string name="reader_verse_actions">Verse actions</string>
+    <string name="reader_copy_verse">Copy verse</string>
+    <string name="reader_share_verse">Share verse</string>
+    <string name="reader_share_chooser">Share verse</string>
+    <string name="reader_verse_copied">Verse copied</string>
     <string name="bookmarks_title">Bookmarks</string>
     <string name="bookmarks_empty">No bookmarks yet.</string>
     <string name="bookmarks_empty_body">Tap the bookmark icon while reading to save a place.</string>

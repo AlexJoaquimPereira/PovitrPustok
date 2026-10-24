@@ -1,5 +1,7 @@
 package com.biblia.povitrpustok.feature.reader
 
+import android.content.Intent
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -50,6 +52,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,6 +62,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -68,11 +72,13 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.ReaderPassageCodec
@@ -132,6 +138,10 @@ fun ReaderScreen(
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     var pickerOpen by rememberSaveable { mutableStateOf(false) }
+    // F-23: long-press opens the verse actions instead of bookmarking blindly.
+    var actionVerseId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val clipboard = LocalClipboardManager.current
+    val scope = rememberCoroutineScope()
 
     // F-09: confirm every long-press toggle and offer an immediate Undo.
     LaunchedEffect(viewModel) {
@@ -232,8 +242,9 @@ fun ReaderScreen(
                         onVerseSelected = viewModel::onVerseSelected,
                         onVerseLongPress = { verseId ->
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            viewModel.toggleBookmarkFor(verseId)
+                            actionVerseId = verseId
                         },
+                        onVerseBookmarkAction = viewModel::toggleBookmarkFor,
                         onNext = viewModel::next,
                         onPrevious = viewModel::previous
                     )
@@ -255,6 +266,118 @@ fun ReaderScreen(
                 }
             },
             onDismiss = { pickerOpen = false }
+        )
+    }
+
+    // F-23: one sheet for the verse a reader long-pressed. Copy/share use the
+    // domain plain text; the bookmark action keeps the existing Undo flow.
+    val actionVerse = actionVerseId?.let { id ->
+        state.verses.firstOrNull { it.id == id }
+            ?: state.passageChapters
+                .asSequence()
+                .flatMap { it.verses.asSequence() }
+                .firstOrNull { it.id == id }
+    }
+    if (actionVerse != null) {
+        val bookName = state.bookDisplayName.ifBlank {
+            state.book?.displayName.orEmpty()
+        }
+        val shareText = verseClipboardText(
+            bookName = bookName,
+            chapterNumber = actionVerse.chapterNumber,
+            verseStart = actionVerse.verseStart,
+            verseEnd = actionVerse.verseEnd,
+            plainText = actionVerse.plainText
+        )
+        VerseActionSheet(
+            isBookmarked = state.bookmarkedVerseIds.contains(actionVerse.id),
+            onDismiss = { actionVerseId = null },
+            onCopy = {
+                clipboard.setText(AnnotatedString(shareText))
+                actionVerseId = null
+                scope.launch {
+                    snackbarHostState.showSnackbar(context.getString(R.string.reader_verse_copied))
+                }
+            },
+            onShare = {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, shareText)
+                }
+                actionVerseId = null
+                context.startActivity(
+                    Intent.createChooser(intent, context.getString(R.string.reader_share_chooser))
+                )
+            },
+            onToggleBookmark = {
+                actionVerseId = null
+                viewModel.toggleBookmarkFor(actionVerse.id)
+            }
+        )
+    }
+}
+
+/**
+ * F-23: Copy / Share / Bookmark for one verse, opened by long-press.
+ *
+ * Deliberately not a text-range `SelectionContainer`: the verse row owns tap
+ * (select), long-press (this sheet) and horizontal swipe (chapter), and a
+ * nested selection container would fight all three.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VerseActionSheet(
+    isBookmarked: Boolean,
+    onDismiss: () -> Unit,
+    onCopy: () -> Unit,
+    onShare: () -> Unit,
+    onToggleBookmark: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag("reader.action_sheet")
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
+            Text(
+                text = stringResource(R.string.reader_verse_actions),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+            )
+            SheetAction(
+                label = stringResource(R.string.reader_copy_verse),
+                tag = "reader.action_copy",
+                onClick = onCopy
+            )
+            SheetAction(
+                label = stringResource(R.string.reader_share_verse),
+                tag = "reader.action_share",
+                onClick = onShare
+            )
+            SheetAction(
+                label = stringResource(
+                    if (isBookmarked) R.string.reader_remove_bookmark else R.string.reader_add_bookmark
+                ),
+                tag = "reader.action_bookmark",
+                onClick = onToggleBookmark
+            )
+        }
+    }
+}
+
+@Composable
+private fun SheetAction(label: String, tag: String, onClick: () -> Unit) {
+    TextButton(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .testTag(tag),
+        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }
