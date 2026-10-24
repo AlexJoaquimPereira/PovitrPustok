@@ -89,7 +89,7 @@ class DailyReadingViewModel @Inject constructor(
                         cachedAt = result.cachedAt
                     )
                 is LiturgicalDayResult.Error ->
-                    _uiState.value = DailyReadingUiState.Error(result.message)
+                    _uiState.value = DailyReadingUiState.Error(result.kind)
             }
         }
     }

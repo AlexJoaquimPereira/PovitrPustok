@@ -1,6 +1,7 @@
 package com.biblia.povitrpustok.feature.dailyreading
 
 import com.biblia.povitrpustok.domain.model.LiturgicalDay
+import com.biblia.povitrpustok.domain.model.LiturgicalErrorKind
 
 /**
  * Daily Reading screen state (Phase 10, plan §12; F-18 freshness).
@@ -16,5 +17,6 @@ sealed interface DailyReadingUiState {
         val cachedAt: Long? = null
     ) : DailyReadingUiState
 
-    data class Error(val message: String) : DailyReadingUiState
+    /** F-24: a typed reason; the screen owns the localized copy. */
+    data class Error(val kind: LiturgicalErrorKind) : DailyReadingUiState
 }

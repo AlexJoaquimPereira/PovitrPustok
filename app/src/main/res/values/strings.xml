@@ -39,6 +39,10 @@
     <string name="daily_notice_not_found">Could not find \'%1$s\' in the Bible.</string>
     <string name="daily_notice_invalid">Unsupported reference \'%1$s\'.</string>
     <string name="search_error_failed">Search failed. Try again.</string>
+    <string name="daily_error_network">Unable to reach the liturgical service. Check your connection.</string>
+    <string name="daily_error_http">The liturgical service returned an error.</string>
+    <string name="daily_error_response">The liturgical service returned an unexpected response.</string>
+    <string name="daily_error_no_data">No liturgical data is available for this day.</string>
     <string name="reader_add_bookmark">Add bookmark</string>
     <string name="reader_remove_bookmark">Remove bookmark</string>
     <string name="reader_bookmark_added">Bookmarked · %1$s %2$d:%3$d</string>

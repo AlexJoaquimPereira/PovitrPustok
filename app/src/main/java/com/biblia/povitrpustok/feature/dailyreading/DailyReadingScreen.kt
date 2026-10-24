@@ -55,6 +55,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.LiturgicalDay
+import com.biblia.povitrpustok.domain.model.LiturgicalErrorKind
 import com.biblia.povitrpustok.domain.model.LiturgicalReading
 import com.biblia.povitrpustok.domain.model.ReaderDestination
 import com.biblia.povitrpustok.domain.model.ReadingType
@@ -158,7 +159,15 @@ fun DailyReadingScreen(
                     CircularProgressIndicator(Modifier.align(Alignment.Center))
 
                 is DailyReadingUiState.Error -> DailyReadingError(
-                    message = current.message,
+                    // F-24: the repository's reason is typed; the copy lives here.
+                    message = stringResource(
+                        when (current.kind) {
+                            LiturgicalErrorKind.NETWORK -> R.string.daily_error_network
+                            LiturgicalErrorKind.HTTP -> R.string.daily_error_http
+                            LiturgicalErrorKind.MALFORMED_RESPONSE -> R.string.daily_error_response
+                            LiturgicalErrorKind.NO_DATA -> R.string.daily_error_no_data
+                        }
+                    ),
                     onRetry = { viewModel.load() }
                 )
 
