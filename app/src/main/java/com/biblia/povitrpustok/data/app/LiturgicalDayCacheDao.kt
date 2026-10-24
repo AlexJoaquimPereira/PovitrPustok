@@ -7,6 +7,13 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Relation
 import androidx.room.Transaction
+import java.time.LocalDate
+
+/**
+ * P2-2: how many days of cached days are kept behind the day being written.
+ * Bounds the cache without a production "clear everything" caller.
+ */
+private const val RETENTION_DAYS = 30L
 
 /** A cached liturgical day with its normalized reading rows. */
 data class LiturgicalDayCacheWithReadings(
@@ -43,6 +50,12 @@ interface LiturgicalDayCacheDao {
      * transaction, so a crash/process death can never expose a cached day
      * with missing or mixed readings. Reading rows are re-pointed at the
      * (possibly new) day id returned by the upsert.
+     *
+     * P2-2: the same transaction then prunes every day older than
+     * [RETENTION_DAYS] before [day]'s date, so the cache is bounded without
+     * a read-path side effect. `liturgical_reading.day_id` declares
+     * `ON DELETE CASCADE`, so deleting the day rows removes their readings
+     * too.
      */
     @Transaction
     suspend fun replaceDay(
@@ -52,8 +65,13 @@ interface LiturgicalDayCacheDao {
         val dayId = upsertDay(day)
         deleteReadings(dayId)
         insertReadings(readings.map { it.copy(dayId = dayId) })
+        deleteDaysBefore(LocalDate.parse(day.date).minusDays(RETENTION_DAYS).toString())
         return dayId
     }
+
+    /** P2-2: deletes day rows strictly older than the ISO `yyyy-MM-dd` [cutoff]. */
+    @Query("DELETE FROM liturgical_day_cache WHERE date < :cutoff")
+    suspend fun deleteDaysBefore(cutoff: String)
 
     @Query("DELETE FROM liturgical_day_cache")
     suspend fun clearAll()

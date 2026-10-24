@@ -43,6 +43,10 @@ class LiturgicalRepositoryImpl @Inject constructor(
      *  - fetch failed + cache appeared   -> return cached (robustness);
      *  - fetch failed + no cache         -> the network error state.
      *
+     * A forced refresh that falls back to the cache is still a [Success],
+     * but carries `refreshFailed = true` so the UI can say the update failed
+     * instead of implying the day was already current (P1-2).
+     *
      * Only successful responses are ever stored, so a malformed response
      * can never overwrite a valid cache entry. The key is the local
      * calendar date, so yesterday's entry never satisfies today. No
@@ -98,7 +102,10 @@ class LiturgicalRepositoryImpl @Inject constructor(
                         if (lateCache != null) {
                             LiturgicalDayResult.Success(
                                 day = LiturgicalCacheMapper.toDomain(lateCache),
-                                cachedAt = lateCache.day.fetchedAt
+                                cachedAt = lateCache.day.fetchedAt,
+                                // P1-2: a forced refresh that fell back to the
+                                // cache is a failed update, not "already current".
+                                refreshFailed = forceRefresh
                             )
                         } else {
                             network

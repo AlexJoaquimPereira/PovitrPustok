@@ -1,5 +1,6 @@
 package com.biblia.povitrpustok.feature.dailyreading
 
+import androidx.lifecycle.SavedStateHandle
 import com.biblia.povitrpustok.domain.model.LiturgicalDay
 import com.biblia.povitrpustok.domain.model.LiturgicalDayResult
 import com.biblia.povitrpustok.domain.model.LiturgicalErrorKind
@@ -82,6 +83,7 @@ class DailyReadingViewModelTest {
         val viewModel = DailyReadingViewModel(
             repository = repository,
             referenceResolver = FakeResolver(),
+            savedStateHandle = SavedStateHandle(),
             dateProvider = { LocalDate.of(2026, 8, 15) }
         )
 
@@ -96,7 +98,7 @@ class DailyReadingViewModelTest {
     fun resume_refreshes_only_when_the_local_date_changes() = runTest(dispatcher.scheduler) {
         var today = LocalDate.of(2026, 8, 15)
         val repository = FakeLiturgicalRepository()
-        val viewModel = DailyReadingViewModel(repository, FakeResolver()) { today }
+        val viewModel = DailyReadingViewModel(repository, FakeResolver(), SavedStateHandle()) { today }
 
         viewModel.load()
         advanceUntilIdle()
@@ -138,7 +140,7 @@ class DailyReadingViewModelTest {
             }
         }
 
-        val viewModel = DailyReadingViewModel(repository, FakeResolver()) { today }
+        val viewModel = DailyReadingViewModel(repository, FakeResolver(), SavedStateHandle()) { today }
         viewModel.load()
         runCurrent() // first request is suspended on the gate
         assertEquals(listOf(firstDate), repository.requested)
@@ -158,7 +160,7 @@ class DailyReadingViewModelTest {
         runTest(dispatcher.scheduler) {
             val today = LocalDate.of(2026, 8, 15)
             val repository = FakeLiturgicalRepository()
-            val viewModel = DailyReadingViewModel(repository, FakeResolver()) { today }
+            val viewModel = DailyReadingViewModel(repository, FakeResolver(), SavedStateHandle()) { today }
             viewModel.load()
             advanceUntilIdle()
 
@@ -194,7 +196,7 @@ class DailyReadingViewModelTest {
                     cachedAt = cachedAt
                 )
             )
-            val viewModel = DailyReadingViewModel(repository, FakeResolver()) { today }
+            val viewModel = DailyReadingViewModel(repository, FakeResolver(), SavedStateHandle()) { today }
             viewModel.load()
             advanceUntilIdle()
 
@@ -211,7 +213,7 @@ class DailyReadingViewModelTest {
     fun resume_does_not_reload_a_past_date() = runTest(dispatcher.scheduler) {
         var today = LocalDate.of(2026, 8, 15)
         val repository = FakeLiturgicalRepository()
-        val viewModel = DailyReadingViewModel(repository, FakeResolver()) { today }
+        val viewModel = DailyReadingViewModel(repository, FakeResolver(), SavedStateHandle()) { today }
         viewModel.load()
         advanceUntilIdle()
         viewModel.previousDay()
@@ -236,7 +238,7 @@ class DailyReadingViewModelTest {
         val repository = FakeLiturgicalRepository(
             LiturgicalDayResult.Error(LiturgicalErrorKind.NETWORK, "No network.")
         )
-        val viewModel = DailyReadingViewModel(repository, FakeResolver()) { LocalDate.now() }
+        val viewModel = DailyReadingViewModel(repository, FakeResolver(), SavedStateHandle()) { LocalDate.now() }
 
         viewModel.load()
         advanceUntilIdle()
@@ -255,7 +257,7 @@ class DailyReadingViewModelTest {
         val repository = FakeLiturgicalRepository(
             LiturgicalDayResult.Error(LiturgicalErrorKind.NO_DATA, "No liturgical data available.")
         )
-        val viewModel = DailyReadingViewModel(repository, FakeResolver()) { LocalDate.now() }
+        val viewModel = DailyReadingViewModel(repository, FakeResolver(), SavedStateHandle()) { LocalDate.now() }
 
         viewModel.load()
         advanceUntilIdle()
@@ -277,7 +279,7 @@ class DailyReadingViewModelTest {
                 )
             )
         )
-        val viewModel = DailyReadingViewModel(FakeLiturgicalRepository(), resolver) { LocalDate.now() }
+        val viewModel = DailyReadingViewModel(FakeLiturgicalRepository(), resolver, SavedStateHandle()) { LocalDate.now() }
 
         viewModel.openReading(LiturgicalReading(ReadingType.GOSPEL, "James 1:5-8"))
         advanceUntilIdle()
@@ -296,7 +298,7 @@ class DailyReadingViewModelTest {
     @Test
     fun unresolvable_reference_surfaces_a_notice_not_a_crash() = runTest(dispatcher.scheduler) {
         val resolver = FakeResolver(ScriptureResolution.Invalid("Unsupported reference."))
-        val viewModel = DailyReadingViewModel(FakeLiturgicalRepository(), resolver) { LocalDate.now() }
+        val viewModel = DailyReadingViewModel(FakeLiturgicalRepository(), resolver, SavedStateHandle()) { LocalDate.now() }
         viewModel.load()
         advanceUntilIdle()
 
@@ -316,7 +318,7 @@ class DailyReadingViewModelTest {
         val resolver = FakeResolver(
             ScriptureResolution.Ambiguous("Jobachem_Pustok", 26, emptyList())
         )
-        val viewModel = DailyReadingViewModel(FakeLiturgicalRepository(), resolver) { LocalDate.now() }
+        val viewModel = DailyReadingViewModel(FakeLiturgicalRepository(), resolver, SavedStateHandle()) { LocalDate.now() }
 
         viewModel.openReading(LiturgicalReading(ReadingType.GOSPEL, "Job 26:5"))
         advanceUntilIdle()
@@ -328,13 +330,56 @@ class DailyReadingViewModelTest {
     @Test
     fun missing_reference_surfaces_a_not_found_notice() = runTest(dispatcher.scheduler) {
         val resolver = FakeResolver(ScriptureResolution.NotFound("Unknown book: 'Genesis'."))
-        val viewModel = DailyReadingViewModel(FakeLiturgicalRepository(), resolver) { LocalDate.now() }
+        val viewModel = DailyReadingViewModel(FakeLiturgicalRepository(), resolver, SavedStateHandle()) { LocalDate.now() }
 
         viewModel.openReading(LiturgicalReading(ReadingType.FIRST_READING, "Genesis 99:1"))
         advanceUntilIdle()
 
         assertEquals(DailyNotice.NotFound("Genesis 99:1"), viewModel.navigationNotice.value)
         assertNull(viewModel.pendingNavigation.value)
+    }
+
+    @Test
+    fun the_selected_date_survives_recreation_with_the_same_saved_state_handle() =
+        runTest(dispatcher.scheduler) {
+            val today = LocalDate.of(2026, 8, 15)
+            val yesterday = today.minusDays(1)
+            val repository = FakeLiturgicalRepository()
+            val handle = SavedStateHandle()
+
+            val first = DailyReadingViewModel(repository, FakeResolver(), handle) { today }
+            first.load()
+            advanceUntilIdle()
+            first.previousDay()
+            advanceUntilIdle()
+            assertEquals(yesterday, first.selectedDate.value)
+            assertEquals(
+                "the visible day is persisted as an ISO date",
+                "2026-08-14",
+                handle.get<String>(DailyReadingViewModel.SELECTED_DATE_KEY)
+            )
+
+            // "process death": a new ViewModel over the same restored handle.
+            val restored = DailyReadingViewModel(repository, FakeResolver(), handle) { today }
+            assertEquals(yesterday, restored.selectedDate.value)
+            assertTrue("a restored past day is not today", !restored.isToday())
+
+            // A resume must not yank the restored day back to today.
+            restored.refreshIfDateChanged()
+            advanceUntilIdle()
+            assertEquals(yesterday, restored.selectedDate.value)
+            assertEquals(yesterday, repository.requestedDates.last())
+        }
+
+    @Test
+    fun without_a_saved_date_the_view_model_starts_on_today() = runTest(dispatcher.scheduler) {
+        val today = LocalDate.of(2026, 8, 15)
+        val handle = SavedStateHandle()
+
+        val viewModel = DailyReadingViewModel(FakeLiturgicalRepository(), FakeResolver(), handle) { today }
+
+        assertEquals(today, viewModel.selectedDate.value)
+        assertTrue(viewModel.isToday())
     }
 
     @Test
@@ -347,7 +392,7 @@ class DailyReadingViewModelTest {
                 )
             )
         )
-        val viewModel = DailyReadingViewModel(FakeLiturgicalRepository(), resolver) { LocalDate.now() }
+        val viewModel = DailyReadingViewModel(FakeLiturgicalRepository(), resolver, SavedStateHandle()) { LocalDate.now() }
 
         viewModel.openReading(LiturgicalReading(ReadingType.FIRST_READING, "Genesis 17:11-12"))
         advanceUntilIdle()

@@ -38,7 +38,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -106,7 +108,7 @@ private val ParagraphGap = 12.dp
  * `viewModel.openReading` remains the row handler. Stable tags:
  * `daily.date`, `daily.prev`, `daily.next`, `daily.today`, `daily.gospel`,
  * `daily.read_gospel`, `daily.reading.<type>`, `daily.freshness`,
- * `daily.refresh`.
+ * `daily.refresh`, `daily.update_failed`, `daily.update_failed_dismiss`.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -349,6 +351,9 @@ private fun DailyReadingContent(
     modifier: Modifier = Modifier
 ) {
     val day = state.day
+    // P1-2: a forced update that fell back to saved data says so, and the
+    // notice is dismissible. A new state instance (each load) re-arms it.
+    var updateFailedDismissed by remember(state) { mutableStateOf(false) }
     // The Gospel is lifted out of the list into its own block. Only the first
     // one is promoted; anything else stays in the compact rows.
     val gospelIndex = day.readings.indexOfFirst { it.type == ReadingType.GOSPEL }
@@ -367,6 +372,12 @@ private fun DailyReadingContent(
         contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 40.dp),
         verticalArrangement = Arrangement.spacedBy(BlockGap)
     ) {
+        if (state.refreshFailed && !updateFailedDismissed) {
+            item(key = "update_failed") {
+                UpdateFailedNotice(onDismiss = { updateFailedDismissed = true })
+            }
+        }
+
         if (day.hasIdentity()) {
             item(key = "identity") { DayIdentity(day = day) }
         }
@@ -676,19 +687,24 @@ private fun DailyNotice.message(): String = when (this) {
  * Reference-resolution notice, inline and dismissible. It sits where the reader
  * will see it (directly above the Gospel) instead of as a transient snackbar,
  * because the tap that produced it changed nothing else on screen.
+ *
+ * [tag]/[dismissTag] let other inline notices (P1-2) reuse the same banner
+ * without colliding with the resolution notice's test tags.
  */
 @Composable
 private fun NoticeBanner(
     message: String,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tag: String = "daily.notice",
+    dismissTag: String = "daily.notice_dismiss"
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .testTag("daily.notice"),
+            .testTag(tag),
         shape = MaterialTheme.shapes.small,
         color = colorScheme.errorContainer,
         contentColor = colorScheme.onErrorContainer
@@ -707,7 +723,7 @@ private fun NoticeBanner(
             )
             IconButton(
                 onClick = onDismiss,
-                modifier = Modifier.testTag("daily.notice_dismiss")
+                modifier = Modifier.testTag(dismissTag)
             ) {
                 Icon(
                     imageVector = Icons.Filled.Close,
@@ -716,6 +732,25 @@ private fun NoticeBanner(
             }
         }
     }
+}
+
+/**
+ * P1-2: the forced update failed and the saved day is still on screen. Stays
+ * inline (not a snackbar) so it does not disappear before it is read, and the
+ * freshness footer's "Update" action remains the retry.
+ */
+@Composable
+private fun UpdateFailedNotice(
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    NoticeBanner(
+        message = stringResource(R.string.daily_update_failed),
+        onDismiss = onDismiss,
+        modifier = modifier,
+        tag = "daily.update_failed",
+        dismissTag = "daily.update_failed_dismiss"
+    )
 }
 
 /**

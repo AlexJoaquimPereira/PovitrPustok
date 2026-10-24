@@ -1,5 +1,6 @@
 package com.biblia.povitrpustok.feature.dailyreading
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.biblia.povitrpustok.domain.model.LiturgicalDayResult
@@ -40,18 +41,23 @@ sealed interface DailyNotice {
  * F-18: the visible date is screen state ([selectedDate]), not a route
  * argument, so yesterday/tomorrow need no navigation and the back stack
  * still means "leave Daily Reading".
+ *
+ * P2-5: [selectedDate] is mirrored into [savedStateHandle] as an ISO string
+ * under [SELECTED_DATE_KEY], so process death restores the browsed day
+ * instead of silently snapping back to today.
  */
 @HiltViewModel
 class DailyReadingViewModel @Inject constructor(
     private val repository: LiturgicalRepository,
     private val referenceResolver: ScriptureReferenceResolver,
+    private val savedStateHandle: SavedStateHandle,
     private val dateProvider: () -> LocalDate
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<DailyReadingUiState>(DailyReadingUiState.Loading)
     val uiState: StateFlow<DailyReadingUiState> = _uiState.asStateFlow()
 
-    private val _selectedDate = MutableStateFlow(dateProvider())
+    private val _selectedDate = MutableStateFlow(restoredDate())
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
 
     /** The date whose data is currently loaded/being loaded (LITURGY-02). */
@@ -60,8 +66,9 @@ class DailyReadingViewModel @Inject constructor(
     /**
      * Whether the visible day follows the calendar's today. False once the
      * user browses another day, so a resume never yanks them back (F-18).
+     * A restored past/future day is by definition not "today".
      */
-    private var followsToday = true
+    private var followsToday = _selectedDate.value == dateProvider()
     private var loadJob: Job? = null
 
     private val _pendingNavigation = MutableStateFlow<ReaderDestination?>(null)
@@ -86,7 +93,8 @@ class DailyReadingViewModel @Inject constructor(
                 is LiturgicalDayResult.Success ->
                     _uiState.value = DailyReadingUiState.Success(
                         day = result.day,
-                        cachedAt = result.cachedAt
+                        cachedAt = result.cachedAt,
+                        refreshFailed = result.refreshFailed
                     )
                 is LiturgicalDayResult.Error ->
                     _uiState.value = DailyReadingUiState.Error(result.kind)
@@ -122,7 +130,7 @@ class DailyReadingViewModel @Inject constructor(
             return
         }
         if (followsToday && loadedDate != today) {
-            _selectedDate.value = today
+            setSelectedDate(today)
             followsToday = true
             load()
         }
@@ -130,10 +138,23 @@ class DailyReadingViewModel @Inject constructor(
 
     private fun selectDay(date: LocalDate) {
         if (date == _selectedDate.value && _uiState.value is DailyReadingUiState.Success) return
-        _selectedDate.value = date
+        setSelectedDate(date)
         followsToday = date == dateProvider()
         load()
     }
+
+    /** P2-5: the visible day survives process death with the same state handle. */
+    private fun setSelectedDate(date: LocalDate) {
+        _selectedDate.value = date
+        savedStateHandle[SELECTED_DATE_KEY] = date.toString()
+    }
+
+    private fun restoredDate(): LocalDate =
+        savedStateHandle.get<String>(SELECTED_DATE_KEY)
+            ?.let { stored ->
+                runCatching { LocalDate.parse(stored) }.getOrNull()
+            }
+            ?: dateProvider()
 
     /** Converts a reading reference and requests Reader navigation. */
     fun openReading(reading: LiturgicalReading) {
@@ -159,5 +180,10 @@ class DailyReadingViewModel @Inject constructor(
 
     fun consumeNotice() {
         _navigationNotice.value = null
+    }
+
+    companion object {
+        /** P2-5: [SavedStateHandle] key holding the selected date as ISO `yyyy-MM-dd`. */
+        const val SELECTED_DATE_KEY = "selected_date"
     }
 }

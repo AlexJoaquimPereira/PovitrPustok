@@ -254,6 +254,11 @@ class LiturgicalRepositoryImplTest {
         val cached = repository.getLiturgicalDay(date)
         assertTrue(cached is LiturgicalDayResult.Success)
         assertNotNull("a cache hit must carry its saved timestamp", (cached as LiturgicalDayResult.Success).cachedAt)
+        assertEquals(
+            "a normal cache hit is not a failed update (P1-2)",
+            false,
+            cached.refreshFailed
+        )
         assertEquals("the cache must serve the day without another call", 1, api.readingsCalls)
     }
 
@@ -284,12 +289,37 @@ class LiturgicalRepositoryImplTest {
         val fallback = repository.getLiturgicalDay(date, forceRefresh = true)
 
         assertTrue("offline must keep the promise", fallback is LiturgicalDayResult.Success)
+        fallback as LiturgicalDayResult.Success
         assertEquals(
             "the fallback keeps the original saved timestamp",
             cached,
-            (fallback as LiturgicalDayResult.Success).cachedAt
+            fallback.cachedAt
+        )
+        assertTrue(
+            "a forced refresh that fell back to the cache must report the failure (P1-2)",
+            fallback.refreshFailed
         )
     }
+
+    @Test
+    fun a_non_forced_load_serves_the_cache_without_reporting_a_failed_update() =
+        runBlocking {
+            val api = successfulApi()
+            val repository = newRepository(api)
+            repository.getLiturgicalDay(date)
+
+            api.readingsFailure = IOException("offline")
+            api.calendarFailure = IOException("offline")
+            val fallback = repository.getLiturgicalDay(date)
+
+            assertTrue(fallback is LiturgicalDayResult.Success)
+            assertEquals(
+                "an automatic (non-forced) load is not a user-visible failed update",
+                false,
+                (fallback as LiturgicalDayResult.Success).refreshFailed
+            )
+            assertEquals("a non-forced cache hit makes no network call", 1, api.readingsCalls)
+        }
 
     @Test
     fun empty_day_without_readings_or_celebration_is_no_data() = runBlocking {

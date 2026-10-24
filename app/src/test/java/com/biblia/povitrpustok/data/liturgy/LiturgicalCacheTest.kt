@@ -13,6 +13,8 @@ import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -195,6 +197,45 @@ class LiturgicalCacheTest {
         assertEquals(LiturgicalErrorKind.MALFORMED_RESPONSE, (result as LiturgicalDayResult.Error).kind)
         assertTrue(database.liturgicalDayCacheDao().getByDateWithReadings(today.toString()) == null)
     }
+
+    @Test
+    fun caching_a_newer_day_prunes_days_older_than_the_retention_window() = runBlocking {
+        val (readings, calendar) = successFixture()
+        val api = FakeApi(readings = readings, calendar = calendar)
+        val repository = repository(api)
+        val dao = database.liturgicalDayCacheDao()
+
+        // Exactly at the 30-day boundary (today - 30) and well outside it.
+        val boundary = today.minusDays(30)
+        val stale = today.minusDays(75)
+
+        repository.getLiturgicalDay(boundary)
+        repository.getLiturgicalDay(stale)
+        val staleId = dao.getByDateWithReadings(stale.toString())!!.day.id
+        assertEquals("the stale day is stored with its readings", 3, readingRowCount(staleId))
+
+        repository.getLiturgicalDay(today)
+
+        assertNull(
+            "a day older than the 30-day window must be pruned",
+            dao.getByDateWithReadings(stale.toString())
+        )
+        assertEquals("pruning a day must remove its readings too", 0, readingRowCount(staleId))
+        assertNotNull(
+            "a day exactly at the 30-day boundary must survive",
+            dao.getByDateWithReadings(boundary.toString())
+        )
+        assertNotNull(dao.getByDateWithReadings(today.toString()))
+    }
+
+    /** Direct row count, so orphaned readings cannot hide behind the cascade. */
+    private fun readingRowCount(dayId: Long): Int =
+        database.openHelper.readableDatabase
+            .query("SELECT COUNT(*) FROM liturgical_reading WHERE day_id = $dayId")
+            .use { cursor ->
+                cursor.moveToFirst()
+                cursor.getInt(0)
+            }
 
     @Test
     fun readings_and_celebration_survive_database_recreation() = runBlocking {
