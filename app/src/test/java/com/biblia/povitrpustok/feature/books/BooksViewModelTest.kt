@@ -1,6 +1,7 @@
 package com.biblia.povitrpustok.feature.books
 
 import com.biblia.povitrpustok.core.result.BibleDatabaseAccessException
+import com.biblia.povitrpustok.feature.reader.FakeBookmarkRepository
 import com.biblia.povitrpustok.domain.repository.BookTitleRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -14,6 +15,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -56,9 +58,27 @@ class BooksViewModelTest {
     }
 
     @Test
+    fun the_last_read_book_is_exposed_and_stale_ids_are_ignored() =
+        runTest(dispatcher.scheduler) {
+            val bookmarks = FakeBookmarkRepository()
+            val viewModel = BooksViewModel(FakeBookTitleRepository(), bookmarks)
+            advanceUntilIdle()
+            assertNull(viewModel.uiState.value.lastReadBookId)
+
+            bookmarks.updateReadingState("jakob", chapterPosition = 1)
+            advanceUntilIdle()
+            assertEquals("jakob", viewModel.uiState.value.lastReadBookId)
+
+            // A book outside the catalog cannot be marked (or navigated to).
+            bookmarks.updateReadingState("not-a-book", chapterPosition = 1)
+            advanceUntilIdle()
+            assertNull(viewModel.uiState.value.lastReadBookId)
+        }
+
+    @Test
     fun successful_load_publishes_names_without_error() = runTest(dispatcher.scheduler) {
         val repository = FakeBookTitleRepository(names = mapOf("jakob" to "JAKOBACHEM POTR"))
-        val viewModel = BooksViewModel(repository)
+        val viewModel = BooksViewModel(repository, FakeBookmarkRepository())
 
         advanceUntilIdle()
 
@@ -74,7 +94,7 @@ class BooksViewModelTest {
         val repository = FakeBookTitleRepository(
             failure = BibleDatabaseAccessException("corpus unavailable")
         )
-        val viewModel = BooksViewModel(repository)
+        val viewModel = BooksViewModel(repository, FakeBookmarkRepository())
 
         advanceUntilIdle()
 
@@ -89,7 +109,7 @@ class BooksViewModelTest {
         val repository = FakeBookTitleRepository(
             failure = BibleDatabaseAccessException("corpus unavailable")
         )
-        val viewModel = BooksViewModel(repository)
+        val viewModel = BooksViewModel(repository, FakeBookmarkRepository())
         advanceUntilIdle()
         assertTrue(viewModel.uiState.value.titlesFailed)
 
@@ -109,7 +129,7 @@ class BooksViewModelTest {
     fun retry_while_a_scan_is_in_flight_does_not_start_another_scan() = runTest(dispatcher.scheduler) {
         val gate = CompletableDeferred<Unit>()
         val repository = FakeBookTitleRepository(gate = gate)
-        val viewModel = BooksViewModel(repository)
+        val viewModel = BooksViewModel(repository, FakeBookmarkRepository())
         runCurrent() // the initial scan starts and suspends on the gate
 
         viewModel.retry()

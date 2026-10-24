@@ -8,6 +8,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.biblia.povitrpustok.core.database.AssetBibleDatabaseProvider
 import com.biblia.povitrpustok.data.bible.BibleRepositoryImpl
 import com.biblia.povitrpustok.domain.repository.BibleRepository
+import com.biblia.povitrpustok.testutil.FakeBookNameRepository
 import org.junit.Rule
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -45,7 +46,7 @@ class BookIntroductionViewModelTest {
 
     @Test
     fun james_introduction_blocks_are_preserved_in_source_order() {
-        val viewModel = BookIntroductionViewModel(repository)
+        val viewModel = BookIntroductionViewModel(repository, FakeBookNameRepository())
         viewModel.load("jakob")
 
         val deadline = System.currentTimeMillis() + 10_000
@@ -61,6 +62,8 @@ class BookIntroductionViewModelTest {
                     state.blocks.map { it.position }
                 )
                 assertTrue(state.blocks.all { it.html.isNotBlank() })
+                // F-21: the screen must be able to name its book.
+                assertEquals("Jakobachem", state.bookDisplayName)
                 return
             }
             Thread.sleep(10)
