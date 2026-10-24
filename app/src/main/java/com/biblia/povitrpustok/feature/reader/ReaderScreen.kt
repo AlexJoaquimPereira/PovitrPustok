@@ -70,6 +70,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.res.painterResource
@@ -490,6 +491,9 @@ private fun ReaderActionBar(
         val currentLabel = state.chapter
             ?.let { chapterDisplayLabel(it, state.chapters) }
             .orEmpty()
+        // F-27/Day 20 matrix: at 2x the full "Chapter 3" ellipsized to
+        // "Chapter…", which says nothing. Keep the numeral and describe it.
+        val compactSelector = LocalDensity.current.fontScale >= 1.5f
         TextButton(
             onClick = onOpenChapterPicker,
             enabled = state.chapter != null && state.chapters.isNotEmpty(),
@@ -500,10 +504,12 @@ private fun ReaderActionBar(
         ) {
             // F-27: no chapter yet (loading/error) -> no dangling "Chapter ".
             if (currentLabel.isNotBlank()) {
+                val spoken = stringResource(R.string.chapter_selector_label, currentLabel)
                 Text(
-                    text = stringResource(R.string.chapter_selector_label, currentLabel),
+                    text = if (compactSelector) currentLabel else spoken,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.semantics { contentDescription = spoken }
                 )
             }
         }
