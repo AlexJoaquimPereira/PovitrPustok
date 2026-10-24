@@ -158,7 +158,11 @@ fun PovitrPustokNavHost() {
             val bookId = backStackEntry.arguments?.getString("bookId").orEmpty()
             BookIntroductionScreen(
                 bookId = bookId,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                // F-21: the end-of-introduction link returns to the book's
+                // chapters. Introduction is only entered from Chapters, so
+                // popping avoids a duplicate Chapters entry on the back stack.
+                onOpenChapters = { navController.popBackStack() }
             )
         }
 

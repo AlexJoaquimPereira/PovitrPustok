@@ -12,10 +12,13 @@
     <string name="books_title">Books</string>
     <string name="books_titles_unavailable">Book titles could not be loaded. Showing catalog names.</string>
     <string name="books_retry">Retry</string>
+    <string name="books_last_read">Last read</string>
     <string name="old_testament">Old Testament</string>
     <string name="new_testament">New Testament</string>
     <string name="chapters_empty">No chapters available for this book.</string>
     <string name="book_introduction">Introduction</string>
+    <string name="book_introduction_with_name">%1$s · Introduction</string>
+    <string name="book_introduction_read_chapters">Read the chapters</string>
     <string name="no_introduction">No introduction available.</string>
     <string name="back">Back</string>
     <string name="reference_entry_title">Go to reference</string>
