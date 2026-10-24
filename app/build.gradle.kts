@@ -25,8 +25,8 @@ android {
         // from API 30 onward; the app's Bible search depends on FTS5.
         minSdk = 30
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.2.0-rc1"
+        versionCode = 6
+        versionName = "1.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
