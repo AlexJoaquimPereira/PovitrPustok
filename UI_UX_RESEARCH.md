@@ -1420,6 +1420,56 @@ Contrast formula: WCAG 2.1 relative luminance, `(L1 + 0.05) / (L2 + 0.05)`, with
 
 **Do first, in this order:** 1 → 2 → 3 → 5 → 6 → 4 → 8 → 9 → 7 → 10. Items 1, 2, 3, 5, and 6 are the "week one" set; they are mostly presentation-only and deliver most of the perceived quality lift. Items 4, 7, 9, and 10 need product decisions or test migrations and should follow with explicit acceptance criteria.
 
+
 ---
 
-*End of document. All findings are derived from the inspected commit and the bundled corpus; no app code, resources, tests, or Gradle files were modified.*
+## 12. Status after the 1.2.0 delivery (Day 20)
+
+The 20-day plan is complete. Every finding below was either delivered or is explicitly deferred; the
+evidence is the commit history and the test suites (JVM + instrumented).
+
+| Finding | Status | Delivered in |
+|---|---|---|
+| F-01 Home insets/scroll | Resolved | Days 1, 13–14 |
+| F-02 Corpus colours | Resolved — theme-aware `ScripturePalette` | Day 3 |
+| F-03 Books progressive titles | Resolved — catalog renders immediately, banner + Retry | Days 1–2 |
+| F-04 Reader chrome | Resolved — back arrow, bottom bar, chapter sheet | Day 10 |
+| F-05 Passage context | Resolved — banner, "Show full chapter", target notice | Day 11 |
+| F-06 Visible reader state | Resolved — solid surfaces, gutter markers, `stateDescription` | Day 4 |
+| F-07 Type scale | Resolved — one serif/sans system, every style defined | Days 5, 13 |
+| F-08 Measure/flow/gutter | Resolved — 620 dp measure, fixed gutter, poetry 480 dp | Day 5 |
+| F-09 Bookmark feedback | Resolved — sheet + snackbar/Undo on both screens | Days 9, 18 |
+| F-10 Navigation reachability | Resolved — back arrows, search action, Reader overflow | Days 6, 15 |
+| F-11 Home hierarchy | Resolved — editorial Home, responsive grid, About footer | Days 13–14 |
+| F-12 One book name | Resolved — `BookNameRepository` single source | Day 8 |
+| F-13 Search/reference ergonomics | Resolved — IME actions, imePadding, stable results | Day 7 |
+| F-14 Chapter cells | Resolved — 48 dp, font-scale columns | Day 6 |
+| F-15 Settings & About | Resolved — preferences + About | Day 15 |
+| F-16 Shared empty/error/loading | Resolved — shared surfaces + retries | Day 8 |
+| F-17 Dark surfaces and bars | Resolved — full surface family + hairlines | Day 15 |
+| F-18 Daily Reading | Resolved — Gospel feature, day stepping, offline badge | Day 16 |
+| F-19 Motion | Resolved — short, finite, scale-aware | Day 12 |
+| F-20 Books scanning aids | Resolved — sticky sections, last-read, jump | Day 17 |
+| F-21 Introduction | Resolved — book title, measure, headings, chapters link | Day 17 |
+| F-22 Search result scanning | Resolved — count/cap, highlighting, dividers | Days 7, 19 |
+| F-23 Copy/share | Resolved as a long-press action sheet (whole verse) | Day 18 |
+| F-24 Locale/plurals | Resolved for the shipped UI; `values-kok` remains future work | Day 19 |
+| F-25 Poetry/chapter header | Resolved — poetry measure; header restyled | Days 5, 19 |
+| F-26 Accessibility | Resolved at the semantics level; TalkBack sweep pending on hardware | Day 18 |
+| F-27 Copy polish | Resolved — "Chapter N", no zero fallback | Day 19 |
+| F-28 Row affordances | Resolved — hairlines + consistent ripples | Day 19 |
+| F-29 Reading progress | Resolved — "Chapter N of M" in the content header | Day 19 |
+| F-30 RTL/bidi | Deferred — UI is LTR (English + Konkani); numeric references are locale-independent | — |
+| F-31 Book index | Resolved as an Old/New Testament jump (canonical order kept) | Day 17 |
+| F-32 Search recents | Deferred — optional in the plan, no data model added | — |
+
+**Explicitly deferred:** full Konkani localization (`values-kok`), text-range selection inside a verse
+(the action sheet copies the whole verse), the TalkBack traversal script and the 2×/landscape matrix on
+physical hardware, FTS5 `MATCH` verification on capable hardware, and the private corpus artifact for
+CI (see `TODO.md` residual backlog).
+
+---
+
+*End of document. Findings were derived from the inspected commit and the bundled corpus; no corpus
+content is reproduced here.*
+
