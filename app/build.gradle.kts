@@ -21,8 +21,9 @@ android {
 
     defaultConfig {
         applicationId = "com.biblia.povitrpustok"
-        // minSdk 30: Android's framework SQLite only ships the FTS5 module
-        // from API 30 onward; the app's Bible search depends on FTS5.
+        // minSdk 30. FTS5 is used only when the device's SQLite build provides
+        // it; many OEM builds (and the bundled emulator) omit the module, so
+        // search always keeps the normalized scan fallback (see README §7).
         minSdk = 30
         targetSdk = 36
         versionCode = 6

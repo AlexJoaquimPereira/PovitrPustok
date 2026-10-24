@@ -92,3 +92,57 @@ jobs:
             app/build/test-results/
             app/build/reports/lint-results-debug.*
           if-no-files-found: ignore
+
+  instrumented:
+    name: Instrumented tests (emulator, scan-fallback path)
+    # The emulator image (like most OEM builds) has no FTS5, so this is the
+    # only automated coverage of the normalized scan fallback users actually
+    # get. Instrumented tests need the private corpus, so the expensive steps
+    # are gated on the secret being configured (job-level `if` cannot read
+    # `secrets`; step-level `env` can).
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+
+    env:
+      CORPUS_ARCHIVE_URL: ${{ secrets.CORPUS_ARCHIVE_URL }}
+      CORPUS_ARCHIVE_SHA256: ${{ secrets.CORPUS_ARCHIVE_SHA256 }}
+      CORPUS_ARCHIVE_TOKEN: ${{ secrets.CORPUS_ARCHIVE_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25 (matches gradle-daemon-jvm.properties)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+
+      - name: Fetch private corpus
+        if: env.CORPUS_ARCHIVE_URL != ''
+        run: tools/corpus/fetch_corpus.sh
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Instrumented tests
+        if: env.CORPUS_ARCHIVE_URL != ''
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: ./gradlew :app:connectedDebugAndroidTest --stacktrace

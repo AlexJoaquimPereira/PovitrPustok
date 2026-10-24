@@ -12,6 +12,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -42,7 +43,11 @@ class BooksViewModel @Inject constructor(
         // F-20: mark the book of the stored reading position. A stale id
         // (book no longer in the catalog) simply shows no marker.
         viewModelScope.launch {
-            bookmarkRepository.observeReadingState().collect { state ->
+            bookmarkRepository.observeReadingState()
+                // Audit P3-7: a corrupt reading-state row must not kill the
+                // marker coroutine (Home treats this the same way).
+                .catch { emit(null) }
+                .collect { state ->
                 val bookId = state?.bookId?.takeIf { BibleCatalog.byId(it) != null }
                 _uiState.update { it.copy(lastReadBookId = bookId) }
             }

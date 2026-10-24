@@ -75,6 +75,13 @@ abstract class AppDatabase : RoomDatabase() {
                 context.applicationContext,
                 AppDatabase::class.java,
                 DATABASE_NAME
-            ).addMigrations(MIGRATION_1_2).build()
+            )
+                .addMigrations(MIGRATION_1_2)
+                // Audit P3-8: installing an older build over a newer database
+                // must not crash. Only app state (bookmarks, reading position,
+                // liturgical cache) lives here; the corpus is separate and
+                // immutable, so dropping is safe.
+                .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
+                .build()
     }
 }
