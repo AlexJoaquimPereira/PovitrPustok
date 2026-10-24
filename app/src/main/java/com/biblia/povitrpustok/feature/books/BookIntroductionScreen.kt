@@ -89,9 +89,12 @@ fun BookIntroductionScreen(
     // A title block that only repeats the book name adds nothing under a bar
     // that already names the book; real headings survive.
     val visibleBlocks = remember(state.blocks, bookDisplayName) {
-        state.blocks.filterNot { block ->
+        val withoutDuplicateTitle = state.blocks.filterNot { block ->
             block.type == TITLE_BLOCK_TYPE && block.repeatsName(bookDisplayName)
         }
+        // Two books ship only their own title block; dropping it would leave
+        // a page with nothing but the chapters link, so keep it as a heading.
+        withoutDuplicateTitle.ifEmpty { state.blocks }
     }
 
     Scaffold(
