@@ -87,11 +87,14 @@ private fun rememberDocument(html: String): BibleHtmlDocument =
 fun ChapterHeader(
     chapter: Chapter,
     modifier: Modifier = Modifier,
-    verseRange: String? = null
+    verseRange: String? = null,
+    positionLabel: String? = null
 ) {
     Column(modifier = modifier.semantics { heading() }) {
         Text(
-            text = stringResource(R.string.reader_chapter_number, chapter.number).uppercase(),
+            // F-29: "Chapter 3 of 21" orients the reader without new chrome.
+            text = (positionLabel ?: stringResource(R.string.reader_chapter_number, chapter.number))
+                .uppercase(),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -435,11 +438,24 @@ fun ReaderContent(
         items(items, key = { it.key }) { item ->
             val itemWidth = Modifier.widthIn(max = ReadingColumnMaxWidth).fillMaxWidth()
             when (item) {
-                is ReaderContentItem.Header -> ChapterHeader(
-                    chapter = item.chapter,
-                    modifier = itemWidth,
-                    verseRange = passageRangeLabel(state, item.chapter)
-                )
+                is ReaderContentItem.Header -> {
+                    val chapterIndex = state.chapters.indexOfFirst { it.id == item.chapter.id }
+                    val positionLabel = if (chapterIndex >= 0 && state.chapters.isNotEmpty()) {
+                        stringResource(
+                            R.string.reader_chapter_of,
+                            chapterIndex + 1,
+                            state.chapters.size
+                        )
+                    } else {
+                        null
+                    }
+                    ChapterHeader(
+                        chapter = item.chapter,
+                        modifier = itemWidth,
+                        verseRange = passageRangeLabel(state, item.chapter),
+                        positionLabel = positionLabel
+                    )
+                }
                 is ReaderContentItem.Heading -> HeadingBlock(
                     item.heading,
                     itemWidth.padding(top = 16.dp, bottom = 4.dp)
