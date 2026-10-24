@@ -206,6 +206,11 @@ class HomeNavigationUiTest {
             .performScrollTo()
             .performTouchInput { longClick() }
 
+        // Day 18 (F-23): long-press opens the verse actions; bookmarking is
+        // one explicit action inside it.
+        composeRule.onNodeWithTag("reader.action_sheet").assertIsDisplayed()
+        composeRule.onNodeWithTag("reader.action_bookmark").performClick()
+
         composeRule.onNodeWithText("Undo").assertIsDisplayed().performClick()
         // The undo removes the bookmark again, so the suite leaves the app
         // database as it found it for the empty-bookmarks test.
