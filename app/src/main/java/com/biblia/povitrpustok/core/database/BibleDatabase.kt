@@ -11,6 +11,8 @@ import com.biblia.povitrpustok.domain.model.IntroductionBlock
 import com.biblia.povitrpustok.domain.model.Verse
 import java.text.Normalizer
 import java.util.Locale
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 
 /**
  * Read-only handle to one imported Bible book database (plan §11, §34).
@@ -255,13 +257,18 @@ class BibleDatabase internal constructor(
      * occur in `text_plain`, ignoring case and diacritics. Results are ordered
      * by source position rather than BM25, but search remains functional
      * offline and never returns a misleading empty result.
+     *
+     * P2-1: the scan fallback is `suspend` and checks for cancellation while
+     * it walks a book, so a superseded search (e.g. `collectLatest` in
+     * `SearchViewModel`) aborts a large book instead of scanning it to the
+     * limit first. Results and ordering are unchanged.
      */
-    fun searchVerses(query: String, limit: Int = 50): List<BibleVerseHit> {
+    suspend fun searchVerses(query: String, limit: Int = 50): List<BibleVerseHit> {
         if (limit <= 0) return emptyList()
         return if (fts5Available) searchWithFts(query, limit) else searchWithScan(query, limit)
     }
 
-    private fun searchWithFts(query: String, limit: Int): List<BibleVerseHit> =
+    private suspend fun searchWithFts(query: String, limit: Int): List<BibleVerseHit> =
         query(
             """
             SELECT v.id, v.chapter_id, c.position, v.chapter_number,
@@ -282,7 +289,7 @@ class BibleDatabase internal constructor(
             }
         }
 
-    private fun searchWithScan(query: String, limit: Int): List<BibleVerseHit> {
+    private suspend fun searchWithScan(query: String, limit: Int): List<BibleVerseHit> {
         val tokens = searchTokens(query)
         if (tokens.isEmpty()) return emptyList()
         return query(
@@ -296,7 +303,14 @@ class BibleDatabase internal constructor(
             emptyArray()
         ) { cursor ->
             val hits = ArrayList<BibleVerseHit>(minOf(limit, 64))
+            var scanned = 0
             while (hits.size < limit && cursor.moveToNext()) {
+                // P2-1: a whole-book scan must observe cancellation; without
+                // this a superseded query still walks every remaining row.
+                if (scanned % CANCELLATION_CHECK_INTERVAL == 0) {
+                    currentCoroutineContext().ensureActive()
+                }
+                scanned++
                 val normalized = normalizeForSearch(cursor.getString(6).orEmpty())
                 if (tokens.all { normalized.contains(it) }) {
                     hits += cursor.toBibleVerseHit()
@@ -354,6 +368,9 @@ class BibleDatabase internal constructor(
         private val COMBINING_MARKS = Regex("\\p{M}+")
         private val FTS_OPERATORS = setOf("or", "and", "not")
 
+        /** Rows scanned between cancellation checkpoints (P2-1). */
+        private const val CANCELLATION_CHECK_INTERVAL = 256
+
         /**
          * Case- and diacritic-insensitive form used by the scan fallback.
          * Curly apostrophes are folded to ASCII so `dil’lo` and `dil'lo`
@@ -387,7 +404,13 @@ class BibleDatabase internal constructor(
         )
     }
 
-    private fun <T> query(sql: String, args: Array<String>, mapper: (Cursor) -> T): T =
+    /**
+     * Runs one read-only query and maps the cursor.
+     *
+     * `inline` so a mapper may perform suspension checks (the scan fallback's
+     * cancellation checkpoints, P2-1) without making every caller suspend.
+     */
+    private inline fun <T> query(sql: String, args: Array<String>, mapper: (Cursor) -> T): T =
         try {
             sqliteDatabase.rawQuery(sql, args).use { cursor -> mapper(cursor) }
         } catch (e: SQLiteException) {

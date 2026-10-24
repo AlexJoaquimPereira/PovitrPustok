@@ -164,6 +164,42 @@ class SearchViewModelTest {
     }
 
     @Test
+    fun total_failure_keeps_the_last_good_results_alongside_the_error() = runTest(dispatcher.scheduler) {
+        val repository = FakeSearchRepository().apply {
+            results = listOf(result(bookId = "jakob", position = 3))
+        }
+        val viewModel = SearchViewModel(
+            repository,
+            BibleSearchQueryParser(),
+            SavedStateHandle(),
+            FakeBookNameRepository()
+        )
+        runCurrent()
+
+        viewModel.onQueryChange("dev")
+        advanceTimeBy(300)
+        advanceUntilIdle()
+        assertEquals(1, viewModel.uiState.value.results.size)
+
+        // The next run fails outright: the UI keeps the readable rows and
+        // shows the failure inline instead of a full-screen error (P2-4).
+        repository.failure = BibleDatabaseAccessException("boom")
+        viewModel.onQueryChange("deva")
+        advanceTimeBy(300)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(
+            "a failed run must not discard the last good rows",
+            1,
+            state.results.size
+        )
+        assertEquals(3, state.results.first().chapterPosition)
+        assertEquals(SearchIssue.Failed, state.issue)
+        assertFalse(state.isSearching)
+    }
+
+    @Test
     fun book_filter_restricts_the_search() = runTest(dispatcher.scheduler) {
         val repository = FakeSearchRepository().apply {
             results = listOf(result())

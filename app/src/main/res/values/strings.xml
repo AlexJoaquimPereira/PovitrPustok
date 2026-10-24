@@ -76,6 +76,7 @@
     <string name="daily_more_readings">MORE READINGS</string>
     <string name="daily_saved_offline">Saved for offline · updated %1$s</string>
     <string name="daily_update">Update</string>
+    <string name="daily_update_failed">Couldn\'t update. Showing saved data.</string>
     <string name="reading_first">First Reading</string>
     <string name="reading_psalm">Responsorial Psalm</string>
     <string name="reading_second">Second Reading</string>
@@ -114,7 +115,10 @@
     <string name="search_all_bible">All Bible</string>
     <string name="search_result_reference">%1$d:%2$d</string>
     <string name="search_result_reference_range">%1$d:%2$d–%3$d</string>
-    <string name="search_result_count">%1$d results</string>
+    <plurals name="search_result_count">
+        <item quantity="one">%1$d result</item>
+        <item quantity="other">%1$d results</item>
+    </plurals>
     <string name="search_result_count_capped">Showing first %1$d results</string>
     <string name="corpus_copyright_notice">Bible text © Archdiocese of Goa and Daman. All rights reserved.</string>
 

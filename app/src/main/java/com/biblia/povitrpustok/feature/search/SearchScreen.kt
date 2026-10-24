@@ -155,7 +155,11 @@ fun SearchScreen(
                     text = if (state.results.size >= SEARCH_LIMIT) {
                         stringResource(R.string.search_result_count_capped, state.results.size)
                     } else {
-                        stringResource(R.string.search_result_count, state.results.size)
+                        pluralStringResource(
+                            R.plurals.search_result_count,
+                            state.results.size,
+                            state.results.size
+                        )
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -164,9 +168,14 @@ fun SearchScreen(
                         .testTag("search.count")
                 )
             }
+            // P2-4: a failed run keeps the last good rows (SearchViewModel);
+            // surface the failure inline instead of replacing them.
+            if (state.issue is SearchIssue.Failed && state.results.isNotEmpty()) {
+                SearchErrorBanner(onRetry = viewModel::retry)
+            }
 
             when {
-                state.issue is SearchIssue.Failed -> ErrorState(
+                state.issue is SearchIssue.Failed && state.results.isEmpty() -> ErrorState(
                     message = stringResource(R.string.search_error_failed),
                     onRetry = viewModel::retry,
                     testTag = "search.error"
@@ -215,6 +224,37 @@ fun SearchScreen(
 }
 
 private const val SEARCH_LIMIT = 50
+
+/**
+ * P2-4: inline failure banner shown above the retained results of the last
+ * successful run, so a failed refresh never hides readable rows.
+ */
+@Composable
+private fun SearchErrorBanner(
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .testTag("search.error"),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = stringResource(R.string.search_error_failed),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.weight(1f)
+        )
+        TextButton(
+            onClick = onRetry,
+            modifier = Modifier.testTag("search.error.retry")
+        ) {
+            Text(stringResource(R.string.reader_retry))
+        }
+    }
+}
 
 /** Compact book filter: "All Bible" plus every catalog book (by id). */
 @Composable
