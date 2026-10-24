@@ -1,6 +1,8 @@
 package com.biblia.povitrpustok.ui
 
 import android.content.ClipboardManager
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.longClick
@@ -40,6 +42,18 @@ class ReaderSelectionUiTest {
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule.onAllNodesWithTag("reader.verse.1").fetchSemanticsNodes().isNotEmpty()
         }
+    }
+
+    @Test
+    fun the_reader_exposes_heading_landmarks() {
+        openFirstVerse()
+
+        // F-26: TalkBack must be able to jump by heading in a 3,258-heading
+        // corpus. The chapter header and the corpus headings carry Heading.
+        val headings = composeRule
+            .onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+            .fetchSemanticsNodes()
+        assertTrue("the reader must expose at least one heading", headings.isNotEmpty())
     }
 
     @Test
