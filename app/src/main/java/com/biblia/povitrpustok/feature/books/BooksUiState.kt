@@ -12,5 +12,7 @@ package com.biblia.povitrpustok.feature.books
 data class BooksUiState(
     val displayNames: Map<String, String> = emptyMap(),
     val isLoading: Boolean = false,
-    val titlesFailed: Boolean = false
+    val titlesFailed: Boolean = false,
+    /** Book of the stored reading position (F-20); null when there is none. */
+    val lastReadBookId: String? = null
 )

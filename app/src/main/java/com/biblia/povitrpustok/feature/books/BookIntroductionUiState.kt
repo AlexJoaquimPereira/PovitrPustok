@@ -9,6 +9,8 @@ import com.biblia.povitrpustok.domain.model.IntroductionBlock
  */
 data class BookIntroductionUiState(
     val bookId: String? = null,
+    /** Display-ready book name (F-21): the bar names the book, not just "Introduction". */
+    val bookDisplayName: String? = null,
     val blocks: List<IntroductionBlock> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null

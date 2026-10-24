@@ -2,7 +2,9 @@ package com.biblia.povitrpustok.feature.books
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.biblia.povitrpustok.domain.model.BibleCatalog
 import com.biblia.povitrpustok.domain.repository.BookTitleRepository
+import com.biblia.povitrpustok.domain.repository.BookmarkRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -26,7 +28,8 @@ import kotlinx.coroutines.launch
  */
 @HiltViewModel
 class BooksViewModel @Inject constructor(
-    private val titleRepository: BookTitleRepository
+    private val titleRepository: BookTitleRepository,
+    bookmarkRepository: BookmarkRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BooksUiState())
@@ -36,6 +39,14 @@ class BooksViewModel @Inject constructor(
 
     init {
         loadTitles()
+        // F-20: mark the book of the stored reading position. A stale id
+        // (book no longer in the catalog) simply shows no marker.
+        viewModelScope.launch {
+            bookmarkRepository.observeReadingState().collect { state ->
+                val bookId = state?.bookId?.takeIf { BibleCatalog.byId(it) != null }
+                _uiState.update { it.copy(lastReadBookId = bookId) }
+            }
+        }
     }
 
     /** Re-runs the title scan after a failure (banner Retry button). */

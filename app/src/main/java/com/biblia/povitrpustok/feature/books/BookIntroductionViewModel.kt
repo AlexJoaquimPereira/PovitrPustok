@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.biblia.povitrpustok.core.result.BibleDataException
 import com.biblia.povitrpustok.domain.repository.BibleRepository
+import com.biblia.povitrpustok.domain.repository.BookNameRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +20,8 @@ import kotlinx.coroutines.launch
  */
 @HiltViewModel
 class BookIntroductionViewModel @Inject constructor(
-    private val repository: BibleRepository
+    private val repository: BibleRepository,
+    private val bookNameRepository: BookNameRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BookIntroductionUiState())
@@ -34,9 +36,13 @@ class BookIntroductionViewModel @Inject constructor(
                 it.copy(bookId = bookId, isLoading = true, errorMessage = null)
             }
             try {
+                // F-21: the title must identify the book. The name source
+                // falls back to the catalog, so this never blocks the load.
+                val displayName = bookNameRepository.displayName(bookId)
                 val blocks = repository.getIntroduction(bookId)
                 _uiState.value = BookIntroductionUiState(
                     bookId = bookId,
+                    bookDisplayName = displayName,
                     blocks = blocks,
                     isLoading = false
                 )
