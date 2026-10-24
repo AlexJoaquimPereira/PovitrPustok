@@ -33,7 +33,16 @@ class BookIntroductionViewModel @Inject constructor(
         lastBookId = bookId
         viewModelScope.launch {
             _uiState.update {
-                it.copy(bookId = bookId, isLoading = true, errorMessage = null)
+                // A new book must not inherit the previous book's name or
+                // blocks: a failed load would otherwise title B's error with
+                // A's name (F-21).
+                it.copy(
+                    bookId = bookId,
+                    bookDisplayName = null,
+                    blocks = emptyList(),
+                    isLoading = true,
+                    errorMessage = null
+                )
             }
             try {
                 // F-21: the title must identify the book. The name source

@@ -7,11 +7,18 @@ import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import com.biblia.povitrpustok.core.database.AssetBibleDatabaseProvider
 import com.biblia.povitrpustok.data.bible.BibleRepositoryImpl
+import com.biblia.povitrpustok.core.result.BibleBookNotFoundException
+import com.biblia.povitrpustok.domain.model.BibleBook
+import com.biblia.povitrpustok.domain.model.Chapter
+import com.biblia.povitrpustok.domain.model.ChapterContent
+import com.biblia.povitrpustok.domain.model.IntroductionBlock
+import com.biblia.povitrpustok.domain.model.Verse
 import com.biblia.povitrpustok.domain.repository.BibleRepository
 import com.biblia.povitrpustok.testutil.FakeBookNameRepository
 import org.junit.Rule
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -42,6 +49,67 @@ class BookIntroductionViewModelTest {
     @After
     fun tearDown() {
         provider.close()
+    }
+
+    /**
+     * A repository that returns one block for [succeedFor] and throws for any
+     * other book, so a cross-book failure can be simulated deterministically.
+     */
+    private class OneBookRepository(private val succeedFor: String) : BibleRepository {
+        override suspend fun getBook(bookId: String): BibleBook =
+            throw UnsupportedOperationException()
+
+        override suspend fun getChapters(bookId: String): List<Chapter> =
+            throw UnsupportedOperationException()
+
+        override suspend fun getChapter(bookId: String, chapterPosition: Int): ChapterContent =
+            throw UnsupportedOperationException()
+
+        override suspend fun getIntroduction(bookId: String): List<IntroductionBlock> =
+            if (bookId == succeedFor) {
+                listOf(IntroductionBlock(id = 1, bookId = bookId, position = 1, type = "body", html = "Text"))
+            } else {
+                throw BibleBookNotFoundException(bookId)
+            }
+
+        override suspend fun getVerse(bookId: String, chapterId: Long, verseStart: Int): Verse? =
+            throw UnsupportedOperationException()
+
+        override suspend fun getVersesCovering(
+            bookId: String,
+            chapterId: Long,
+            verse: Int
+        ): List<Verse> = throw UnsupportedOperationException()
+    }
+
+    @Test
+    fun a_failed_cross_book_load_does_not_keep_the_previous_books_name() {
+        val viewModel = BookIntroductionViewModel(
+            OneBookRepository(succeedFor = "jakob"),
+            FakeBookNameRepository()
+        )
+
+        viewModel.load("jakob")
+        waitFor { !viewModel.uiState.value.isLoading }
+        assertEquals("Jakobachem", viewModel.uiState.value.bookDisplayName)
+
+        viewModel.load("utpoti")
+        waitFor { viewModel.uiState.value.errorMessage != null }
+
+        val state = viewModel.uiState.value
+        assertEquals("utpoti", state.bookId)
+        assertNull("a failed load must not title itself with another book", state.bookDisplayName)
+        assertTrue("stale blocks must not survive a new load", state.blocks.isEmpty())
+    }
+
+    private fun waitFor(condition: () -> Boolean) {
+        val deadline = System.currentTimeMillis() + 10_000
+        while (System.currentTimeMillis() < deadline) {
+            shadowOf(Looper.getMainLooper()).idle()
+            if (condition()) return
+            Thread.sleep(10)
+        }
+        fail("timed out waiting for state")
     }
 
     @Test
