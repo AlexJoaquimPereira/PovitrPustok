@@ -498,11 +498,14 @@ private fun ReaderActionBar(
                 .heightIn(min = 48.dp)
                 .testTag("reader.chapter_picker")
         ) {
-            Text(
-                text = stringResource(R.string.chapter_selector_label, currentLabel),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            // F-27: no chapter yet (loading/error) -> no dangling "Chapter ".
+            if (currentLabel.isNotBlank()) {
+                Text(
+                    text = stringResource(R.string.chapter_selector_label, currentLabel),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
 
         IconButton(
