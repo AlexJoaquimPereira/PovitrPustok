@@ -542,7 +542,11 @@ fun ReaderErrorState(
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onRetry) {
+        Button(
+            onClick = onRetry,
+            // F-26: the retry action is a 48 dp target like every other action.
+            modifier = Modifier.heightIn(min = 48.dp)
+        ) {
             Text(text = stringResource(R.string.reader_retry))
         }
     }
