@@ -45,6 +45,14 @@ class ReaderSelectionUiTest {
     }
 
     @Test
+    fun the_chapter_header_places_the_chapter_within_the_book() {
+        openFirstVerse()
+
+        // F-29: "Chapter 1 of 50" orients the reader without new chrome.
+        composeRule.onNodeWithText("CHAPTER 1 OF 50").assertIsDisplayed()
+    }
+
+    @Test
     fun the_reader_exposes_heading_landmarks() {
         openFirstVerse()
 

@@ -94,12 +94,27 @@ class BookIntroductionViewModelTest {
         assertEquals("Jakobachem", viewModel.uiState.value.bookDisplayName)
 
         viewModel.load("utpoti")
-        waitFor { viewModel.uiState.value.errorMessage != null }
+        waitFor { viewModel.uiState.value.error != null }
 
         val state = viewModel.uiState.value
         assertEquals("utpoti", state.bookId)
+        assertEquals(IntroductionError.BOOK_NOT_FOUND, state.error)
         assertNull("a failed load must not title itself with another book", state.bookDisplayName)
         assertTrue("stale blocks must not survive a new load", state.blocks.isEmpty())
+    }
+
+    @Test
+    fun a_missing_book_maps_to_book_not_found() {
+        val viewModel = BookIntroductionViewModel(
+            OneBookRepository(succeedFor = "jakob"),
+            FakeBookNameRepository()
+        )
+
+        viewModel.load("not-a-book")
+        waitFor { !viewModel.uiState.value.isLoading }
+
+        assertEquals(IntroductionError.BOOK_NOT_FOUND, viewModel.uiState.value.error)
+        assertTrue(viewModel.uiState.value.blocks.isEmpty())
     }
 
     private fun waitFor(condition: () -> Boolean) {
@@ -121,7 +136,7 @@ class BookIntroductionViewModelTest {
         while (System.currentTimeMillis() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
             val state = viewModel.uiState.value
-            if (!state.isLoading && (state.blocks.isNotEmpty() || state.errorMessage != null)) {
+            if (!state.isLoading && (state.blocks.isNotEmpty() || state.error != null)) {
                 assertEquals("James has exactly 8 introduction blocks", 8, state.blocks.size)
                 assertEquals("blocks must stay distinct", state.blocks.size, state.blocks.map { it.id }.toSet().size)
                 assertEquals(

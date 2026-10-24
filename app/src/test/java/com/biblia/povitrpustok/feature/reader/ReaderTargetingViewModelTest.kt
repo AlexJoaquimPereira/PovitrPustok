@@ -148,7 +148,7 @@ class ReaderTargetingViewModelTest {
         assertTrue("missing target must be flagged", state.targetMissing)
         assertNull(state.targetVerseId)
         assertTrue("chapter must still render", state.verses.isNotEmpty())
-        assertNull(state.errorMessage)
+        assertNull(state.loadError)
     }
 
     @Test
@@ -210,7 +210,7 @@ class ReaderTargetingViewModelTest {
         gate1.complete(Unit)
         advanceUntilIdle()
         assertEquals("stale chapter must not win", 2, viewModel.uiState.value.chapter!!.position)
-        assertNull(viewModel.uiState.value.errorMessage)
+        assertNull(viewModel.uiState.value.loadError)
         assertEquals(200L, viewModel.uiState.value.verses.first().id)
 
         // reading state must end at the newest chapter

@@ -8,13 +8,19 @@ import android.content.Context
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import com.biblia.povitrpustok.core.database.AssetBibleDatabaseProvider
+import com.biblia.povitrpustok.core.result.BibleDataException
+import com.biblia.povitrpustok.core.result.CorruptBibleDatabaseException
 import com.biblia.povitrpustok.data.bible.BibleRepositoryImpl
+import com.biblia.povitrpustok.domain.model.BibleBook
+import com.biblia.povitrpustok.domain.model.Chapter
+import com.biblia.povitrpustok.domain.model.ChapterContent
+import com.biblia.povitrpustok.domain.model.IntroductionBlock
+import com.biblia.povitrpustok.domain.model.Verse
 import com.biblia.povitrpustok.domain.repository.BibleRepository
 import com.biblia.povitrpustok.domain.repository.BookNameRepository
 import org.junit.Rule
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -59,7 +65,7 @@ class BookChaptersViewModelTest {
         while (System.currentTimeMillis() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
             val state = viewModel.uiState.value
-            if (!state.isLoading && (state.book != null || state.errorMessage != null)) {
+            if (!state.isLoading && (state.book != null || state.error != null)) {
                 return state
             }
             Thread.sleep(10)
@@ -73,7 +79,7 @@ class BookChaptersViewModelTest {
         assertEquals("James", s.book!!.englishName)
         assertEquals(5, s.chapters.size)
         assertEquals(listOf(1, 2, 3, 4, 5), s.chapters.map { it.position })
-        assertNull(s.errorMessage)
+        assertNull(s.error)
     }
 
     @Test
@@ -106,10 +112,56 @@ class BookChaptersViewModelTest {
     }
 
     @Test
-    fun unknown_book_reports_error() {
+    fun unknown_book_reports_book_not_found() {
         val s = settledState { it.load("not-a-book") }
         assertNull(s.book)
-        assertNotNull("expected an error message", s.errorMessage)
+        assertEquals(ChaptersError.BOOK_NOT_FOUND, s.error)
         assertTrue(s.chapters.isEmpty())
+    }
+
+    @Test
+    fun a_data_failure_maps_to_unknown() {
+        val viewModel = BookChaptersViewModel(
+            FailingChaptersRepository(CorruptBibleDatabaseException("jakob")),
+            FakeBookNameRepository()
+        )
+        viewModel.load("jakob")
+        waitForChapters { !viewModel.uiState.value.isLoading }
+
+        assertEquals(ChaptersError.UNKNOWN, viewModel.uiState.value.error)
+        assertTrue(viewModel.uiState.value.chapters.isEmpty())
+    }
+
+    /** Fails every call with [failure] so the UNKNOWN mapping is deterministic. */
+    private class FailingChaptersRepository(
+        private val failure: BibleDataException
+    ) : BibleRepository {
+        override suspend fun getBook(bookId: String): BibleBook = throw failure
+
+        override suspend fun getChapters(bookId: String): List<Chapter> = throw failure
+
+        override suspend fun getChapter(bookId: String, chapterPosition: Int): ChapterContent =
+            throw failure
+
+        override suspend fun getIntroduction(bookId: String): List<IntroductionBlock> = throw failure
+
+        override suspend fun getVerse(bookId: String, chapterId: Long, verseStart: Int): Verse? =
+            throw failure
+
+        override suspend fun getVersesCovering(
+            bookId: String,
+            chapterId: Long,
+            verse: Int
+        ): List<Verse> = throw failure
+    }
+
+    private fun waitForChapters(condition: () -> Boolean) {
+        val deadline = System.currentTimeMillis() + 10_000
+        while (System.currentTimeMillis() < deadline) {
+            shadowOf(Looper.getMainLooper()).idle()
+            if (condition()) return
+            Thread.sleep(10)
+        }
+        error("timed out waiting for chapter state")
     }
 }

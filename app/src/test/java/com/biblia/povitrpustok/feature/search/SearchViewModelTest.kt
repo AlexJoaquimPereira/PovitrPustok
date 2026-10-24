@@ -21,7 +21,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -112,7 +111,7 @@ class SearchViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.isSearching)
         assertEquals(1, state.resultCount)
-        assertNull(state.error)
+        assertNull(state.issue)
     }
 
     @Test
@@ -143,7 +142,7 @@ class SearchViewModelTest {
         assertTrue(repository.callCount >= 1)
         assertTrue(viewModel.uiState.value.results.isEmpty())
         assertEquals(0, viewModel.uiState.value.resultCount)
-        assertNull(viewModel.uiState.value.error)
+        assertNull(viewModel.uiState.value.issue)
     }
 
     @Test
@@ -160,7 +159,7 @@ class SearchViewModelTest {
 
         val state = viewModel.uiState.value
         assertFalse(state.isSearching)
-        assertNotNull("expected a controlled error state", state.error)
+        assertEquals("expected a controlled error state", SearchIssue.Failed, state.issue)
         assertTrue(state.results.isEmpty())
     }
 
@@ -200,8 +199,25 @@ class SearchViewModelTest {
 
         val state = viewModel.uiState.value
         assertEquals(1, state.results.size)
-        assertNull(state.error)
-        assertNotNull("expected a partial-result warning", state.warning)
+        assertEquals("partial failures must not block the results", SearchIssue.Partial(1), state.issue)
+    }
+
+    @Test
+    fun partial_failure_reports_the_failed_book_count() = runTest(dispatcher.scheduler) {
+        val repository = FakeSearchRepository().apply {
+            results = listOf(result())
+            failures = listOf(SearchFailure("Amos", "bad index"), SearchFailure("Esther", "bad index"))
+        }
+        val viewModel = SearchViewModel(repository, BibleSearchQueryParser(), SavedStateHandle(), FakeBookNameRepository())
+        runCurrent()
+
+        viewModel.onQueryChange("dev")
+        advanceTimeBy(300)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(1, state.results.size)
+        assertEquals(SearchIssue.Partial(2), state.issue)
     }
 
     @Test
@@ -218,8 +234,11 @@ class SearchViewModelTest {
 
         val state = viewModel.uiState.value
         assertTrue(state.results.isEmpty())
-        assertNotNull("expected a controlled error when every book fails", state.error)
-        assertNull(state.warning)
+        assertEquals(
+            "expected a controlled error when every book fails",
+            SearchIssue.Failed,
+            state.issue
+        )
     }
 
     @Test

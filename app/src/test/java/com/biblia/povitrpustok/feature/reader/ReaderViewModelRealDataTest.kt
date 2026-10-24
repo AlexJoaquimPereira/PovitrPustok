@@ -58,7 +58,7 @@ class ReaderViewModelRealDataTest {
         while (System.currentTimeMillis() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
             val state = viewModel.uiState.value
-            if (!state.isLoading && (state.chapter != null || state.errorMessage != null)) return
+            if (!state.isLoading && (state.chapter != null || state.loadError != null)) return
             Thread.sleep(10)
         }
         fail("timed out waiting for the reader state")
@@ -76,7 +76,7 @@ class ReaderViewModelRealDataTest {
         assertEquals("jakob", state.chapter!!.bookId)
         assertTrue("expected headings", state.headings.isNotEmpty())
         assertTrue("expected verses", state.verses.isNotEmpty())
-        assertNull(state.errorMessage)
+        assertNull(state.loadError)
         assertFalse(state.isLoading)
     }
 
@@ -113,7 +113,7 @@ class ReaderViewModelRealDataTest {
         assertEquals("Esther", state.book!!.englishName)
         assertEquals(1, state.chapter!!.position)
         assertTrue(state.verses.isNotEmpty())
-        assertNull(state.errorMessage)
+        assertNull(state.loadError)
     }
 
     @Test

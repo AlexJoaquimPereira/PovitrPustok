@@ -282,7 +282,7 @@ class DailyReadingViewModelTest {
         viewModel.openReading(LiturgicalReading(ReadingType.FIRST_READING, "1 Kings 99:1"))
         advanceUntilIdle()
 
-        assertNotNull(viewModel.navigationNotice.value)
+        assertEquals(DailyNotice.Invalid("1 Kings 99:1"), viewModel.navigationNotice.value)
         assertNull(viewModel.pendingNavigation.value)
         assertTrue(viewModel.uiState.value is DailyReadingUiState.Success) // screen unaffected
 
@@ -300,7 +300,19 @@ class DailyReadingViewModelTest {
         viewModel.openReading(LiturgicalReading(ReadingType.GOSPEL, "Job 26:5"))
         advanceUntilIdle()
 
-        assertNotNull(viewModel.navigationNotice.value)
+        assertEquals(DailyNotice.AmbiguousChapter("Job 26:5"), viewModel.navigationNotice.value)
+        assertNull(viewModel.pendingNavigation.value)
+    }
+
+    @Test
+    fun missing_reference_surfaces_a_not_found_notice() = runTest(dispatcher.scheduler) {
+        val resolver = FakeResolver(ScriptureResolution.NotFound("Unknown book: 'Genesis'."))
+        val viewModel = DailyReadingViewModel(FakeLiturgicalRepository(), resolver) { LocalDate.now() }
+
+        viewModel.openReading(LiturgicalReading(ReadingType.FIRST_READING, "Genesis 99:1"))
+        advanceUntilIdle()
+
+        assertEquals(DailyNotice.NotFound("Genesis 99:1"), viewModel.navigationNotice.value)
         assertNull(viewModel.pendingNavigation.value)
     }
 

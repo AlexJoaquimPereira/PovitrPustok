@@ -119,7 +119,7 @@ class ReaderViewModelTest {
 
         val pending = viewModel.uiState.value
         assertTrue("must show loading while pending", pending.isLoading)
-        assertNull(pending.errorMessage)
+        assertNull(pending.loadError)
 
         gate.complete(Unit)
         advanceUntilIdle()
@@ -127,7 +127,7 @@ class ReaderViewModelTest {
         val loaded = viewModel.uiState.value
         assertFalse(loaded.isLoading)
         assertEquals(ch1, loaded.chapter)
-        assertNull(loaded.errorMessage)
+        assertNull(loaded.loadError)
     }
 
     @Test
@@ -149,7 +149,7 @@ class ReaderViewModelTest {
         assertEquals(1, state.headings.size)
         assertEquals(1, state.verses.size)
         assertFalse(state.isLoading)
-        assertNull(state.errorMessage)
+        assertNull(state.loadError)
     }
 
     @Test
@@ -402,7 +402,7 @@ class ReaderViewModelTest {
             // F-12: a failing first load for another book still shows a name.
             viewModel.load("Utpoti", 999)
             advanceUntilIdle()
-            assertNotNull(viewModel.uiState.value.errorMessage)
+            assertNotNull(viewModel.uiState.value.loadError)
             assertEquals("Utpoti", viewModel.uiState.value.bookDisplayName)
         }
 
@@ -414,7 +414,7 @@ class ReaderViewModelTest {
 
         val state = viewModel.uiState.value
         assertFalse(state.isLoading)
-        assertNotNull("expected an error message", state.errorMessage)
+        assertEquals("a missing chapter must map to its own reason", ReaderLoadError.CHAPTER_NOT_FOUND, state.loadError)
         assertNull(state.chapter)
     }
 
@@ -425,7 +425,7 @@ class ReaderViewModelTest {
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
-        assertNotNull("expected an error message", state.errorMessage)
+        assertEquals("an unknown book must map to its own reason", ReaderLoadError.BOOK_NOT_FOUND, state.loadError)
         assertFalse(state.isLoading)
     }
 
@@ -452,7 +452,7 @@ class ReaderViewModelTest {
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
-        assertNotNull(state.errorMessage)
+        assertNotNull(state.loadError)
         assertEquals("the last good chapter is retained", 1, state.chapter?.position)
         assertNull("selection must not leak across a failed navigation", state.selectedVerseId)
         assertNull(state.highlightedVerseId)
@@ -475,14 +475,14 @@ class ReaderViewModelTest {
 
         viewModel.load(bookId, 1, targetVerseId = verseId, passageStart = 1, passageEnd = 1)
         advanceUntilIdle()
-        assertNotNull(viewModel.uiState.value.errorMessage)
+        assertNotNull(viewModel.uiState.value.loadError)
 
         repository.failure = null
         viewModel.retry()
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
-        assertNull(state.errorMessage)
+        assertNull(state.loadError)
         assertEquals("the retry must keep the verse target", verseId, state.targetVerseId)
         assertEquals("the retry must keep the passage", ReaderPassage(1, 1), state.passage)
     }
@@ -536,13 +536,13 @@ class ReaderViewModelTest {
 
         assertNull(
             "a cancelled load must never surface an error",
-            viewModel.uiState.value.errorMessage
+            viewModel.uiState.value.loadError
         )
 
         gate.complete(Unit)
         advanceUntilIdle()
         assertEquals(2, viewModel.uiState.value.chapter?.position)
-        assertNull(viewModel.uiState.value.errorMessage)
+        assertNull(viewModel.uiState.value.loadError)
     }
 
     @Test
@@ -555,7 +555,7 @@ class ReaderViewModelTest {
 
         val state = viewModel.uiState.value
         assertFalse("the Reader must not stay loading", state.isLoading)
-        assertNotNull("unexpected failures must surface a controlled error", state.errorMessage)
+        assertNotNull("unexpected failures must surface a controlled error", state.loadError)
         assertNull("no chapter may be published", state.chapter)
     }
 

@@ -239,7 +239,7 @@ class HomeNavigationUiTest {
         }
         // The selection actually loaded chapter 2 (the bar shows its label).
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodesWithText("Ch 2").fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodesWithText("Chapter 2").fetchSemanticsNodes().isNotEmpty()
         }
 
         composeRule.onNodeWithTag("reader.back").performClick()

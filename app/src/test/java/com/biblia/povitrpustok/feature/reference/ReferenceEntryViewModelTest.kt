@@ -1,6 +1,7 @@
 package com.biblia.povitrpustok.feature.reference
 
 import androidx.lifecycle.SavedStateHandle
+import com.biblia.povitrpustok.core.result.BibleDatabaseAccessException
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.ResolvedScriptureReference
 import com.biblia.povitrpustok.domain.model.ScriptureResolution
@@ -43,9 +44,11 @@ class ReferenceEntryViewModelTest {
     private class FakeResolver : ScriptureReferenceResolver {
         val queries = mutableListOf<Pair<String, String?>>()
         var result: ScriptureResolution = ScriptureResolution.Invalid("unconfigured")
+        var failure: Exception? = null
 
         override suspend fun resolve(reference: String, contextBookId: String?): ScriptureResolution {
             queries += reference to contextBookId
+            failure?.let { throw it }
             return result
         }
     }
@@ -126,6 +129,22 @@ class ReferenceEntryViewModelTest {
         advanceUntilIdle()
 
         assertTrue(viewModel.uiState.value.resolution is ScriptureResolution.Invalid)
+    }
+
+    @Test
+    fun resolver_failure_presents_invalid_with_a_blank_message() = runTest(dispatcher.scheduler) {
+        val resolver = FakeResolver().apply {
+            failure = BibleDatabaseAccessException("disk exploded")
+        }
+        val viewModel = ReferenceEntryViewModel(resolver, SavedStateHandle())
+
+        viewModel.onQueryChange("James 1:5")
+        viewModel.resolve()
+        advanceUntilIdle()
+
+        val resolution = viewModel.uiState.value.resolution
+        assertTrue("a failure must not crash", resolution is ScriptureResolution.Invalid)
+        assertEquals("the screen owns the localized error text", "", (resolution as ScriptureResolution.Invalid).reason)
     }
 
     @Test

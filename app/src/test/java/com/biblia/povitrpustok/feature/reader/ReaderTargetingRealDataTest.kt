@@ -52,7 +52,7 @@ class ReaderTargetingRealDataTest {
         while (System.currentTimeMillis() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
             val state = viewModel.uiState.value
-            if (!state.isLoading && (state.chapter != null || state.errorMessage != null)) {
+            if (!state.isLoading && (state.chapter != null || state.loadError != null)) {
                 return state
             }
             Thread.sleep(10)
@@ -82,6 +82,6 @@ class ReaderTargetingRealDataTest {
         assertTrue("bogus target must be flagged", state.targetMissing)
         assertNull(state.targetVerseId)
         assertTrue("chapter must still render", state.verses.isNotEmpty())
-        assertNull(state.errorMessage)
+        assertNull(state.loadError)
     }
 }
