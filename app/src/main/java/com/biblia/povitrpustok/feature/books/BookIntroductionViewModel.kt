@@ -2,6 +2,7 @@ package com.biblia.povitrpustok.feature.books
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.biblia.povitrpustok.core.result.BibleBookNotFoundException
 import com.biblia.povitrpustok.core.result.BibleDataException
 import com.biblia.povitrpustok.domain.repository.BibleRepository
 import com.biblia.povitrpustok.domain.repository.BookNameRepository
@@ -41,7 +42,7 @@ class BookIntroductionViewModel @Inject constructor(
                     bookDisplayName = null,
                     blocks = emptyList(),
                     isLoading = true,
-                    errorMessage = null
+                    error = null
                 )
             }
             try {
@@ -55,12 +56,21 @@ class BookIntroductionViewModel @Inject constructor(
                     blocks = blocks,
                     isLoading = false
                 )
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: BibleBookNotFoundException) {
+                setError(IntroductionError.BOOK_NOT_FOUND)
             } catch (e: BibleDataException) {
-                _uiState.update {
-                    it.copy(isLoading = false, errorMessage = e.message ?: "Failed to load introduction.")
-                }
+                setError(IntroductionError.UNKNOWN)
+            } catch (e: Exception) {
+                setError(IntroductionError.UNKNOWN)
             }
         }
+    }
+
+    /** F-24: the state carries a reason; the screen owns the localized copy. */
+    private fun setError(error: IntroductionError) {
+        _uiState.update { it.copy(isLoading = false, error = error) }
     }
 
     /** Repeats the last load after a failure (F-16: no dead ends). */

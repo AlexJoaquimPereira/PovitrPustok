@@ -86,7 +86,7 @@ class SearchViewModel @Inject constructor(
 
     private suspend fun runSearch(rawQuery: String, bookId: String?) {
         val expression = queryParser.parse(rawQuery)
-        _uiState.update { it.copy(isSearching = true, error = null, warning = null) }
+        _uiState.update { it.copy(isSearching = true, issue = null) }
         if (expression == null) {
             _uiState.update {
                 it.copy(
@@ -94,7 +94,7 @@ class SearchViewModel @Inject constructor(
                     bookNames = emptyMap(),
                     isSearching = false,
                     resultCount = null,
-                    warning = null
+                    issue = null
                 )
             }
             return
@@ -113,15 +113,11 @@ class SearchViewModel @Inject constructor(
                     bookNames = emptyMap(),
                     isSearching = false,
                     resultCount = outcome.results.size,
-                    error = if (outcome.results.isEmpty() && outcome.failures.isNotEmpty()) {
-                        "Search failed for ${outcome.failures.size} book(s)."
-                    } else {
-                        null
-                    },
-                    warning = if (partial) {
-                        "Partial results: ${outcome.failures.size} book(s) could not be searched."
-                    } else {
-                        null
+                    issue = when {
+                        outcome.results.isEmpty() && outcome.failures.isNotEmpty() ->
+                            SearchIssue.Failed
+                        partial -> SearchIssue.Partial(outcome.failures.size)
+                        else -> null
                     }
                 )
             }
@@ -150,8 +146,7 @@ class SearchViewModel @Inject constructor(
                     // is a presentation layer over them (S4).
                     results = it.results,
                     isSearching = false,
-                    error = e.message ?: "Search failed.",
-                    warning = null,
+                    issue = SearchIssue.Failed,
                     resultCount = null
                 )
             }

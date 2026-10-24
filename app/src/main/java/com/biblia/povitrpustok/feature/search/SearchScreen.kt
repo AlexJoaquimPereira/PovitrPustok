@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -135,15 +136,19 @@ fun SearchScreen(
                     modifier = Modifier.fillMaxWidth().testTag("search.progress")
                 )
             }
-            state.warning?.let { warning ->
+            (state.issue as? SearchIssue.Partial)?.let { partial ->
                 Text(
-                    text = warning,
+                    text = pluralStringResource(
+                        R.plurals.search_partial_results,
+                        partial.failedBooks,
+                        partial.failedBooks
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                 )
             }
-            if (!state.isSearching && state.error == null &&
+            if (!state.isSearching && state.issue !is SearchIssue.Failed &&
                 state.query.isNotBlank() && state.results.isNotEmpty()
             ) {
                 Text(
@@ -161,8 +166,8 @@ fun SearchScreen(
             }
 
             when {
-                state.error != null -> ErrorState(
-                    message = state.error.orEmpty(),
+                state.issue is SearchIssue.Failed -> ErrorState(
+                    message = stringResource(R.string.search_error_failed),
                     onRetry = viewModel::retry,
                     testTag = "search.error"
                 )
@@ -183,16 +188,25 @@ fun SearchScreen(
                     modifier = Modifier.weight(1f).fillMaxWidth().testTag("search.results"),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
                 ) {
-                    items(state.results, key = { "${it.bookId}-${it.chapterId}-${it.verseId}" }) { result ->
-                        SearchResultItem(
-                            result = result,
-                            query = state.query,
-                            onClick = { onOpenResult(result) },
-                            bookName = state.bookNames[result.bookId]
-                        )
-                        HorizontalDivider(
-                            color = MaterialTheme.colorScheme.outlineVariant
-                        )
+                    itemsIndexed(
+                        items = state.results,
+                        key = { _, result -> "${result.bookId}-${result.chapterId}-${result.verseId}" }
+                    ) { index, result ->
+                        // F-28: the hairline sits between rows only, outside the
+                        // clickable row, so it is never part of the merged node.
+                        Column {
+                            SearchResultItem(
+                                result = result,
+                                query = state.query,
+                                onClick = { onOpenResult(result) },
+                                bookName = state.bookNames[result.bookId]
+                            )
+                            if (index < state.results.lastIndex) {
+                                HorizontalDivider(
+                                    color = MaterialTheme.colorScheme.outlineVariant
+                                )
+                            }
+                        }
                     }
                 }
             }

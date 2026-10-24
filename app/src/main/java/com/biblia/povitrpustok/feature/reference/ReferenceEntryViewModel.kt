@@ -64,12 +64,14 @@ class ReferenceEntryViewModel @Inject constructor(
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: BibleDataException) {
+                // The screen renders the localized resolve error for a blank
+                // reason; data-layer messages are not user-facing prose.
                 _uiState.update {
-                    it.copy(isResolving = false, resolution = ScriptureResolution.Invalid(e.message ?: "Failed to resolve reference."))
+                    it.copy(isResolving = false, resolution = ScriptureResolution.Invalid(""))
                 }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(isResolving = false, resolution = ScriptureResolution.Invalid("Failed to resolve reference."))
+                    it.copy(isResolving = false, resolution = ScriptureResolution.Invalid(""))
                 }
             }
         }

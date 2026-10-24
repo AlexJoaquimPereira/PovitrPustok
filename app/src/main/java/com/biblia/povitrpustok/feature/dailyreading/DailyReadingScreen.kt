@@ -333,7 +333,7 @@ private fun DailyReadingError(
 @Composable
 private fun DailyReadingContent(
     state: DailyReadingUiState.Success,
-    notice: String?,
+    notice: DailyNotice?,
     onReadingSelected: (LiturgicalReading) -> Unit,
     onNoticeDismissed: () -> Unit,
     onUpdate: () -> Unit,
@@ -364,7 +364,7 @@ private fun DailyReadingContent(
 
         if (notice != null) {
             item(key = "notice") {
-                NoticeBanner(message = notice, onDismiss = onNoticeDismissed)
+                NoticeBanner(message = notice.message(), onDismiss = onNoticeDismissed)
             }
         }
 
@@ -649,6 +649,19 @@ private fun ReadingRow(
 // ---------------------------------------------------------------------------
 // Notice and freshness
 // ---------------------------------------------------------------------------
+
+/** Maps a resolution notice to its user-visible string (no prose in the VM). */
+@Composable
+private fun DailyNotice.message(): String = when (this) {
+    is DailyNotice.AmbiguousChapter ->
+        stringResource(R.string.daily_notice_ambiguous_chapter, reference)
+    is DailyNotice.AmbiguousVerse ->
+        stringResource(R.string.daily_notice_ambiguous_verse, reference)
+    is DailyNotice.NotFound ->
+        stringResource(R.string.daily_notice_not_found, reference)
+    is DailyNotice.Invalid ->
+        stringResource(R.string.daily_notice_invalid, reference)
+}
 
 /**
  * Reference-resolution notice, inline and dismissible. It sits where the reader

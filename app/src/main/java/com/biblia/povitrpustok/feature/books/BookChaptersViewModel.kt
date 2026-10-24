@@ -2,6 +2,7 @@ package com.biblia.povitrpustok.feature.books
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.biblia.povitrpustok.core.result.BibleBookNotFoundException
 import com.biblia.povitrpustok.core.result.BibleDataException
 import com.biblia.povitrpustok.domain.model.BibleCatalog
 import com.biblia.povitrpustok.domain.repository.BibleRepository
@@ -41,7 +42,7 @@ class BookChaptersViewModel @Inject constructor(
                     // F-12: never blank while the corpus title is loading.
                     displayName = BibleCatalog.byId(bookId)?.displayName.orEmpty(),
                     isLoading = true,
-                    errorMessage = null
+                    error = null
                 )
             }
             try {
@@ -54,16 +55,27 @@ class BookChaptersViewModel @Inject constructor(
                     chapters = chapters,
                     isLoading = false
                 )
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: BibleBookNotFoundException) {
+                setError(ChaptersError.BOOK_NOT_FOUND)
             } catch (e: BibleDataException) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = e.message ?: "Failed to load chapters.",
-                        book = null,
-                        chapters = emptyList()
-                    )
-                }
+                setError(ChaptersError.UNKNOWN)
+            } catch (e: Exception) {
+                setError(ChaptersError.UNKNOWN)
             }
+        }
+    }
+
+    /** F-24: the state carries a reason; the screen owns the localized copy. */
+    private fun setError(error: ChaptersError) {
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                error = error,
+                book = null,
+                chapters = emptyList()
+            )
         }
     }
 }

@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -182,7 +182,11 @@ fun ReferenceEntryScreen(
                 )
 
                 is ScriptureResolution.Invalid -> Message(
-                    text = stringResource(R.string.reference_invalid, resolution.reason)
+                    text = if (resolution.reason.isBlank()) {
+                        stringResource(R.string.reference_error_resolve)
+                    } else {
+                        stringResource(R.string.reference_invalid, resolution.reason)
+                    }
                 )
             }
         }
@@ -202,18 +206,27 @@ private fun AmbiguousMessage(
         )
         Spacer(modifier = Modifier.height(8.dp))
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            items(resolution.candidates, key = { it.id }) { chapter ->
-                Text(
-                    text = chapterDisplayLabel(chapter, resolution.candidates),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .semantics(mergeDescendants = true) { role = Role.Button }
-                        .clickable { onCandidateSelected(chapter) }
-                        .heightIn(min = 48.dp)
-                        .padding(vertical = 14.dp)
-                )
+            itemsIndexed(resolution.candidates, key = { _, chapter -> chapter.id }) { index, chapter ->
+                // F-28: hairline between candidates, outside the clickable
+                // text so it stays out of the merged semantics node.
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = chapterDisplayLabel(chapter, resolution.candidates),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .semantics(mergeDescendants = true) { role = Role.Button }
+                            .clickable { onCandidateSelected(chapter) }
+                            .heightIn(min = 48.dp)
+                            .padding(vertical = 14.dp)
+                    )
+                    if (index < resolution.candidates.lastIndex) {
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant
+                        )
+                    }
+                }
             }
         }
     }
@@ -232,18 +245,27 @@ private fun AmbiguousVerseMessage(
         )
         Spacer(modifier = Modifier.height(8.dp))
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            items(resolution.candidates, key = { it.id }) { verse ->
-                Text(
-                    text = verseLabel(verse, resolution.candidates),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .semantics(mergeDescendants = true) { role = Role.Button }
-                        .clickable { onCandidateSelected(verse) }
-                        .heightIn(min = 48.dp)
-                        .padding(vertical = 14.dp)
-                )
+            itemsIndexed(resolution.candidates, key = { _, verse -> verse.id }) { index, verse ->
+                // F-28: hairline between candidates, outside the clickable
+                // text so it stays out of the merged semantics node.
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = verseLabel(verse, resolution.candidates),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .semantics(mergeDescendants = true) { role = Role.Button }
+                            .clickable { onCandidateSelected(verse) }
+                            .heightIn(min = 48.dp)
+                            .padding(vertical = 14.dp)
+                    )
+                    if (index < resolution.candidates.lastIndex) {
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant
+                        )
+                    }
+                }
             }
         }
     }

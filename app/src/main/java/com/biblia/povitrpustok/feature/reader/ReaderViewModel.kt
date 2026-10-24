@@ -2,6 +2,8 @@ package com.biblia.povitrpustok.feature.reader
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.biblia.povitrpustok.core.result.BibleBookNotFoundException
+import com.biblia.povitrpustok.core.result.BibleChapterNotFoundException
 import com.biblia.povitrpustok.core.result.BibleDataException
 import com.biblia.povitrpustok.domain.model.BibleCatalog
 import com.biblia.povitrpustok.domain.model.Chapter
@@ -107,11 +109,11 @@ class ReaderViewModel @Inject constructor(
             val catalogName = BibleCatalog.byId(bookId)?.displayName.orEmpty()
             _uiState.update { state ->
                 if (state.book?.id == bookId) {
-                    state.copy(isLoading = true, errorMessage = null)
+                    state.copy(isLoading = true, loadError = null)
                 } else {
                     state.copy(
                         isLoading = true,
-                        errorMessage = null,
+                        loadError = null,
                         bookDisplayName = catalogName,
                         // Never show the previous book's English name (or its
                         // chapter list) next to the new local name.
@@ -200,10 +202,14 @@ class ReaderViewModel @Inject constructor(
                 bookmarkRepository.updateReadingState(bookId, chapterPosition)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
+            } catch (e: BibleBookNotFoundException) {
+                setLoadError(ReaderLoadError.BOOK_NOT_FOUND)
+            } catch (e: BibleChapterNotFoundException) {
+                setLoadError(ReaderLoadError.CHAPTER_NOT_FOUND)
             } catch (e: BibleDataException) {
-                setLoadError(e.message ?: "Failed to load chapter.")
+                setLoadError(ReaderLoadError.UNKNOWN)
             } catch (e: Exception) {
-                setLoadError("Failed to load chapter.")
+                setLoadError(ReaderLoadError.UNKNOWN)
             }
         }
     }
@@ -212,11 +218,11 @@ class ReaderViewModel @Inject constructor(
      * READER-06: a failed navigation must not leave a target, highlight, or
      * passage from the previous chapter active over the retained content.
      */
-    private fun setLoadError(message: String) {
+    private fun setLoadError(error: ReaderLoadError) {
         _uiState.update {
             it.copy(
                 isLoading = false,
-                errorMessage = message,
+                loadError = error,
                 targetVerseId = null,
                 targetMissing = false,
                 selectedVerseId = null,

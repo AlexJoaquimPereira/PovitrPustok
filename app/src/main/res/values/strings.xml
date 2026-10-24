@@ -16,10 +16,14 @@
     <string name="old_testament">Old Testament</string>
     <string name="new_testament">New Testament</string>
     <string name="chapters_empty">No chapters available for this book.</string>
+    <string name="chapters_error_load">The chapters could not be loaded.</string>
+    <string name="chapters_error_book_missing">This book could not be found.</string>
     <string name="book_introduction">Introduction</string>
     <string name="book_introduction_with_name">%1$s · Introduction</string>
     <string name="book_introduction_read_chapters">Read the chapters</string>
     <string name="no_introduction">No introduction available.</string>
+    <string name="introduction_error_load">The introduction could not be loaded.</string>
+    <string name="introduction_error_book_missing">This book could not be found.</string>
     <string name="back">Back</string>
     <string name="reference_entry_title">Go to reference</string>
     <string name="reference_entry_label">Reference</string>
@@ -29,6 +33,12 @@
     <string name="reference_ambiguous_verse">Multiple source verses match. Choose one:</string>
     <string name="reference_not_found">%1$s</string>
     <string name="reference_invalid">%1$s</string>
+    <string name="reference_error_resolve">The reference could not be resolved. Check the book name and try again.</string>
+    <string name="daily_notice_ambiguous_chapter">Multiple chapters match \'%1$s\'.</string>
+    <string name="daily_notice_ambiguous_verse">Multiple source verses match \'%1$s\'.</string>
+    <string name="daily_notice_not_found">Could not find \'%1$s\' in the Bible.</string>
+    <string name="daily_notice_invalid">Unsupported reference \'%1$s\'.</string>
+    <string name="search_error_failed">Search failed. Try again.</string>
     <string name="reader_add_bookmark">Add bookmark</string>
     <string name="reader_remove_bookmark">Remove bookmark</string>
     <string name="reader_bookmark_added">Bookmarked · %1$s %2$d:%3$d</string>
@@ -68,6 +78,10 @@
     <string name="reading_gospel">Gospel</string>
     <string name="reading_other">Reading</string>
     <string name="reader_retry">Retry</string>
+    <string name="reader_error_book_missing">This book could not be opened.</string>
+    <string name="reader_error_chapter_missing">This chapter is not available.</string>
+    <string name="reader_error_load_failed">The chapter could not be loaded.</string>
+    <string name="reader_chapter_of">Chapter %1$d of %2$d</string>
     <string name="reader_chapter_number">Chapter %1$d</string>
     <string name="reader_selected_verse">Chapter %1$d · verse %2$d</string>
     <string name="reader_verse_state_target">Target verse</string>
@@ -75,7 +89,7 @@
     <string name="reader_verse_state_bookmarked">Bookmarked</string>
     <string name="reader_previous_chapter">Previous chapter</string>
     <string name="reader_next_chapter">Next chapter</string>
-    <string name="chapter_selector_label">Ch %1$s</string>
+    <string name="chapter_selector_label">Chapter %1$s</string>
     <string name="chapter_picker_title">Choose a chapter</string>
     <string name="chapter_picker_current">Current chapter</string>
     <string name="verse_range">%1$d–%2$d</string>
@@ -138,4 +152,8 @@
     <string name="settings_about_licenses_title">Open-source licenses</string>
     <string name="settings_about_licenses_components">Kotlin · Jetpack Compose · AndroidX Navigation, Lifecycle and Room · Hilt · Retrofit and OkHttp · Gson</string>
     <string name="settings_about_licenses_license">Apache License, Version 2.0 · apache.org/licenses/LICENSE-2.0</string>
+    <plurals name="search_partial_results">
+        <item quantity="one">Partial results: %1$d book could not be searched.</item>
+        <item quantity="other">Partial results: %1$d books could not be searched.</item>
+    </plurals>
 </resources>

@@ -3,15 +3,24 @@ package com.biblia.povitrpustok.feature.search
 import com.biblia.povitrpustok.domain.model.SearchResult
 
 /**
+ * Search failure presentation, mapped to resources by the screen.
+ *
+ * [Failed] blocks the list (no book could be searched); [Partial] is a
+ * non-blocking notice over healthy rows (SEARCH-02).
+ */
+sealed interface SearchIssue {
+    data object Failed : SearchIssue
+    data class Partial(val failedBooks: Int) : SearchIssue
+}
+
+/**
  * Immutable search state (implementation plan §23) exposed via StateFlow.
  */
 data class SearchUiState(
     val query: String = "",
     val results: List<SearchResult> = emptyList(),
     val isSearching: Boolean = false,
-    val error: String? = null,
-    /** Non-blocking partial-result notice (SEARCH-02); null when complete. */
-    val warning: String? = null,
+    val issue: SearchIssue? = null,
     val selectedBookId: String? = null,
     val resultCount: Int? = null,
     /**

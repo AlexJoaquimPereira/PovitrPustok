@@ -11,6 +11,8 @@ import com.biblia.povitrpustok.domain.model.Chapter
  *
  * [displayName] is the resolved corpus/catalog name (F-12), so the screen
  * never renders a blank title.
+ *
+ * [error] is a reason, not English (F-24): the screen owns the localized copy.
  */
 data class BookChaptersUiState(
     val book: BibleBook? = null,
@@ -18,5 +20,5 @@ data class BookChaptersUiState(
     val displayName: String = "",
     val chapters: List<Chapter> = emptyList(),
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val error: ChaptersError? = null
 )

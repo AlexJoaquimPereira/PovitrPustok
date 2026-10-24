@@ -125,10 +125,17 @@ fun BookIntroductionScreen(
         }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            // F-24: the ViewModel carries a reason, not English.
+            val error = state.error
             when {
                 state.isLoading -> LoadingState(testTag = "introduction.loading")
-                state.errorMessage != null -> ErrorState(
-                    message = state.errorMessage.orEmpty(),
+                error != null -> ErrorState(
+                    message = stringResource(
+                        when (error) {
+                            IntroductionError.BOOK_NOT_FOUND -> R.string.introduction_error_book_missing
+                            IntroductionError.UNKNOWN -> R.string.introduction_error_load
+                        }
+                    ),
                     onRetry = viewModel::retry,
                     testTag = "introduction.error"
                 )

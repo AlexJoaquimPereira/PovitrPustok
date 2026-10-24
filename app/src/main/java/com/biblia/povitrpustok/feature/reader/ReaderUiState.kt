@@ -31,7 +31,8 @@ data class ReaderUiState(
     val headings: List<Heading> = emptyList(),
     val verses: List<Verse> = emptyList(),
     val isLoading: Boolean = false,
-    val errorMessage: String? = null,
+    /** Localized by the screen; the ViewModel never carries English (F-24). */
+    val loadError: ReaderLoadError? = null,
     /**
      * Transient one-shot verse target (Phase 8): the id of the verse to
      * scroll to/highlight after the chapter loads. Consumed once by

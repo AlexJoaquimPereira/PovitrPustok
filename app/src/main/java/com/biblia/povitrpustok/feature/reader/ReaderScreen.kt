@@ -206,7 +206,16 @@ fun ReaderScreen(
                 TargetMissingNotice(onDismiss = viewModel::dismissTargetMissing)
             }
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            val errorMessage = state.errorMessage
+            // F-24: the ViewModel carries a reason, not English.
+            val errorMessage = state.loadError?.let { error ->
+                stringResource(
+                    when (error) {
+                        ReaderLoadError.BOOK_NOT_FOUND -> R.string.reader_error_book_missing
+                        ReaderLoadError.CHAPTER_NOT_FOUND -> R.string.reader_error_chapter_missing
+                        ReaderLoadError.UNKNOWN -> R.string.reader_error_load_failed
+                    }
+                )
+            }
             when {
                 state.isLoading -> ReaderLoadingState()
                 errorMessage != null ->

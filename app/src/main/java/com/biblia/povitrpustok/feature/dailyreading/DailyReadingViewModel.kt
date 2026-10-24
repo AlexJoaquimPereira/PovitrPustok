@@ -18,6 +18,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
+ * A reading reference that could not be opened, mapped to a resource by the
+ * screen. Carries the raw reference only, never user-visible prose.
+ */
+sealed interface DailyNotice {
+    data class AmbiguousChapter(val reference: String) : DailyNotice
+    data class AmbiguousVerse(val reference: String) : DailyNotice
+    data class NotFound(val reference: String) : DailyNotice
+    data class Invalid(val reference: String) : DailyNotice
+}
+
+/**
  * Daily Reading state holder (Phase 10, plan §12, §14, §27).
  *
  * "Today" uses the user's local date via an injectable [dateProvider]
@@ -56,8 +67,8 @@ class DailyReadingViewModel @Inject constructor(
     private val _pendingNavigation = MutableStateFlow<ReaderDestination?>(null)
     val pendingNavigation: StateFlow<ReaderDestination?> = _pendingNavigation.asStateFlow()
 
-    private val _navigationNotice = MutableStateFlow<String?>(null)
-    val navigationNotice: StateFlow<String?> = _navigationNotice.asStateFlow()
+    private val _navigationNotice = MutableStateFlow<DailyNotice?>(null)
+    val navigationNotice: StateFlow<DailyNotice?> = _navigationNotice.asStateFlow()
 
     /**
      * Loads [selectedDate]. [forceRefresh] skips the cache so the user can
@@ -131,13 +142,13 @@ class DailyReadingViewModel @Inject constructor(
                 is ScriptureResolution.Resolved ->
                     _pendingNavigation.value = resolution.reference.toReaderDestination()
                 is ScriptureResolution.Ambiguous ->
-                    _navigationNotice.value = "Multiple chapters match '${reading.reference}'."
+                    _navigationNotice.value = DailyNotice.AmbiguousChapter(reading.reference)
                 is ScriptureResolution.AmbiguousVerse ->
-                    _navigationNotice.value = "Multiple source verses match '${reading.reference}'."
+                    _navigationNotice.value = DailyNotice.AmbiguousVerse(reading.reference)
                 is ScriptureResolution.NotFound ->
-                    _navigationNotice.value = "Could not find '${reading.reference}' in the Bible."
+                    _navigationNotice.value = DailyNotice.NotFound(reading.reference)
                 is ScriptureResolution.Invalid ->
-                    _navigationNotice.value = "Unsupported reference '${reading.reference}'."
+                    _navigationNotice.value = DailyNotice.Invalid(reading.reference)
             }
         }
     }

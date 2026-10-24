@@ -105,10 +105,17 @@ fun BookChaptersScreen(
         }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            // F-24: the ViewModel carries a reason, not English.
+            val error = state.error
             when {
                 state.isLoading -> LoadingState(testTag = "chapters.loading")
-                state.errorMessage != null -> ErrorState(
-                    message = state.errorMessage.orEmpty(),
+                error != null -> ErrorState(
+                    message = stringResource(
+                        when (error) {
+                            ChaptersError.BOOK_NOT_FOUND -> R.string.chapters_error_book_missing
+                            ChaptersError.UNKNOWN -> R.string.chapters_error_load
+                        }
+                    ),
                     onRetry = { viewModel.load(bookId) },
                     testTag = "chapters.error"
                 )
