@@ -45,6 +45,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -288,7 +289,9 @@ private fun TitlesUnavailableBanner(
             )
             TextButton(
                 onClick = onRetry,
-                modifier = Modifier.testTag("books.retry")
+                modifier = Modifier
+                    .heightIn(min = 48.dp)
+                    .testTag("books.retry")
             ) {
                 Text(text = stringResource(R.string.books_retry))
             }
@@ -319,7 +322,8 @@ private fun TestamentHeader(testament: Testament, modifier: Modifier = Modifier)
                 else R.string.new_testament
             ).uppercase(),
             style = OverlineTextStyle,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.semantics { heading() }
         )
         Spacer(modifier = Modifier.height(6.dp))
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

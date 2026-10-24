@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -43,6 +44,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
@@ -85,7 +89,7 @@ fun ChapterHeader(
     modifier: Modifier = Modifier,
     verseRange: String? = null
 ) {
-    Column(modifier = modifier) {
+    Column(modifier = modifier.semantics { heading() }) {
         Text(
             text = stringResource(R.string.reader_chapter_number, chapter.number).uppercase(),
             style = MaterialTheme.typography.labelMedium,
@@ -107,7 +111,8 @@ fun ChapterHeader(
 fun HeadingBlock(heading: Heading, modifier: Modifier = Modifier) {
     BibleHtmlText(
         document = rememberDocument(heading.html),
-        modifier = modifier.fillMaxWidth(),
+        // F-26: corpus section headings are navigation landmarks.
+        modifier = modifier.fillMaxWidth().semantics { heading() },
         style = MaterialTheme.typography.titleMedium
     )
 }
@@ -134,6 +139,7 @@ fun VerseBlock(
     isSelected: Boolean = false,
     onSelect: (() -> Unit)? = null,
     onLongPress: (() -> Unit)? = null,
+    onBookmarkAction: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val document = rememberDocument(verse.html)
@@ -150,14 +156,28 @@ fun VerseBlock(
         label = "verse-state-color"
     )
     val stateDescription = verseStateDescription(isTarget, isSelected, isBookmarked)
+    val bookmarkActionLabel = stringResource(
+        if (isBookmarked) R.string.reader_remove_bookmark else R.string.reader_add_bookmark
+    )
     Row(
         modifier = modifier
             .fillMaxWidth()
+            // F-26: a verse row must be a 48 dp target even when its text is
+            // a single short line.
+            .heightIn(min = 48.dp)
             .then(
-                if (stateDescription != null) {
-                    Modifier.semantics { this.stateDescription = stateDescription }
-                } else {
-                    Modifier
+                Modifier.semantics {
+                    if (stateDescription != null) this.stateDescription = stateDescription
+                    // F-26: a screen-reader user cannot long-press; expose
+                    // the same action directly.
+                    if (onBookmarkAction != null) {
+                        customActions = listOf(
+                            CustomAccessibilityAction(bookmarkActionLabel) {
+                                onBookmarkAction()
+                                true
+                            }
+                        )
+                    }
                 }
             )
             .then(
@@ -285,6 +305,7 @@ fun ReaderContent(
     onHighlightCleared: () -> Unit = {},
     onVerseSelected: (Long) -> Unit = {},
     onVerseLongPress: (Long) -> Unit = {},
+    onVerseBookmarkAction: (Long) -> Unit = {},
     onNext: () -> Unit = {},
     onPrevious: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -359,10 +380,34 @@ fun ReaderContent(
     val swipeThresholdPx = with(LocalDensity.current) { SWIPE_THRESHOLD_DP.toPx() }
     val canGoNext = state.canGoNext
     val canGoPrevious = state.canGoPrevious
+    // F-26: swipe navigation is invisible to a screen reader, so the same
+    // two actions are exposed as custom accessibility actions on the list.
+    val nextChapterLabel = stringResource(R.string.reader_next_chapter)
+    val previousChapterLabel = stringResource(R.string.reader_previous_chapter)
 
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
+            .semantics {
+                customActions = buildList {
+                    if (canGoNext) {
+                        add(
+                            CustomAccessibilityAction(nextChapterLabel) {
+                                onNext()
+                                true
+                            }
+                        )
+                    }
+                    if (canGoPrevious) {
+                        add(
+                            CustomAccessibilityAction(previousChapterLabel) {
+                                onPrevious()
+                                true
+                            }
+                        )
+                    }
+                }
+            }
             .pointerInput(chapter.id, canGoNext, canGoPrevious) {
                 awaitEachGesture {
                     awaitFirstDown(requireUnconsumed = false)
@@ -407,6 +452,7 @@ fun ReaderContent(
                     isSelected = item.verse.id == state.selectedVerseId,
                     onSelect = { onVerseSelected(item.verse.id) },
                     onLongPress = { onVerseLongPress(item.verse.id) },
+                    onBookmarkAction = { onVerseBookmarkAction(item.verse.id) },
                     modifier = itemWidth.testTag("reader.verse.${item.verse.id}")
                 )
             }

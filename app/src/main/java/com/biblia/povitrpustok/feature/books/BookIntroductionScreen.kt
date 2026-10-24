@@ -32,6 +32,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -191,7 +193,7 @@ private fun IntroductionBlockView(block: IntroductionBlock, modifier: Modifier =
     val isHeading = block.type == TITLE_BLOCK_TYPE
     BibleHtmlText(
         document = document,
-        modifier = modifier,
+        modifier = if (isHeading) modifier.semantics { heading() } else modifier,
         style = if (isHeading) {
             MaterialTheme.typography.titleLarge
         } else {

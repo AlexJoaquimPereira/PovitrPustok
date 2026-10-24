@@ -523,7 +523,8 @@ private fun GospelFeature(
                 Text(
                     text = stringResource(R.string.reading_gospel).uppercase(Locale.ROOT),
                     style = OverlineTextStyle,
-                    color = contentColor
+                    color = contentColor,
+                    modifier = Modifier.semantics { heading() }
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(

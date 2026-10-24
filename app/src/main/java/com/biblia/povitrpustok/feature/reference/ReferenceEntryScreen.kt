@@ -140,7 +140,7 @@ fun ReferenceEntryScreen(
             Button(
                 onClick = viewModel::resolve,
                 enabled = state.query.isNotBlank() && !state.isResolving,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
             ) {
                 Text(stringResource(R.string.reference_entry_go))
             }
@@ -209,7 +209,7 @@ private fun AmbiguousMessage(
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .semantics { role = Role.Button }
+                        .semantics(mergeDescendants = true) { role = Role.Button }
                         .clickable { onCandidateSelected(chapter) }
                         .heightIn(min = 48.dp)
                         .padding(vertical = 14.dp)
@@ -239,7 +239,7 @@ private fun AmbiguousVerseMessage(
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .semantics { role = Role.Button }
+                        .semantics(mergeDescendants = true) { role = Role.Button }
                         .clickable { onCandidateSelected(verse) }
                         .heightIn(min = 48.dp)
                         .padding(vertical = 14.dp)
