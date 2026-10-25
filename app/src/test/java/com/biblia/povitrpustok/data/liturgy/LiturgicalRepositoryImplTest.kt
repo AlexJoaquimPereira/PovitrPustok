@@ -17,6 +17,7 @@ import okhttp3.ResponseBody
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -149,6 +150,113 @@ class LiturgicalRepositoryImplTest {
             LiturgicalErrorKind.MALFORMED_RESPONSE,
             (result as LiturgicalDayResult.Error).kind
         )
+    }
+
+    @Test
+    fun goan_override_corrects_the_network_day_and_the_cached_copy() = runBlocking {
+        val api = FakeApi(
+            readings = ReadingsDto(
+                season = "Advent",
+                readings = ReadingsFieldsDto(
+                    firstReading = "Isaiah 26:1-6",
+                    gospel = "Matthew 7:21, 24-27"
+                )
+            ),
+            calendar = CalendarDto(
+                season = "Advent",
+                celebration = CelebrationDto(
+                    name = "Saint Francis Xavier, Priest",
+                    type = "MEMORIAL"
+                )
+            )
+        )
+        val repository = newRepository(api)
+        val date = LocalDate.of(2026, 12, 3)
+
+        val first = repository.getLiturgicalDay(date)
+        assertTrue(first is LiturgicalDayResult.Success)
+        val networkDay = (first as LiturgicalDayResult.Success).day
+        assertEquals("Saint Francis Xavier, Patron of India, Priest", networkDay.celebrationName)
+        assertEquals("SOLEMNITY", networkDay.celebrationType)
+        assertTrue(networkDay.properReadingsUnavailable)
+        assertTrue(networkDay.readings.isEmpty())
+
+        // The cache stores the raw feed, but every read re-applies the
+        // current Goan override (so an old cached row is corrected too).
+        val second = repository.getLiturgicalDay(date)
+        assertTrue(second is LiturgicalDayResult.Success)
+        val cachedDay = (second as LiturgicalDayResult.Success).day
+        assertEquals("SOLEMNITY", cachedDay.celebrationType)
+        assertTrue(cachedDay.properReadingsUnavailable)
+        assertEquals(1, api.readingsCalls)
+    }
+
+    @Test
+    fun goan_override_survives_a_day_with_no_raw_celebration_or_readings() = runBlocking {
+        val api = FakeApi(
+            readings = ReadingsDto(season = "Ordinary Time"),
+            calendar = CalendarDto(season = "Ordinary Time")
+        )
+        val repository = newRepository(api)
+
+        val result = repository.getLiturgicalDay(LocalDate.of(2026, 1, 16))
+
+        assertTrue(result is LiturgicalDayResult.Success)
+        val day = (result as LiturgicalDayResult.Success).day
+        assertEquals("Saint Joseph Vaz, Patron of the Archdiocese", day.celebrationName)
+        assertEquals("SOLEMNITY", day.celebrationType)
+        assertTrue(day.properReadingsUnavailable)
+    }
+
+    @Test
+    fun cached_saint_thomas_keeps_his_proper_readings() = runBlocking {
+        val api = FakeApi(
+            readings = ReadingsDto(
+                season = "Ordinary Time",
+                readings = ReadingsFieldsDto(
+                    firstReading = "Ephesians 2:19-22",
+                    gospel = "John 20:24-29"
+                )
+            ),
+            calendar = CalendarDto(
+                season = "Ordinary Time",
+                celebration = CelebrationDto(name = "Saint Thomas the Apostle", type = "FEAST")
+            )
+        )
+        val repository = newRepository(api)
+        val date = LocalDate.of(2026, 7, 3)
+
+        val first = repository.getLiturgicalDay(date) as LiturgicalDayResult.Success
+        assertEquals("SOLEMNITY", first.day.celebrationType)
+        assertEquals(2, first.day.readings.size)
+        assertFalse(first.day.properReadingsUnavailable)
+
+        val second = repository.getLiturgicalDay(date) as LiturgicalDayResult.Success
+        assertEquals("SOLEMNITY", second.day.celebrationType)
+        assertEquals(2, second.day.readings.size)
+        assertFalse(second.day.properReadingsUnavailable)
+        assertEquals(1, api.readingsCalls)
+    }
+
+    @Test
+    fun forced_refresh_failure_keeps_the_goan_override() = runBlocking {
+        val api = FakeApi(
+            readings = ReadingsDto(season = "Advent", readings = ReadingsFieldsDto(gospel = "Matthew 7:21, 24-27")),
+            calendar = CalendarDto(
+                season = "Advent",
+                celebration = CelebrationDto(name = "Saint Francis Xavier, Priest", type = "MEMORIAL")
+            )
+        )
+        val repository = newRepository(api)
+        val date = LocalDate.of(2026, 12, 3)
+        repository.getLiturgicalDay(date)
+
+        api.readingsFailure = IOException("offline")
+        val result = repository.getLiturgicalDay(date, forceRefresh = true) as LiturgicalDayResult.Success
+
+        assertTrue(result.refreshFailed)
+        assertEquals("SOLEMNITY", result.day.celebrationType)
+        assertTrue(result.day.properReadingsUnavailable)
     }
 
     @Test

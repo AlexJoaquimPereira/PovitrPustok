@@ -17,5 +17,10 @@ data class LiturgicalDay(
     val celebrationType: String?,
     val celebrationDescription: String?,
     val celebrationQuote: String?,
-    val readings: List<LiturgicalReading>
+    val readings: List<LiturgicalReading>,
+    /**
+     * True when the celebration is known but the feed has no proper readings
+     * for it. The screen shows an explicit notice instead of ferial readings.
+     */
+    val properReadingsUnavailable: Boolean = false
 )

@@ -39,7 +39,7 @@ object LiturgicalCacheMapper {
 
     fun toDomain(cached: LiturgicalDayCacheWithReadings): LiturgicalDay {
         val day = cached.day
-        return LiturgicalDay(
+        return GoaCalendarOverrides.apply(LiturgicalDay(
             date = LocalDate.parse(day.date),
             season = day.season,
             celebrationName = day.celebrationName,
@@ -55,7 +55,7 @@ object LiturgicalCacheMapper {
                         displayLabel = reading.displayLabel
                     )
                 }
-        )
+        ))
     }
 
     /** Unknown stored type names fall back to OTHER (forward-compatible). */

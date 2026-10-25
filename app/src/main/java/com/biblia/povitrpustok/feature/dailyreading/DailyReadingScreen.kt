@@ -382,6 +382,12 @@ private fun DailyReadingContent(
             item(key = "identity") { DayIdentity(day = day) }
         }
 
+        if (day.properReadingsUnavailable) {
+            item(key = "readings_unavailable") {
+                ReadingsUnavailableNotice()
+            }
+        }
+
         if (notice != null) {
             item(key = "notice") {
                 NoticeBanner(message = notice.message(), onDismiss = onNoticeDismissed)
@@ -408,7 +414,7 @@ private fun DailyReadingContent(
             }
         }
 
-        if (day.readings.isEmpty()) {
+        if (day.readings.isEmpty() && !day.properReadingsUnavailable) {
             item(key = "empty") {
                 Text(
                     text = stringResource(R.string.daily_reading_empty),
@@ -751,6 +757,39 @@ private fun UpdateFailedNotice(
         tag = "daily.update_failed",
         dismissTag = "daily.update_failed_dismiss"
     )
+}
+
+/**
+ * The Goan celebration is known, but the feed has no proper readings for it.
+ * Show that explicitly instead of the US/ferial readings the feed would
+ * otherwise supply.
+ */
+@Composable
+private fun ReadingsUnavailableNotice(modifier: Modifier = Modifier) {
+    val colorScheme = MaterialTheme.colorScheme
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("daily.readings_unavailable"),
+        shape = MaterialTheme.shapes.small,
+        color = colorScheme.secondaryContainer,
+        contentColor = colorScheme.onSecondaryContainer
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(R.string.daily_readings_unavailable_title),
+                style = MaterialTheme.typography.titleSmall,
+                color = colorScheme.onSecondaryContainer,
+                modifier = Modifier.semantics { heading() }
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.daily_readings_unavailable_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colorScheme.onSecondaryContainer
+            )
+        }
+    }
 }
 
 /**

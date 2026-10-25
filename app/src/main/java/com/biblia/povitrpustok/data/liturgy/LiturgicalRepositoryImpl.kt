@@ -95,7 +95,10 @@ class LiturgicalRepositoryImpl @Inject constructor(
                                 readings = network.day.readings
                             )
                         )
-                        network
+                        // 1.2.2: keep the cache raw so a future data update
+                        // (e.g. real Goan proper readings) can be re-applied;
+                        // only the value returned to the UI is overridden.
+                        network.copy(day = GoaCalendarOverrides.apply(network.day))
                     }
                     is LiturgicalDayResult.Error -> {
                         val lateCache = cacheDao.getByDateWithReadings(dateKey)
@@ -134,7 +137,10 @@ class LiturgicalRepositoryImpl @Inject constructor(
                 }
 
                 val day = CatholicReadingsMapper.toLiturgicalDay(date, readingsDto, calendarDto)
-                if (day.readings.isEmpty() && day.celebrationName == null) {
+                // A Goan override can supply a celebration even when the feed
+                // has no name/readings for that date; do not drop it as NO_DATA.
+                val effective = GoaCalendarOverrides.apply(day)
+                if (effective.readings.isEmpty() && effective.celebrationName == null) {
                     LiturgicalDayResult.Error(
                         LiturgicalErrorKind.NO_DATA,
                         "No liturgical data available for $date."
