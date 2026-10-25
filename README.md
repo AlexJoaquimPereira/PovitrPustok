@@ -10,12 +10,12 @@ the app never re-imports, rewrites or "fixes" it.
 | | |
 |---|---|
 | **Application ID / namespace** | `com.biblia.povitrpustok` |
-| **Version** | 1.2.1 (versionCode 7) |
+| **Version** | 1.2.2 (versionCode 8) |
 | **Min SDK** | 30 (Android 11) — FTS5 is used when the device SQLite provides it; a scan fallback covers builds that omit it |
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 475 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 46 instrumented tests (3 FTS5 Assumes) |
+| **Tests** | 488 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 46 instrumented tests (3 FTS5 Assumes) |
 
 ---
 
@@ -349,7 +349,7 @@ PovitrPustok/
 │       │   │   ├── feature/{books,reader,search,reference,bookmarks,dailyreading}
 │       │   │   └── ui/{theme, HomeScreen, HomeViewModel}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
-│       ├── test/                        # 475 JVM unit tests + HTML fixtures
+│       ├── test/                        # 488 JVM unit tests + HTML fixtures
 │       └── androidTest/                 # 46 instrumented tests
 ├── gradle/libs.versions.toml            # version catalog
 ├── build.gradle.kts, settings.gradle.kts, gradle.properties
@@ -466,8 +466,8 @@ If the file is absent, the release signing config is simply left unset and the p
 
 | Suite | Count | Runner | Notes |
 |---|---|---|---|
-| JVM unit tests | **475** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
-| Instrumented tests | **30** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 27 executed / 0 failed / 3 FTS5-only skips (30 total) |
+| JVM unit tests | **488** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
+| Instrumented tests | **46** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 43 executed / 0 failed / 3 FTS5-only skips (46 total) |
 
 29 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
 assets or Room.
@@ -594,10 +594,11 @@ Bible corpus from inside the app.
 
 ## 15. License and corpus attribution
 
-No license file is included in this repository. All rights are reserved by the repository owner
-unless a license is added.
+The application code is licensed under the **Apache License, Version 2.0**. See [`LICENSE`](LICENSE)
+and [`NOTICE`](NOTICE); the license text is also bundled in the APK under `assets/licenses/`.
 
 **Bible corpus:** the Konkani Bible text, the source XML, and the derived SQLite databases are
-© **Archdiocese of Goa and Daman**. All rights reserved by the rights holder. They are not
-distributed with this repository; see [Obtaining the corpus](#obtaining-the-corpus). Any use or
-distribution of the text — including inside a built APK — requires the Archdiocese's permission.
+© **Archdiocese of Goa and Daman**. All rights reserved by the rights holder. They are used under
+permission CP/2163/2017 and are **not** covered by the Apache License. They are not distributed with
+this repository; see [Obtaining the corpus](#obtaining-the-corpus). Any use or distribution of the
+text — including inside a built APK — requires the Archdiocese's permission.
