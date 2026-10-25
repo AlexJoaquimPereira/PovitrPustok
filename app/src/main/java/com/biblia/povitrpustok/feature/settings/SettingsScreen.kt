@@ -434,6 +434,13 @@ private fun AboutSection(
         BlockTitle(text = stringResource(R.string.settings_about_licenses_title))
         Spacer(modifier = Modifier.height(8.dp))
         Text(
+            text = stringResource(R.string.settings_about_app_license),
+            style = MaterialTheme.typography.bodySmall,
+            color = colorScheme.onSurface,
+            modifier = Modifier.testTag("settings.about.app_license")
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
             text = stringResource(R.string.settings_about_licenses_components),
             style = MaterialTheme.typography.bodySmall,
             color = colorScheme.onSurfaceVariant
@@ -441,6 +448,29 @@ private fun AboutSection(
         Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = stringResource(R.string.settings_about_licenses_license),
+            style = MaterialTheme.typography.labelSmall,
+            color = colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(BlockGap))
+
+        BlockTitle(text = stringResource(R.string.settings_about_acknowledgement_title))
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.settings_about_acknowledgement_independent),
+            style = MaterialTheme.typography.bodySmall,
+            color = colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.settings_about_acknowledgement_body),
+            style = MaterialTheme.typography.bodySmall,
+            color = colorScheme.onSurface,
+            modifier = Modifier.testTag("settings.about.acknowledgement")
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.settings_about_acknowledgement_permission),
             style = MaterialTheme.typography.labelSmall,
             color = colorScheme.onSurfaceVariant
         )

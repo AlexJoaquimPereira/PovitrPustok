@@ -50,6 +50,8 @@ class SettingsUiTest {
         openSettingsFromHome()
 
         composeRule.onNodeWithTag("settings.about.copyright").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("settings.about.app_license").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("settings.about.acknowledgement").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithTag("settings.version").performScrollTo().assertIsDisplayed()
 
         // The version is read from PackageManager; a blank fallback would
