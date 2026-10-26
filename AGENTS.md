@@ -117,7 +117,17 @@ testing but **not** the FTS5 verification item.
 
 ## Documentation and local-only files
 
-- `README.md` is the product/architecture reference; `UI_UX_RESEARCH.md` is the UI/UX audit.
+- `README.md` is the product/architecture reference.
 - `TODO.md` and `AUDIT_REPORT.md` are **gitignored local working documents**; do not assume a fresh
   clone contains them. Do not rewrite `AUDIT_REPORT.md` as fixes land.
 - Release notes are published in GitHub releases, not committed as a file.
+- UI/UX research and Figma files were removed in 1.2.3 and must not be reintroduced.
+
+## Disclosure pages
+
+- Settings > About is a **landing page**; every disclosure type has its own page under
+  `feature/about` (Source edition, API & data, Software licences, Credits).
+- Every new API, data source, licence or acknowledgement gets its **own page** with a source link,
+  repository link and licence/attribution — do not append it to an existing page.
+- The app's own licence page must show the **complete** licence text (Apache-2.0), not a link.
+- When adding or changing a disclosure, update `README.md` and this file, and add tests.

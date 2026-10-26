@@ -10,12 +10,12 @@ the app never re-imports, rewrites or "fixes" it.
 | | |
 |---|---|
 | **Application ID / namespace** | `com.biblia.povitrpustok` |
-| **Version** | 1.2.2 (versionCode 8) |
+| **Version** | 1.2.3 (versionCode 9) |
 | **Min SDK** | 30 (Android 11) — FTS5 is used when the device SQLite provides it; a scan fallback covers builds that omit it |
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 488 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 46 instrumented tests (3 FTS5 Assumes) |
+| **Tests** | 488 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 51 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
 
 ---
 
@@ -44,7 +44,8 @@ the app never re-imports, rewrites or "fixes" it.
 12. [Known limitations and roadmap](#12-known-limitations-and-roadmap)
 13. [Repository conventions](#13-repository-conventions)
 14. [Documentation](#14-documentation)
-15. [License](#15-license)
+15. [License](#15-license-and-corpus-attribution)
+16. [About and disclosure pages](#16-about-and-disclosure-pages)
 
 ---
 
@@ -161,7 +162,13 @@ content objects.
 | `reference` | Scripture reference entry | — |
 | `daily-reading` | Daily Reading | — |
 | `bookmarks` | Bookmarks | — |
-| `settings` | *(declared, not implemented)* | — |
+| `settings` | Settings | — |
+| `about` | About landing page | — |
+| `about/source-edition` | Source edition disclosure | — |
+| `about/api` | API and data disclosure | — |
+| `about/licenses` | Software licences | — |
+| `about/licenses/app` | App licence (full Apache-2.0 text) | — |
+| `about/credits` | Credits | — |
 
 Back-stack behaviour is the standard push/pop of Navigation Compose: Books → Chapters →
 Introduction and Reader targets pop via `popBackStack()`.
@@ -350,7 +357,7 @@ PovitrPustok/
 │       │   │   └── ui/{theme, HomeScreen, HomeViewModel}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
 │       ├── test/                        # 488 JVM unit tests + HTML fixtures
-│       └── androidTest/                 # 46 instrumented tests
+│       └── androidTest/                 # 51 instrumented tests
 ├── gradle/libs.versions.toml            # version catalog
 ├── build.gradle.kts, settings.gradle.kts, gradle.properties
 ├── gradlew, gradlew.bat, gradle/wrapper/
@@ -358,7 +365,7 @@ PovitrPustok/
 ```
 
 Reserved (currently empty) package directories exist in the working tree for planned work:
-`core/util`, `domain/usecase`, `feature/{history,notes,settings}`, `ui/{components,typography}`.
+`core/util`, `domain/usecase`, `feature/{history,notes}`, `ui/{components,typography}`.
 Because git does not track empty directories, a fresh clone will not contain them.
 
 ---
@@ -467,7 +474,7 @@ If the file is absent, the release signing config is simply left unset and the p
 | Suite | Count | Runner | Notes |
 |---|---|---|---|
 | JVM unit tests | **488** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
-| Instrumented tests | **46** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 43 executed / 0 failed / 3 FTS5-only skips (46 total) |
+| Instrumented tests | **51** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 47 executed / 0 failed / 4 skips (3 FTS5-only + 1 network-dependent Daily Reading) |
 
 29 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
 assets or Room.
@@ -552,7 +559,6 @@ current corpus. Build the artifact you need from source instead.
 
 * Reading history (`feature/history`)
 * Notes (`feature/notes`)
-* Settings — typography, font size, theme override (`feature/settings`)
 * Shared UI components and a standalone typography module (`ui/components`, `ui/typography`)
 * Use-case layer (`domain/usecase`) and core utilities (`core/util`)
 
@@ -583,22 +589,44 @@ Bible corpus from inside the app.
   *Note: this working document is currently **not** tracked by git, so it will be absent from a
   fresh clone.*
 * Section references of the form "implementation plan §N" in source KDoc point into that document.
-* Earlier releases are tagged in git (`v1.0.0`, `v1.1.0`). The 1.1.0 notes are published in the
-  corresponding GitHub release.
-* UI/UX research and prioritized, non-breaking improvement proposals:
-  [`UI_UX_RESEARCH.md`](UI_UX_RESEARCH.md).
-* Figma plan (20-day roadmap, guardrails, structural wireframes):
-  [`PovitrPustok_UIUX_Plan_1.2.0.fig`](PovitrPustok_UIUX_Plan_1.2.0.fig).
+* Earlier releases are tagged in git (`v1.0.0` through `v1.2.3`); release notes are published in
+  the corresponding GitHub releases.
 
 ---
 
 ## 15. License and corpus attribution
 
 The application code is licensed under the **Apache License, Version 2.0**. See [`LICENSE`](LICENSE)
-and [`NOTICE`](NOTICE); the license text is also bundled in the APK under `assets/licenses/`.
+and [`NOTICE`](NOTICE); the license text is also bundled in the APK under `assets/licenses/` and is
+shown in full on the in-app **Settings > About > Software licences > App licence** page.
 
 **Bible corpus:** the Konkani Bible text, the source XML, and the derived SQLite databases are
 © **Archdiocese of Goa and Daman**. All rights reserved by the rights holder. They are used under
 permission CP/2163/2017 and are **not** covered by the Apache License. They are not distributed with
 this repository; see [Obtaining the corpus](#obtaining-the-corpus). Any use or distribution of the
-text — including inside a built APK — requires the Archdiocese's permission.
+text — including inside a built APK — requires the Archdiocese's permission. The in-app
+**Source edition** page carries this diocesan acknowledgement and copyright notice.
+
+---
+
+## 16. About and disclosure pages
+
+Settings > About opens a landing page; every disclosure type has its own page under
+`feature/about`, so the landing page never becomes a wall of mixed legal text.
+
+**Required pages**
+
+| Page | Content |
+|---|---|
+| Source edition | Diocesan acknowledgement and copyright for the Konkani corpus |
+| API & data | Links to the source website, repository and licence for external data (Daily Reading) |
+| Software licences | Third-party licence links, plus the entry to the App licence page with the complete Apache-2.0 text |
+| Credits | Contributors and other acknowledgements |
+
+**Rules**
+
+* Any new API, data source, licence or acknowledgement must get a **dedicated page** with a source
+  link, its licence/attribution, and tests. Do not fold new disclosures into an existing page.
+* The app's own licence page must **always show the complete licence text**, never a link or a
+  summary.
+* UI/UX research and Figma files were removed in 1.2.3 and must not be reintroduced.
