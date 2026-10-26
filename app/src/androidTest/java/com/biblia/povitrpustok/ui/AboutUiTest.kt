@@ -112,9 +112,11 @@ class AboutUiTest {
         composeRule.onNodeWithTag("about.credits").performScrollTo().performClick()
         waitForTag("about.credits.screen")
 
+        composeRule.onNodeWithTag("about.credits.github").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithTag("about.credits.source").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithTag("about.credits.api").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithTag("about.credits.licenses").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Alex Pereira", substring = true).assertDoesNotExist()
 
         composeRule.onNodeWithTag("about.credits.back").performClick()
         waitForTag("about.screen")

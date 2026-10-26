@@ -201,7 +201,8 @@
     <string name="about_app_license_unavailable">The licence text could not be read from the app package.</string>
     <string name="about_credits_title">Credits</string>
     <string name="about_credits_subtitle">People and projects this app relies on</string>
-    <string name="about_credits_lead">Povitr Pustok is designed and built by Alex Pereira as a free, independent, open-source project.</string>
+    <string name="about_credits_lead">Povitr Pustok is a free, independent, open-source project.</string>
+    <string name="about_credits_github">GitHub</string>
     <string name="about_credits_source_title">Source edition</string>
     <string name="about_credits_source_body">Diocesan Centre for Biblical Apostolate, Archdiocese of Goa and Daman.</string>
     <string name="about_credits_source_link">Read about the source edition</string>

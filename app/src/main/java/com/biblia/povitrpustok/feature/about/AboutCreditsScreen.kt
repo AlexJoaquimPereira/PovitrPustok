@@ -32,6 +32,15 @@ fun AboutCreditsScreen(
     ) {
         AboutLead(text = stringResource(R.string.about_credits_lead))
 
+        Spacer(modifier = Modifier.height(20.dp))
+        AboutRowGroup {
+            AboutLinkRow(
+                label = stringResource(R.string.about_credits_github),
+                url = GITHUB_PROFILE,
+                tag = "about.credits.github"
+            )
+        }
+
         Spacer(modifier = Modifier.height(28.dp))
 
         CreditBlock(
@@ -113,3 +122,5 @@ private fun CreditBlock(
     AboutBody(text = body)
     link()
 }
+
+private const val GITHUB_PROFILE = "https://github.com/AlexJoaquimPereira"
