@@ -10,7 +10,7 @@ the app never re-imports, rewrites or "fixes" it.
 | | |
 |---|---|
 | **Application ID / namespace** | `com.biblia.povitrpustok` |
-| **Version** | 1.2.3 (versionCode 9) |
+| **Version** | 1.2.4 (versionCode 10) |
 | **Min SDK** | 30 (Android 11) — FTS5 is used when the device SQLite provides it; a scan fallback covers builds that omit it |
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
@@ -589,7 +589,7 @@ Bible corpus from inside the app.
   *Note: this working document is currently **not** tracked by git, so it will be absent from a
   fresh clone.*
 * Section references of the form "implementation plan §N" in source KDoc point into that document.
-* Earlier releases are tagged in git (`v1.0.0` through `v1.2.3`); release notes are published in
+* Earlier releases are tagged in git (`v1.0.0` through `v1.2.4`); release notes are published in
   the corresponding GitHub releases.
 
 ---
