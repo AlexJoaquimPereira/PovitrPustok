@@ -38,7 +38,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -61,7 +60,8 @@ import com.biblia.povitrpustok.ui.theme.ReadingColumnMaxWidth
  *    `chapterPosition` is not a display number (Job repeats source numbers);
  *  - destinations 01–05: Bible as the single primary block, then a compact
  *    two-column grid whose fourth cell is the accent-coloured Daily Reading;
- *  - the corpus notice as the quiet footer, now the entry point to About.
+ *  - the Settings link as the quiet footer; the corpus copyright now lives on
+ *    the About > Source edition page instead of being repeated here.
  *
  * Day 14 adds the responsive/accessibility pass on top of that composition:
  *
@@ -70,14 +70,14 @@ import com.biblia.povitrpustok.ui.theme.ReadingColumnMaxWidth
  *    a cell never trades a 48 dp touch target for a clipped label;
  *  - landscape (short) windows tighten the masthead rhythm instead of pinning
  *    anything to a fixed height, so every destination stays one scroll away;
- *  - the notice is a merged, clickable footer that also offers
- *    "About & settings" (the route is wired by the caller).
+ *  - the footer is a merged, clickable "Settings & about" entry point (the
+ *    route is wired by the caller).
  *
  * Test-safety (HomeNavigationUiTest): each cell is one merged clickable
  * surface, so "Bible" / "Search" / "Bookmarks" resolve to exactly one node
  * each and clicking it still navigates; subtitles are deliberately different
- * strings so they cannot produce a second match. The notice keeps its exact
- * copy inside the merged footer node. No Bible content is loaded here.
+ * strings so they cannot produce a second match. No Bible content is loaded
+ * here.
  *
  * The screen is edge-to-edge safe: [WindowInsets.safeDrawing] keeps content
  * clear of the status/navigation bars (including 3-button navigation), and
@@ -320,13 +320,12 @@ private fun DestinationGrid(
 }
 
 /**
- * Quiet footer (F-11, F-15): the corpus attribution doubles as the way into
- * About & settings.
+ * Quiet footer (F-11, F-15): the Settings entry point.
  *
  * The whole block is one merged clickable surface — no separate button, no
- * second label competing with the notice — so the exact attribution stays
- * visible at 1x and the tap target clears 48 dp. The affordance line keeps the
- * accent colour but no fill, so it reads as a link in a footer.
+ * second label competing with the link — so the tap target clears 48 dp. The
+ * footer no longer repeats the corpus copyright: that statement now lives on
+ * its own Source edition page, where it has room to be read properly.
  */
 @Composable
 private fun AboutFooter(
@@ -347,19 +346,10 @@ private fun AboutFooter(
         contentColor = supportingColor
     ) {
         Column(
-            // No horizontal padding: the 24 dp page gutters are the inset, and
-            // the attribution needs every spare dp to stay on one line at 1x.
+            // No horizontal padding: the 24 dp page gutters are the inset.
             modifier = Modifier.padding(vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = stringResource(R.string.corpus_copyright_notice),
-                style = MaterialTheme.typography.labelSmall,
-                color = supportingColor,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = stringResource(R.string.home_about_and_settings),

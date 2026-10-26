@@ -1,6 +1,5 @@
 package com.biblia.povitrpustok.feature.settings
 
-import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -39,12 +38,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -63,6 +60,9 @@ import com.biblia.povitrpustok.domain.model.AppTheme
 import com.biblia.povitrpustok.domain.model.LineSpacing
 import com.biblia.povitrpustok.domain.model.ReadingPreferences
 import com.biblia.povitrpustok.domain.model.ScriptureSize
+import com.biblia.povitrpustok.feature.about.AboutEntryRow
+import com.biblia.povitrpustok.feature.about.AboutRowGroup
+import com.biblia.povitrpustok.ui.rememberAppVersionName
 import com.biblia.povitrpustok.ui.theme.LocalReadingPreferences
 import com.biblia.povitrpustok.ui.theme.LocalScripturePalette
 import com.biblia.povitrpustok.ui.theme.OverlineTextStyle
@@ -70,8 +70,8 @@ import com.biblia.povitrpustok.ui.theme.ReadingColumnMaxWidth
 import com.biblia.povitrpustok.ui.theme.scriptureTextStyle
 
 /**
- * Settings & About (F-15): the single destination for the reading controls and
- * everything the app has to disclose about the text it shows.
+ * Settings (F-15): the reading controls, plus the single entry point to the
+ * About pages.
  *
  * The screen is one scrolling editorial column, capped to
  * [ReadingColumnMaxWidth] so it keeps the same measure as Home and the Reader
@@ -81,9 +81,10 @@ import com.biblia.povitrpustok.ui.theme.scriptureTextStyle
  *    [scriptureTextStyle], line spacing, the red-letter switch, and the theme.
  *    Every control writes through to the repository on tap, so the change
  *    applies to this screen (and the next one) without a Save button.
- *  - **ABOUT** — the corpus attribution and permission note, the runtime
- *    version, the Daily Reading data source with its privacy statement, and a
- *    static open-source licence list. No WebView and no new dependency.
+ *  - **ABOUT** — one row that opens the About landing page, where the source
+ *    edition, the Daily Reading data source, the software licences and the
+ *    credits each have their own page. The disclosures deliberately no longer
+ *    live inline here: Settings stays a settings screen.
  *
  * Accessibility notes:
  *  - each segmented row is a [selectableGroup] of `Role.RadioButton` segments,
@@ -100,6 +101,7 @@ import com.biblia.povitrpustok.ui.theme.scriptureTextStyle
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onOpenAbout: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
@@ -136,7 +138,10 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(SectionGap))
 
-                AboutSection(versionName = versionName)
+                AboutSection(
+                    versionName = versionName,
+                    onOpenAbout = onOpenAbout
+                )
             }
         }
     }
@@ -146,7 +151,6 @@ fun SettingsScreen(
 // on a per-block magic number.
 private val SectionGap = 40.dp
 private val ControlGap = 28.dp
-private val BlockGap = 24.dp
 
 /**
  * Top bar in house style: back arrow, serif title, and the F-17 hairline that
@@ -377,147 +381,38 @@ private fun RedLetterControl(
 @Composable
 private fun AboutSection(
     versionName: String?,
+    onOpenAbout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-
     Column(modifier = modifier.fillMaxWidth()) {
         SectionLabel(text = stringResource(R.string.settings_section_about))
         Spacer(modifier = Modifier.height(14.dp))
 
-        // The masthead rule from Home, reused once: what follows is the
-        // colophon, not another control.
-        Box(
-            modifier = Modifier
-                .width(44.dp)
-                .height(2.dp)
-                .background(colorScheme.primary)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // The colophon: the one statement in the serif reading voice.
-        Text(
-            text = stringResource(R.string.corpus_copyright_notice),
-            style = MaterialTheme.typography.bodyLarge,
-            color = colorScheme.onSurface,
-            modifier = Modifier.testTag("settings.about.copyright")
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = stringResource(R.string.settings_about_permission),
-            style = MaterialTheme.typography.bodyMedium,
-            color = colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(BlockGap))
-
-        VersionRow(versionName = versionName)
-
-        Spacer(modifier = Modifier.height(BlockGap))
-
-        BlockTitle(text = stringResource(R.string.settings_about_daily_title))
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = stringResource(R.string.settings_about_daily_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = stringResource(R.string.settings_about_daily_url),
-            style = MaterialTheme.typography.bodySmall,
-            color = colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(BlockGap))
-
-        BlockTitle(text = stringResource(R.string.settings_about_licenses_title))
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = stringResource(R.string.settings_about_app_license),
-            style = MaterialTheme.typography.bodySmall,
-            color = colorScheme.onSurface,
-            modifier = Modifier.testTag("settings.about.app_license")
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = stringResource(R.string.settings_about_licenses_components),
-            style = MaterialTheme.typography.bodySmall,
-            color = colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = stringResource(R.string.settings_about_licenses_license),
-            style = MaterialTheme.typography.labelSmall,
-            color = colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(BlockGap))
-
-        BlockTitle(text = stringResource(R.string.settings_about_acknowledgement_title))
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = stringResource(R.string.settings_about_acknowledgement_independent),
-            style = MaterialTheme.typography.bodySmall,
-            color = colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = stringResource(R.string.settings_about_acknowledgement_body),
-            style = MaterialTheme.typography.bodySmall,
-            color = colorScheme.onSurface,
-            modifier = Modifier.testTag("settings.about.acknowledgement")
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = stringResource(R.string.settings_about_acknowledgement_permission),
-            style = MaterialTheme.typography.labelSmall,
-            color = colorScheme.onSurfaceVariant
-        )
+        // One row, not a colophon: the disclosures moved to their own pages,
+        // so Settings states only that they exist and where to find them.
+        AboutRowGroup {
+            AboutEntryRow(
+                title = stringResource(R.string.settings_about_title),
+                subtitle = stringResource(R.string.settings_about_subtitle),
+                onClick = onOpenAbout,
+                tag = "settings.about",
+                trailing = {
+                    Text(
+                        text = versionName
+                            ?: stringResource(R.string.about_version_unknown),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        // Its own semantics boundary, so the version keeps a
+                        // queryable node inside the row's merged click target.
+                        modifier = Modifier
+                            .testTag("settings.version")
+                            .semantics(mergeDescendants = true) {}
+                    )
+                }
+            )
+        }
     }
 }
-
-/**
- * Label/value fact row. The version comes from `PackageManager` because
- * `buildConfig` is not enabled for this module.
- */
-@Composable
-private fun VersionRow(
-    versionName: String?,
-    modifier: Modifier = Modifier
-) {
-    val colorScheme = MaterialTheme.colorScheme
-
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = stringResource(R.string.settings_about_version_label),
-            style = MaterialTheme.typography.bodyMedium,
-            color = colorScheme.onSurface,
-            modifier = Modifier.weight(1f)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = versionName ?: stringResource(R.string.settings_about_version_unknown),
-            style = MaterialTheme.typography.bodyMedium,
-            color = colorScheme.onSurfaceVariant,
-            modifier = Modifier.testTag("settings.version")
-        )
-    }
-}
-
-@Composable
-private fun rememberAppVersionName(): String? {
-    val context = LocalContext.current
-    return remember(context) { context.appVersionName() }
-}
-
-@Suppress("DEPRECATION")
-private fun Context.appVersionName(): String? = runCatching {
-    packageManager.getPackageInfo(packageName, 0).versionName
-}.getOrNull()
 
 // ---------------------------------------------------------------------------
 // Building blocks
@@ -533,19 +428,6 @@ private fun SectionLabel(
         style = OverlineTextStyle,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier.semantics { heading() }
-    )
-}
-
-@Composable
-private fun BlockTitle(
-    text: String,
-    modifier: Modifier = Modifier
-) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurface,
-        modifier = modifier
     )
 }
 

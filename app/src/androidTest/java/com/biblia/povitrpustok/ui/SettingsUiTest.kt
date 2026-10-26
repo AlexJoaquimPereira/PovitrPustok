@@ -20,10 +20,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * F-15: Settings & About is reachable from Home and from the Reader, the
- * controls write through immediately, and the selection survives navigating
- * away and back (the repository is the single source of truth, so no restart
- * is involved).
+ * F-15/1.2.3: Settings is reachable from Home, the About landing page is
+ * reachable from Settings and from the Reader, the controls write through
+ * immediately, and the selection survives navigating away and back (the
+ * repository is the single source of truth, so no restart is involved).
  *
  * Every test restores the defaults it changed so the suite leaves the app as
  * it found it.
@@ -45,29 +45,38 @@ class SettingsUiTest {
         waitForSettings()
     }
 
+    private fun waitForAbout() {
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodesWithTag("about.screen").fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
     @Test
-    fun home_notice_opens_settings_and_back_returns_home() {
+    fun home_notice_opens_settings_and_about_returns_home() {
         openSettingsFromHome()
 
-        composeRule.onNodeWithTag("settings.about.copyright").performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithTag("settings.about.app_license").performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithTag("settings.about.acknowledgement").performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithTag("settings.version").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("settings.about").performScrollTo().assertIsDisplayed()
+
+        composeRule.onNodeWithTag("settings.about").performClick()
+        waitForAbout()
 
         // The version is read from PackageManager; a blank fallback would
         // still be "displayed", so assert there is real text.
-        val versionNode = composeRule.onNodeWithTag("settings.version").fetchSemanticsNode()
+        val versionNode = composeRule.onNodeWithTag("about.version").fetchSemanticsNode()
         val versionText = versionNode.config.getOrNull(SemanticsProperties.Text)
             ?.joinToString("")
             .orEmpty()
         assertTrue("version text must not be blank", versionText.isNotBlank())
+        composeRule.onNodeWithTag("about.source").assertIsDisplayed()
 
+        composeRule.onNodeWithTag("about.back").performClick()
+        waitForSettings()
         composeRule.onNodeWithTag("settings.back").performClick()
         composeRule.onNodeWithTag("home.bible").assertIsDisplayed()
     }
 
     @Test
-    fun reader_overflow_opens_settings() {
+    fun reader_overflow_opens_about() {
         composeRule.onNodeWithTag("home.bible").performClick()
         composeRule.onNodeWithText("Utpoti").performScrollTo().performClick()
         composeRule.waitUntil(timeoutMillis = 10_000) {
@@ -81,11 +90,11 @@ class SettingsUiTest {
         composeRule.onNodeWithTag("reader.menu").performClick()
         composeRule.onNodeWithTag("reader.menu.about").performClick()
 
-        waitForSettings()
-        composeRule.onNodeWithTag("settings.about.copyright").performScrollTo().assertIsDisplayed()
+        waitForAbout()
+        composeRule.onNodeWithTag("about.source").assertIsDisplayed()
 
         // Back returns to the Reader, not to Home.
-        composeRule.onNodeWithTag("settings.back").performClick()
+        composeRule.onNodeWithTag("about.back").performClick()
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule.onAllNodesWithTag("reader.topbar").fetchSemanticsNodes().isNotEmpty()
         }

@@ -82,10 +82,22 @@ class AppDestinationTest {
             AppDestination.READER,
             AppDestination.SEARCH,
             AppDestination.REFERENCE_ENTRY,
-            AppDestination.ABOUT
+            AppDestination.SETTINGS,
+            AppDestination.ABOUT,
+            AppDestination.ABOUT_SOURCE_EDITION,
+            AppDestination.ABOUT_API,
+            AppDestination.ABOUT_LICENSES,
+            AppDestination.ABOUT_APP_LICENSE,
+            AppDestination.ABOUT_CREDITS
         )
-        assertEquals(10, routes.size)
+        assertEquals(16, routes.size)
+        assertEquals("settings", AppDestination.SETTINGS)
         assertEquals("about", AppDestination.ABOUT)
+        assertEquals("about/source-edition", AppDestination.ABOUT_SOURCE_EDITION)
+        assertEquals("about/api", AppDestination.ABOUT_API)
+        assertEquals("about/licenses", AppDestination.ABOUT_LICENSES)
+        assertEquals("about/licenses/app", AppDestination.ABOUT_APP_LICENSE)
+        assertEquals("about/credits", AppDestination.ABOUT_CREDITS)
     }
 
     @Test

@@ -40,8 +40,26 @@ object AppDestination {
 
     const val BOOKMARKS = "bookmarks"
 
-    /** Single Settings & About destination (F-15); entered from Home and the Reader. */
+    /** Settings: reading controls, entered from Home and the Reader. */
+    const val SETTINGS = "settings"
+
+    /** About landing page; every disclosure below it has its own route. */
     const val ABOUT = "about"
+
+    /** Source edition: who owns the Konkani Bible text. */
+    const val ABOUT_SOURCE_EDITION = "about/source-edition"
+
+    /** API & data: the Daily Reading source, privacy and reference. */
+    const val ABOUT_API = "about/api"
+
+    /** Software licences: runtime, test and build-time components. */
+    const val ABOUT_LICENSES = "about/licenses"
+
+    /** App licence: the complete Apache-2.0 text and the NOTICE file. */
+    const val ABOUT_APP_LICENSE = "about/licenses/app"
+
+    /** Credits: the people and projects behind the app. */
+    const val ABOUT_CREDITS = "about/credits"
 
     fun bookChapters(bookId: String): String = "books/$bookId"
 

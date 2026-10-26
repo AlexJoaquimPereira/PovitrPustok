@@ -25,7 +25,7 @@ import org.junit.runner.RunWith
 
 /**
  * TEST-03: executable Compose navigation coverage for the behaviors that were
- * previously only compile-verified: the Home attribution notice and back
+ * previously only compile-verified: the Home settings entry and back
  * navigation from a top-level destination.
  */
 @RunWith(AndroidJUnit4::class)
@@ -34,17 +34,16 @@ class HomeNavigationUiTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<MainActivity>()
 
-    private val notice =
-        "Bible text © Archdiocese of Goa and Daman. All rights reserved."
-
     @Test
-    fun home_shows_attribution_and_bookmarks_back_returns_home() {
-        composeRule.onNodeWithText(notice).assertIsDisplayed()
+    fun home_shows_settings_entry_and_bookmarks_back_returns_home() {
+        composeRule.onNodeWithTag("home.notice").assertIsDisplayed()
+        composeRule.onNodeWithText("Bible text © Archdiocese", substring = true)
+            .assertDoesNotExist()
 
         composeRule.onNodeWithText("Bookmarks").performClick()
         composeRule.onNodeWithContentDescription("Back").assertIsDisplayed().performClick()
 
-        composeRule.onNodeWithText(notice).assertIsDisplayed()
+        composeRule.onNodeWithTag("home.notice").assertIsDisplayed()
     }
 
     @Test
@@ -60,9 +59,9 @@ class HomeNavigationUiTest {
     }
 
     @Test
-    fun home_notice_is_a_tappable_about_row() {
-        // Day 14: the attribution line is the About entry point (the route
-        // arrives on Day 15; the click action must exist now).
+    fun home_notice_is_a_tappable_settings_row() {
+        // The footer row is the Settings entry point; the disclosure pages
+        // live one level deeper under Settings > About.
         composeRule.onNodeWithTag("home.notice").assertHasClickAction()
     }
 
@@ -166,7 +165,7 @@ class HomeNavigationUiTest {
         composeRule.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText(notice).assertIsDisplayed()
+        composeRule.onNodeWithTag("home.notice").assertIsDisplayed()
     }
 
     @Test

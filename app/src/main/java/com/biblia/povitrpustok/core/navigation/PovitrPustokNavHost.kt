@@ -11,6 +11,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.biblia.povitrpustok.feature.about.AboutApiScreen
+import com.biblia.povitrpustok.feature.about.AboutAppLicenseScreen
+import com.biblia.povitrpustok.feature.about.AboutCreditsScreen
+import com.biblia.povitrpustok.feature.about.AboutLicensesScreen
+import com.biblia.povitrpustok.feature.about.AboutScreen
+import com.biblia.povitrpustok.feature.about.AboutSourceEditionScreen
 import com.biblia.povitrpustok.feature.books.BookChaptersScreen
 import com.biblia.povitrpustok.feature.books.BookIntroductionScreen
 import com.biblia.povitrpustok.feature.books.BooksScreen
@@ -69,7 +75,7 @@ fun PovitrPustokNavHost() {
                     )
                 },
                 onOpenDailyReading = { navController.navigate(AppDestination.DAILY_READING) },
-                onOpenAbout = { navController.navigate(AppDestination.ABOUT) }
+                onOpenAbout = { navController.navigate(AppDestination.SETTINGS) }
             )
         }
 
@@ -196,9 +202,54 @@ fun PovitrPustokNavHost() {
             )
         }
 
-        composable(AppDestination.ABOUT) {
+        composable(AppDestination.SETTINGS) {
             SettingsScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onOpenAbout = { navController.navigate(AppDestination.ABOUT) }
+            )
+        }
+
+        composable(AppDestination.ABOUT) {
+            AboutScreen(
+                onBack = { navController.popBackStack() },
+                onOpenSourceEdition = {
+                    navController.navigate(AppDestination.ABOUT_SOURCE_EDITION)
+                },
+                onOpenApi = { navController.navigate(AppDestination.ABOUT_API) },
+                onOpenLicenses = { navController.navigate(AppDestination.ABOUT_LICENSES) },
+                onOpenCredits = { navController.navigate(AppDestination.ABOUT_CREDITS) }
+            )
+        }
+
+        composable(AppDestination.ABOUT_SOURCE_EDITION) {
+            AboutSourceEditionScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(AppDestination.ABOUT_API) {
+            AboutApiScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(AppDestination.ABOUT_LICENSES) {
+            AboutLicensesScreen(
+                onBack = { navController.popBackStack() },
+                onOpenAppLicense = {
+                    navController.navigate(AppDestination.ABOUT_APP_LICENSE)
+                }
+            )
+        }
+
+        composable(AppDestination.ABOUT_APP_LICENSE) {
+            AboutAppLicenseScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(AppDestination.ABOUT_CREDITS) {
+            AboutCreditsScreen(
+                onBack = { navController.popBackStack() },
+                onOpenSourceEdition = {
+                    navController.navigate(AppDestination.ABOUT_SOURCE_EDITION)
+                },
+                onOpenApi = { navController.navigate(AppDestination.ABOUT_API) },
+                onOpenLicenses = { navController.navigate(AppDestination.ABOUT_LICENSES) }
             )
         }
 
