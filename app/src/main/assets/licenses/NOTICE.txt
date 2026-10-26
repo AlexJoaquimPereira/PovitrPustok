@@ -15,7 +15,7 @@ limitations under the License.
 
 The Konkani Bible text, the source XML, and the derived SQLite databases are
 © Archdiocese of Goa and Daman. All rights reserved by the rights holder.
-They are used under permission CP/2163/2017 and are NOT covered by the
+They are used with the permission of the rights holder and are NOT covered by the
 Apache License. They are not distributed in this repository; a built APK
 that contains them is distributed under the rights holder's permission, not
 under the Apache License.

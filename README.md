@@ -15,7 +15,7 @@ the app never re-imports, rewrites or "fixes" it.
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 488 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 51 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
+| **Tests** | 489 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 51 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
 
 ---
 
@@ -356,7 +356,7 @@ PovitrPustok/
 │       │   │   ├── feature/{books,reader,search,reference,bookmarks,dailyreading}
 │       │   │   └── ui/{theme, HomeScreen, HomeViewModel}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
-│       ├── test/                        # 488 JVM unit tests + HTML fixtures
+│       ├── test/                        # 489 JVM unit tests + HTML fixtures
 │       └── androidTest/                 # 51 instrumented tests
 ├── gradle/libs.versions.toml            # version catalog
 ├── build.gradle.kts, settings.gradle.kts, gradle.properties
@@ -473,7 +473,7 @@ If the file is absent, the release signing config is simply left unset and the p
 
 | Suite | Count | Runner | Notes |
 |---|---|---|---|
-| JVM unit tests | **488** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
+| JVM unit tests | **489** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
 | Instrumented tests | **51** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 47 executed / 0 failed / 4 skips (3 FTS5-only + 1 network-dependent Daily Reading) |
 
 29 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
@@ -601,9 +601,9 @@ and [`NOTICE`](NOTICE); the license text is also bundled in the APK under `asset
 shown in full on the in-app **Settings > About > Software licences > App licence** page.
 
 **Bible corpus:** the Konkani Bible text, the source XML, and the derived SQLite databases are
-© **Archdiocese of Goa and Daman**. All rights reserved by the rights holder. They are used under
-permission CP/2163/2017 and are **not** covered by the Apache License. They are not distributed with
-this repository; see [Obtaining the corpus](#obtaining-the-corpus). Any use or distribution of the
+© **Archdiocese of Goa and Daman**. All rights reserved by the rights holder. They are used with
+the permission of the rights holder and are **not** covered by the Apache License. They are not
+distributed with this repository; see [Obtaining the corpus](#obtaining-the-corpus). Any use or distribution of the
 text — including inside a built APK — requires the Archdiocese's permission. The in-app
 **Source edition** page carries this diocesan acknowledgement and copyright notice.
 
