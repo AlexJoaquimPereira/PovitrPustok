@@ -25,6 +25,7 @@ import com.biblia.povitrpustok.feature.dailyreading.DailyReadingScreen
 import com.biblia.povitrpustok.feature.reader.ReaderScreen
 import com.biblia.povitrpustok.feature.reference.ReferenceEntryScreen
 import com.biblia.povitrpustok.feature.search.SearchScreen
+import com.biblia.povitrpustok.domain.model.BibleEditions
 import com.biblia.povitrpustok.feature.settings.SettingsScreen
 import com.biblia.povitrpustok.ui.HomeScreen
 
@@ -66,7 +67,7 @@ fun PovitrPustokNavHost() {
         composable(AppDestination.HOME) {
             HomeScreen(
                 onOpenBooks = { navController.navigate(AppDestination.BOOKS) },
-                onOpenSearch = { navController.navigate(AppDestination.SEARCH) },
+                onOpenSearch = { navController.navigate(AppDestination.search()) },
                 onOpenReference = { navController.navigate(AppDestination.REFERENCE_ENTRY) },
                 onOpenBookmarks = { navController.navigate(AppDestination.BOOKMARKS) },
                 onContinueReading = { readingState ->
@@ -131,7 +132,7 @@ fun PovitrPustokNavHost() {
                     navController.navigate(AppDestination.bookChapters(bookId))
                 },
                 onBack = { navController.popBackStack() },
-                onOpenSearch = { navController.navigate(AppDestination.SEARCH) }
+                onOpenSearch = { navController.navigate(AppDestination.search()) }
             )
         }
 
@@ -151,7 +152,7 @@ fun PovitrPustokNavHost() {
                     navController.navigate(AppDestination.bookIntroduction(bookId))
                 },
                 onBack = { navController.popBackStack() },
-                onOpenSearch = { navController.navigate(AppDestination.SEARCH) }
+                onOpenSearch = { navController.navigate(AppDestination.search()) }
             )
         }
 
@@ -181,7 +182,8 @@ fun PovitrPustokNavHost() {
                 navArgument("verseStart") { type = NavType.IntType; defaultValue = -1 },
                 navArgument("verseEnd") { type = NavType.IntType; defaultValue = -1 },
                 navArgument("passages") { type = NavType.StringType; defaultValue = "" },
-                navArgument("targetVerse") { type = NavType.IntType; defaultValue = -1 }
+                navArgument("targetVerse") { type = NavType.IntType; defaultValue = -1 },
+                navArgument("editionId") { type = NavType.StringType; defaultValue = "" }
             )
         ) { backStackEntry ->
             val arguments = backStackEntry.arguments
@@ -198,6 +200,9 @@ fun PovitrPustokNavHost() {
                 passageEnd = verseEnd,
                 passagesSpec = arguments?.getString("passages").orEmpty(),
                 targetVerseNumber = targetVerse,
+                editionId = arguments?.getString("editionId")
+                    ?.takeIf { it.isNotBlank() }
+                    ?: BibleEditions.KONKANI_ID,
                 onOpenAbout = { navController.navigate(AppDestination.ABOUT) }
             )
         }
@@ -253,7 +258,15 @@ fun PovitrPustokNavHost() {
             )
         }
 
-        composable(AppDestination.SEARCH) {
+        composable(
+            route = AppDestination.SEARCH,
+            arguments = listOf(
+                navArgument("editionId") {
+                    type = NavType.StringType
+                    defaultValue = BibleEditions.KONKANI_ID
+                }
+            )
+        ) {
             SearchScreen(
                 onBack = { navController.popBackStack() },
                 onOpenResult = { result ->

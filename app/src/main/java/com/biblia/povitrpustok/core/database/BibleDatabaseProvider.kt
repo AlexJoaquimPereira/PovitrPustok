@@ -1,5 +1,8 @@
 package com.biblia.povitrpustok.core.database
 
+import com.biblia.povitrpustok.core.result.BibleEditionNotFoundException
+import com.biblia.povitrpustok.domain.model.BibleEditions
+
 /**
  * Provides read-only access to the imported per-book Bible databases
  * (implementation plan §11).
@@ -21,6 +24,16 @@ interface BibleDatabaseProvider {
      * @throws com.biblia.povitrpustok.core.result.CorruptBibleDatabaseException
      */
     suspend fun openBook(bookId: String): BibleDatabase
+
+    suspend fun openBook(
+        bookId: String,
+        editionId: String
+    ): BibleDatabase {
+        if (editionId != BibleEditions.KONKANI_ID) {
+            throw BibleEditionNotFoundException(editionId)
+        }
+        return openBook(bookId)
+    }
 
     /**
      * Closes all cached handles and permanently closes this provider

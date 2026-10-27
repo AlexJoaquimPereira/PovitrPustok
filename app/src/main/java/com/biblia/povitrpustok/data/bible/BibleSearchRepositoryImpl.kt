@@ -3,9 +3,11 @@ package com.biblia.povitrpustok.data.bible
 import com.biblia.povitrpustok.core.database.BibleDatabaseProvider
 import com.biblia.povitrpustok.core.database.BibleVerseHit
 import com.biblia.povitrpustok.core.result.BibleDataException
+import com.biblia.povitrpustok.core.result.BibleEditionNotFoundException
 import com.biblia.povitrpustok.domain.model.BibleBook
 import com.biblia.povitrpustok.domain.model.BibleCanonicalOrder
 import com.biblia.povitrpustok.domain.model.BibleCatalog
+import com.biblia.povitrpustok.domain.model.BibleEditions
 import com.biblia.povitrpustok.domain.model.SearchFailure
 import com.biblia.povitrpustok.domain.model.SearchOutcome
 import com.biblia.povitrpustok.domain.model.SearchResult
@@ -50,29 +52,47 @@ class BibleSearchRepositoryImpl @Inject constructor(
         query: String,
         bookIds: List<String>?,
         limit: Int
-    ): List<SearchResult> = searchWithDiagnostics(query, bookIds, limit).results
+    ): List<SearchResult> = search(query, bookIds, limit, BibleEditions.KONKANI_ID)
+
+    override suspend fun search(
+        query: String,
+        bookIds: List<String>?,
+        limit: Int,
+        editionId: String
+    ): List<SearchResult> = searchWithDiagnostics(query, bookIds, limit, editionId).results
 
     override suspend fun searchWithDiagnostics(
         query: String,
         bookIds: List<String>?,
         limit: Int
+    ): SearchOutcome = searchWithDiagnostics(query, bookIds, limit, BibleEditions.KONKANI_ID)
+
+    override suspend fun searchWithDiagnostics(
+        query: String,
+        bookIds: List<String>?,
+        limit: Int,
+        editionId: String
     ): SearchOutcome = withContext(Dispatchers.IO) {
+        if (BibleEditions.byId(editionId) == null) {
+            throw BibleEditionNotFoundException(editionId)
+        }
         val trimmed = query.trim()
         if (trimmed.isEmpty() || limit <= 0) {
             return@withContext SearchOutcome(emptyList())
         }
 
+        val editionBooks = BibleCatalog.forEdition(editionId)
         val requested = if (bookIds == null) {
-            BibleCatalog.books
+            editionBooks
         } else {
             val wanted = bookIds.toSet()
-            BibleCatalog.books.filter { it.id in wanted }
+            editionBooks.filter { it.id in wanted }
         }
         // Canonical book order is the deterministic tie-breaker for equal ranks.
         val books = requested.sortedBy { BibleCanonicalOrder.position(it.id) ?: Int.MAX_VALUE }
 
         val (perBook, failures) = searchBooks(books) { book ->
-            provider.openBook(book.id).searchVerses(trimmed, limit)
+            provider.openBook(book.id, editionId).searchVerses(trimmed, limit)
         }
 
         SearchOutcome(

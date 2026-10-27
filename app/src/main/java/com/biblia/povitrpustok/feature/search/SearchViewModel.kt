@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.biblia.povitrpustok.core.result.BibleDataException
+import com.biblia.povitrpustok.domain.model.BibleEditions
 import com.biblia.povitrpustok.domain.repository.BibleSearchRepository
 import com.biblia.povitrpustok.domain.repository.BookNameRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -51,6 +52,9 @@ class SearchViewModel @Inject constructor(
 
     private val queryInput = MutableStateFlow(savedStateHandle.get<String>(KEY_QUERY) ?: "")
     private val bookFilter = MutableStateFlow(savedStateHandle.get<String>(KEY_BOOK_FILTER))
+    private val editionId = savedStateHandle.get<String>(KEY_EDITION_ID)
+        ?.takeIf { it.isNotBlank() }
+        ?: BibleEditions.KONKANI_ID
 
     init {
         viewModelScope.launch {
@@ -102,7 +106,8 @@ class SearchViewModel @Inject constructor(
         try {
             val outcome = searchRepository.searchWithDiagnostics(
                 query = expression,
-                bookIds = bookId?.let { listOf(it) }
+                bookIds = bookId?.let { listOf(it) },
+                editionId = editionId
             )
             val partial = outcome.results.isNotEmpty() && outcome.failures.isNotEmpty()
             // Emit results first: the rows fall back to catalog names, so the
@@ -157,5 +162,6 @@ class SearchViewModel @Inject constructor(
         const val DEBOUNCE_MILLIS = 300L
         const val KEY_QUERY = "search_query"
         const val KEY_BOOK_FILTER = "search_book_filter"
+        const val KEY_EDITION_ID = "editionId"
     }
 }

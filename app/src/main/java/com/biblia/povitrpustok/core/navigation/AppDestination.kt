@@ -30,9 +30,9 @@ object AppDestination {
      * and kept separate from the chapter navigation identity
      * (chapterPosition). Existing callers that omit them still match.
      */
-    const val READER = "reader/{bookId}/{chapterPosition}?verseId={verseId}&verseStart={verseStart}&verseEnd={verseEnd}&passages={passages}&targetVerse={targetVerse}"
+    const val READER = "reader/{bookId}/{chapterPosition}?verseId={verseId}&verseStart={verseStart}&verseEnd={verseEnd}&passages={passages}&targetVerse={targetVerse}&editionId={editionId}"
 
-    const val SEARCH = "search"
+    const val SEARCH = "search?editionId={editionId}"
 
     const val REFERENCE_ENTRY = "reference"
 
@@ -61,6 +61,9 @@ object AppDestination {
     /** Credits: the people and projects behind the app. */
     const val ABOUT_CREDITS = "about/credits"
 
+    fun search(editionId: String? = null): String =
+        if (editionId.isNullOrBlank()) "search" else "search?editionId=$editionId"
+
     fun bookChapters(bookId: String): String = "books/$bookId"
 
     fun bookIntroduction(bookId: String): String = "books/$bookId/introduction"
@@ -72,7 +75,8 @@ object AppDestination {
         verseStart: Int? = null,
         verseEnd: Int? = null,
         passages: List<com.biblia.povitrpustok.domain.model.ReaderPassageSpec> = emptyList(),
-        targetVerseNumber: Int? = null
+        targetVerseNumber: Int? = null,
+        editionId: String? = null
     ): String {
         val base = "reader/$bookId/$chapterPosition"
         val params = buildList {
@@ -83,6 +87,7 @@ object AppDestination {
                 add("passages=" + com.biblia.povitrpustok.domain.model.ReaderPassageCodec.encode(passages))
             }
             targetVerseNumber?.let { add("targetVerse=$it") }
+            editionId?.let { add("editionId=$it") }
         }
         return if (params.isEmpty()) base else base + "?" + params.joinToString("&")
     }

@@ -1,5 +1,7 @@
 package com.biblia.povitrpustok.domain.repository
 
+import com.biblia.povitrpustok.core.result.BibleEditionNotFoundException
+import com.biblia.povitrpustok.domain.model.BibleEditions
 import com.biblia.povitrpustok.domain.model.SearchOutcome
 import com.biblia.povitrpustok.domain.model.SearchResult
 
@@ -31,6 +33,14 @@ interface BibleSearchRepository {
         limit: Int = 50
     ): List<SearchResult>
 
+    /** Edition-aware [search]; only the shipped Konkani edition is available. */
+    suspend fun search(
+        query: String,
+        bookIds: List<String>? = null,
+        limit: Int = 50,
+        editionId: String
+    ): List<SearchResult> = defaultEdition(editionId).let { search(query, bookIds, limit) }
+
     /**
      * SEARCH-02: like [search], but a failure in one book's index does not
      * erase results from the rest of the corpus. [SearchOutcome.failures]
@@ -44,4 +54,20 @@ interface BibleSearchRepository {
         bookIds: List<String>? = null,
         limit: Int = 50
     ): SearchOutcome
+
+    /** Edition-aware [searchWithDiagnostics]; only Konkani is available. */
+    suspend fun searchWithDiagnostics(
+        query: String,
+        bookIds: List<String>? = null,
+        limit: Int = 50,
+        editionId: String
+    ): SearchOutcome = defaultEdition(editionId).let {
+        searchWithDiagnostics(query, bookIds, limit)
+    }
+
+    private fun defaultEdition(editionId: String) {
+        if (editionId != BibleEditions.KONKANI_ID) {
+            throw BibleEditionNotFoundException(editionId)
+        }
+    }
 }

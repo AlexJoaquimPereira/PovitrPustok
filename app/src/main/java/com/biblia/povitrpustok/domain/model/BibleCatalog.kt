@@ -85,8 +85,17 @@ object BibleCatalog {
         BibleBook(id = "timotak2", displayName = "Timotak Pauluchem Dusrem Potr", englishName = "2 Timothy", testament = Testament.NEW_TESTAMENT, position = 73, databaseAsset = "bible/timotak2.sqlite"),
     )
 
-    fun byId(bookId: String): BibleBook? =
-        books.firstOrNull { it.id == bookId }
+    /** Books available in [editionId]; only the shipped Konkani edition exists today. */
+    fun forEdition(editionId: String = BibleEditions.KONKANI_ID): List<BibleBook> {
+        val edition = BibleEditions.byId(editionId) ?: return emptyList()
+        return books.filter { it.id in edition.canon }
+    }
+
+    fun byId(bookId: String, editionId: String = BibleEditions.KONKANI_ID): BibleBook? {
+        val edition = BibleEditions.byId(editionId) ?: return null
+        if (bookId !in edition.canon) return null
+        return books.firstOrNull { it.id == bookId }
+    }
 
     fun byPosition(position: Int): BibleBook? =
         books.firstOrNull { it.position == position }

@@ -30,6 +30,10 @@ import kotlinx.coroutines.withContext
  * `ABSENT` (a book with no title block, e.g. 2 Kings). A single [Mutex]
  * serializes corpus scans, so concurrent callers never open the corpus
  * twice and repeat calls open no databases at all.
+ *
+ * Edition seam: this repository still uses the default Konkani edition and
+ * keys its cache by book id. When a second edition ships, add `editionId` to
+ * this boundary and to the cache key before using it for English.
  */
 @Singleton
 class BookTitleRepositoryImpl @Inject constructor(

@@ -26,6 +26,10 @@ import kotlinx.coroutines.withContext
  * repository also caches its own lookups). A lookup failure returns the
  * catalog/id fallback *without* caching it, so a later call can retry the
  * corpus after a transient failure.
+ *
+ * Edition seam: this cache is book-id keyed and therefore currently scoped
+ * to the default Konkani edition. A second edition must extend this boundary
+ * with `editionId` and the cache key.
  */
 @Singleton
 class BookNameRepositoryImpl @Inject constructor(

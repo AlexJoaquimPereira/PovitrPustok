@@ -5,9 +5,12 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteException
 import com.biblia.povitrpustok.core.result.BibleBookNotFoundException
 import com.biblia.povitrpustok.core.result.BibleDatabaseNotFoundException
+import com.biblia.povitrpustok.core.result.BibleEditionNotFoundException
 import com.biblia.povitrpustok.core.result.CorruptBibleDatabaseException
 import com.biblia.povitrpustok.domain.model.BibleBook
 import com.biblia.povitrpustok.domain.model.BibleCatalog
+import com.biblia.povitrpustok.domain.model.BibleEditions
+import com.biblia.povitrpustok.domain.model.Edition
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.FileOutputStream
@@ -76,15 +79,22 @@ class AssetBibleDatabaseProvider @Inject constructor(
     private val openDatabases = mutableMapOf<String, BibleDatabase>()
     private var closed = false
 
+    /** Convenience overload for existing callers that use the default edition. */
     override suspend fun openBook(bookId: String): BibleDatabase =
+        openBook(bookId, BibleEditions.KONKANI_ID)
+
+    override suspend fun openBook(bookId: String, editionId: String): BibleDatabase =
         withContext(Dispatchers.IO) {
             mutex.withLock {
                 check(!closed) { "BibleDatabaseProvider is closed." }
-                openDatabases[bookId]?.let { return@withLock it }
-                val book = BibleCatalog.byId(bookId)
+                val edition = BibleEditions.byId(editionId)
+                    ?: throw BibleEditionNotFoundException(editionId)
+                val cacheKey = "${edition.id}/$bookId"
+                openDatabases[cacheKey]?.let { return@withLock it }
+                val book = BibleCatalog.byId(bookId, edition.id)
                     ?: throw BibleBookNotFoundException(bookId)
-                val database = prepare(book)
-                openDatabases[bookId] = database
+                val database = prepare(book, edition)
+                openDatabases[cacheKey] = database
                 database
             }
         }
@@ -103,8 +113,15 @@ class AssetBibleDatabaseProvider @Inject constructor(
         }
     }
 
-    private fun prepare(book: BibleBook): BibleDatabase {
-        val directory = File(context.filesDir, BIBLE_DIRECTORY).apply { mkdirs() }
+    private fun prepare(book: BibleBook, edition: Edition): BibleDatabase {
+        val root = File(context.filesDir, BIBLE_DIRECTORY).apply { mkdirs() }
+        // The shipped edition keeps the pre-seam path so existing users do
+        // not recopy 26 MB on upgrade; future editions get their own subtree.
+        val directory = if (edition.id == BibleEditions.KONKANI_ID) {
+            root
+        } else {
+            File(root, edition.id).apply { mkdirs() }
+        }
         val databaseFile = File(directory, book.id + DATABASE_EXTENSION)
         val markerFile = File(directory, book.id + VERSION_EXTENSION)
         val tempFile = File(directory, book.id + TEMP_EXTENSION)
@@ -119,7 +136,7 @@ class AssetBibleDatabaseProvider @Inject constructor(
 
         // Missing, stale, corrupt, or unopenable: replace it exactly once.
         discard(databaseFile, markerFile, tempFile, markerTempFile)
-        publishFromAsset(book, databaseFile, markerFile, tempFile, markerTempFile)
+        publishFromAsset(book, edition, databaseFile, markerFile, tempFile, markerTempFile)
 
         return openReadOnly(databaseFile) ?: run {
             discard(databaseFile, markerFile, tempFile, markerTempFile)
@@ -130,6 +147,7 @@ class AssetBibleDatabaseProvider @Inject constructor(
     /** Copies the packaged asset to a validated, fsynced temp file and publishes it. */
     private fun publishFromAsset(
         book: BibleBook,
+        edition: Edition,
         databaseFile: File,
         markerFile: File,
         tempFile: File,
@@ -137,7 +155,7 @@ class AssetBibleDatabaseProvider @Inject constructor(
     ) {
         try {
             val input = try {
-                assetSource.open(book.databaseAsset)
+                assetSource.open(edition.assetFor(book.id))
             } catch (e: IOException) {
                 throw BibleDatabaseNotFoundException(book.id, e)
             }

@@ -6,6 +6,7 @@ import com.biblia.povitrpustok.core.result.BibleBookNotFoundException
 import com.biblia.povitrpustok.core.result.BibleChapterNotFoundException
 import com.biblia.povitrpustok.core.result.BibleDataException
 import com.biblia.povitrpustok.domain.model.BibleCatalog
+import com.biblia.povitrpustok.domain.model.BibleEditions
 import com.biblia.povitrpustok.domain.model.Bookmark
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.ReaderPassageSpec
@@ -71,7 +72,8 @@ class ReaderViewModel @Inject constructor(
         val targetVerseNumber: Int?,
         val passageStart: Int?,
         val passageEnd: Int?,
-        val passages: List<ReaderPassageSpec>
+        val passages: List<ReaderPassageSpec>,
+        val editionId: String
     )
 
     /** Serializes bookmark toggles so rapid taps cannot act on a stale snapshot (READER-05). */
@@ -91,7 +93,8 @@ class ReaderViewModel @Inject constructor(
         passageStart: Int? = null,
         passageEnd: Int? = null,
         passages: List<ReaderPassageSpec> = emptyList(),
-        targetVerseNumber: Int? = null
+        targetVerseNumber: Int? = null,
+        editionId: String = BibleEditions.KONKANI_ID
     ) {
         this.bookId = bookId
         lastRequest = LoadRequest(
@@ -101,7 +104,8 @@ class ReaderViewModel @Inject constructor(
             targetVerseNumber,
             passageStart,
             passageEnd,
-            passages
+            passages,
+            editionId
         )
         loadJob?.cancel()
         // F-06/audit: the previous chapter's bookmark ids must not stay live
@@ -128,15 +132,15 @@ class ReaderViewModel @Inject constructor(
                 }
             }
             try {
-                val book = repository.getBook(bookId)
+                val book = repository.getBook(bookId, editionId)
                 val displayName = bookNames.displayName(bookId)
-                val chapters = repository.getChapters(bookId)
+                val chapters = repository.getChapters(bookId, editionId)
 
                 if (passages.isNotEmpty()) {
                     val chapterContents = passages
                         .map { it.chapterPosition }
                         .distinct()
-                        .associateWith { repository.getChapter(bookId, it) }
+                        .associateWith { repository.getChapter(bookId, it, editionId) }
                     val firstContent = chapterContents.getValue(passages.first().chapterPosition)
                     val passageChapters = passages
                         .groupBy { it.chapterPosition }
@@ -185,7 +189,7 @@ class ReaderViewModel @Inject constructor(
                     return@launch
                 }
 
-                val content = repository.getChapter(bookId, chapterPosition)
+                val content = repository.getChapter(bookId, chapterPosition, editionId)
                 val target = content.verses.targetFor(targetVerseId, targetVerseNumber)
                 val passage = if (passageStart != null && passageEnd != null && passageEnd >= passageStart) {
                     ReaderPassage(passageStart, passageEnd)
@@ -253,7 +257,8 @@ class ReaderViewModel @Inject constructor(
                 targetVerseNumber = request.targetVerseNumber,
                 passageStart = request.passageStart,
                 passageEnd = request.passageEnd,
-                passages = request.passages
+                passages = request.passages,
+                editionId = request.editionId
             )
         }
     }

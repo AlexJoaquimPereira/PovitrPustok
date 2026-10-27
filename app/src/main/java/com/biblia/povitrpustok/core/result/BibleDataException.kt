@@ -24,6 +24,11 @@ class CorruptBibleDatabaseException(
     cause: Throwable? = null
 ) : BibleDataException("Bible database for book '$bookId' is corrupt or unreadable", cause)
 
+/** The requested Bible edition id does not exist. */
+class BibleEditionNotFoundException(
+    editionId: String
+) : BibleDataException("No Bible edition with id '$editionId'")
+
 /** The requested book id does not exist in the static catalog. */
 class BibleBookNotFoundException(
     bookId: String

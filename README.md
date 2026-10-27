@@ -15,7 +15,7 @@ the app never re-imports, rewrites or "fixes" it.
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 489 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 51 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
+| **Tests** | 497 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 51 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
 
 ---
 
@@ -199,6 +199,14 @@ Enforced rules (see implementation-plan §46 and the coding-harness rules):
   `BibleHtmlRenderer` → Compose (`BibleHtmlText`). The parser is pure Kotlin and JVM-testable.
 * **No startup corpus copy or preload.** Each book is prepared lazily on first use, once per process.
 
+### Bible editions
+
+`Edition` / `BibleEditions` declare the edition id, language tag, label, asset pattern, canon and
+licence. Only **Konkani (Romi)** (`konkani-romi`) ships today and is the default everywhere. The
+provider keys handles and copies by `(editionId, bookId)`; the default edition keeps the pre-seam
+`filesDir/bible/` path so existing users do not recopy the corpus. Reader and search routes accept an
+optional `editionId` query parameter, defaulting to Konkani, so the UI is unchanged.
+
 ### Package responsibilities
 
 | Package | Responsibility |
@@ -357,7 +365,7 @@ PovitrPustok/
 │       │   │   ├── feature/{books,reader,search,reference,bookmarks,dailyreading}
 │       │   │   └── ui/{theme, HomeScreen, HomeViewModel}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
-│       ├── test/                        # 489 JVM unit tests + HTML fixtures
+│       ├── test/                        # 497 JVM unit tests + HTML fixtures
 │       └── androidTest/                 # 51 instrumented tests
 ├── gradle/libs.versions.toml            # version catalog
 ├── build.gradle.kts, settings.gradle.kts, gradle.properties
@@ -474,10 +482,10 @@ If the file is absent, the release signing config is simply left unset and the p
 
 | Suite | Count | Runner | Notes |
 |---|---|---|---|
-| JVM unit tests | **489** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
+| JVM unit tests | **497** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
 | Instrumented tests | **51** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 47 executed / 0 failed / 4 skips (3 FTS5-only + 1 network-dependent Daily Reading) |
 
-32 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
+34 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
 assets or Room. Room migrations are validated by `MigrationTestHelper` against the checked-in
 `app/schemas/` JSON; the debug variant carries those schemas as test assets, the release APK does
 not. The migration suite runs under `testDebugUnitTest`; `testReleaseUnitTest` is not a supported

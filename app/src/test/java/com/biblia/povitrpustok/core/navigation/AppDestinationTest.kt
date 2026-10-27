@@ -30,7 +30,7 @@ class AppDestinationTest {
         assertEquals("reader/jakob/3?verseId=42", AppDestination.reader("jakob", 3, 42L))
         assertEquals(
             AppDestination.READER,
-            "reader/{bookId}/{chapterPosition}?verseId={verseId}&verseStart={verseStart}&verseEnd={verseEnd}&passages={passages}&targetVerse={targetVerse}"
+            "reader/{bookId}/{chapterPosition}?verseId={verseId}&verseStart={verseStart}&verseEnd={verseEnd}&passages={passages}&targetVerse={targetVerse}&editionId={editionId}"
         )
     }
 
@@ -58,6 +58,17 @@ class AppDestinationTest {
             AppDestination.reader("jakob", 1, 7L, 5, 8)
         )
         assertEquals("reader/jakob/1", AppDestination.reader("jakob", 1, null, null, null))
+    }
+
+    @Test
+    fun edition_is_optional_on_reader_and_search_routes() {
+        assertEquals(
+            "reader/jakob/3?editionId=konkani-romi",
+            AppDestination.reader("jakob", 3, editionId = "konkani-romi")
+        )
+        assertEquals("search", AppDestination.search())
+        assertEquals("search?editionId=konkani-romi", AppDestination.search("konkani-romi"))
+        assertEquals("search?editionId={editionId}", AppDestination.SEARCH)
     }
 
     @Test
