@@ -15,10 +15,9 @@ import org.robolectric.RobolectricTestRunner
  * F1-07: migrations are validated against the exported Room schemas rather
  * than a hand-written DDL comparison.
  *
- * The v1 schema JSON is generated from the two v1 entities and checked in
- * beside the current v2 schema, so MigrationTestHelper can recreate a real
- * v1 database, run [AppDatabase.MIGRATION_1_2], and validate the result
- * against the exported v2 schema.
+ * The v1 and v2 schema JSONs are checked in beside the current v3 schema, so
+ * MigrationTestHelper can recreate a real older database, run the production
+ * migrations, and validate the result against the exported target schema.
  *
  * These tests run under `testDebugUnitTest`; the schema JSON is carried as a
  * debug-variant asset so Robolectric can read it. Release unit tests are not a
@@ -142,7 +141,96 @@ class AppDatabaseMigrationTest {
     }
 
     @Test
-    fun production_builder_applies_migration_1_to_2() {
+    fun migration_2_to_3_rebuilds_bookmarks_with_uuid_and_anchor() {
+        helper.createDatabase(TEST_DB, 2).apply {
+            execSQL(
+                "INSERT INTO bookmarks " +
+                    "(bookId,chapterId,chapterPosition,verseId,chapterNumber,verseStart,verseEnd,createdAt) " +
+                    "VALUES ('jakob',1,3,42,1,5,6,1000)"
+            )
+            close()
+        }
+
+        val database = helper.runMigrationsAndValidate(
+            TEST_DB,
+            3,
+            true,
+            AppDatabase.MIGRATION_2_3
+        )
+        try {
+            database.query(
+                "SELECT id,bookId,chapterPosition,verseStart,verseEnd,startOffset,endOffset," +
+                    "chapterNumber,createdAt,updatedAt,deletedAt FROM bookmarks"
+            ).use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(1, cursor.count)
+                assertTrue(
+                    "a canonical UUID must be generated",
+                    cursor.getString(0).matches(
+                        Regex("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")
+                    )
+                )
+                assertEquals("jakob", cursor.getString(1))
+                assertEquals(3, cursor.getInt(2))
+                assertEquals(5, cursor.getInt(3))
+                assertEquals(6, cursor.getInt(4))
+                assertEquals(0, cursor.getInt(5))
+                assertEquals(0, cursor.getInt(6))
+                assertEquals(1, cursor.getInt(7))
+                assertEquals(1000L, cursor.getLong(8))
+                assertEquals(1000L, cursor.getLong(9))
+                assertTrue("deletedAt starts null", cursor.isNull(10))
+            }
+
+            val columns = database.query("PRAGMA table_info(`bookmarks`)").use { cursor ->
+                buildSet {
+                    while (cursor.moveToNext()) add(cursor.getString(1))
+                }
+            }
+            assertTrue("corpus row ids are no longer stored", "chapterId" !in columns && "verseId" !in columns)
+            assertTrue("anchor columns are present", "startOffset" in columns && "endOffset" in columns)
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun migration_2_to_3_deduplicates_rows_that_share_an_anchor() {
+        helper.createDatabase(TEST_DB, 2).apply {
+            // v2 uniqueness was (bookId, chapterId, verseId); two corpus rows
+            // can therefore describe the same stable anchor.
+            execSQL(
+                "INSERT INTO bookmarks " +
+                    "(bookId,chapterId,chapterPosition,verseId,chapterNumber,verseStart,verseEnd,createdAt) " +
+                    "VALUES ('jakob',1,3,42,1,5,6,1000)"
+            )
+            execSQL(
+                "INSERT INTO bookmarks " +
+                    "(bookId,chapterId,chapterPosition,verseId,chapterNumber,verseStart,verseEnd,createdAt) " +
+                    "VALUES ('jakob',2,3,43,1,5,6,2000)"
+            )
+            close()
+        }
+
+        val database = helper.runMigrationsAndValidate(
+            TEST_DB,
+            3,
+            true,
+            AppDatabase.MIGRATION_2_3
+        )
+        try {
+            assertEquals(
+                "duplicate anchors collapse to one bookmark instead of crashing the upgrade",
+                1,
+                scalar(database, "SELECT count(*) FROM bookmarks")
+            )
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun production_builder_applies_all_migrations_to_v3() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         context.deleteDatabase(AppDatabase.DATABASE_NAME)
 
@@ -162,7 +250,7 @@ class AppDatabaseMigrationTest {
         val roomDatabase = AppDatabase.create(context)
         try {
             val database = roomDatabase.openHelper.writableDatabase
-            assertEquals("production builder must reach schema v2", 2, database.version)
+            assertEquals("production builder must reach schema v3", 3, database.version)
             assertEquals(1, scalar(database, "SELECT count(*) FROM bookmarks"))
             assertEquals(1, scalar(database, "SELECT count(*) FROM reading_state"))
             assertEquals(0, scalar(database, "SELECT count(*) FROM liturgical_day_cache"))

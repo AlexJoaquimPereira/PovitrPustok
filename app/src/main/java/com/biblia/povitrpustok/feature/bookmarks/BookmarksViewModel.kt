@@ -45,7 +45,7 @@ class BookmarksViewModel @Inject constructor(
         }
     }
 
-    fun removeBookmark(id: Long) {
+    fun removeBookmark(id: String) {
         viewModelScope.launch {
             bookmarkRepository.removeBookmarkById(id)
         }
@@ -59,13 +59,8 @@ class BookmarksViewModel @Inject constructor(
     fun restoreBookmark(bookmark: Bookmark) {
         viewModelScope.launch {
             bookmarkRepository.addBookmark(
-                bookId = bookmark.bookId,
-                chapterId = bookmark.chapterId,
-                chapterPosition = bookmark.chapterPosition,
-                chapterNumber = bookmark.chapterNumber,
-                verseId = bookmark.verseId,
-                verseStart = bookmark.verseStart,
-                verseEnd = bookmark.verseEnd
+                anchor = bookmark.anchor,
+                chapterNumber = bookmark.chapterNumber
             )
         }
     }

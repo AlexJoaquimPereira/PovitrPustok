@@ -7,6 +7,7 @@ import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import com.biblia.povitrpustok.data.app.AppDatabase
 import com.biblia.povitrpustok.data.app.BookmarkRepositoryImpl
+import com.biblia.povitrpustok.domain.model.VerseAnchor
 import com.biblia.povitrpustok.domain.repository.BookmarkRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -55,8 +56,8 @@ class BookmarksViewModelTest {
     @Test
     fun view_model_observes_and_deletes_bookmarks() = runBlocking {
         repository.addBookmark(
-            bookId = "jakob", chapterId = 1, chapterPosition = 1, chapterNumber = 1,
-            verseId = 5, verseStart = 5, verseEnd = 5
+            anchor = VerseAnchor("jakob", chapterPosition = 1, verseStart = 5, verseEnd = 5),
+            chapterNumber = 1
         )
 
         val viewModel = BookmarksViewModel(repository, FakeBookNameRepository())
@@ -65,7 +66,7 @@ class BookmarksViewModelTest {
         val state = viewModel.uiState.value
         assertEquals(1, state.bookmarks.size)
         assertEquals("jakob", state.bookmarks[0].bookId)
-        assertEquals(5L, state.bookmarks[0].verseId)
+        assertEquals(5, state.bookmarks[0].anchor.verseStart)
         assertNotNull(state.bookmarks[0].toReaderDestination())
 
         val removed = state.bookmarks[0]
@@ -77,9 +78,7 @@ class BookmarksViewModelTest {
         viewModel.restoreBookmark(removed)
         awaitCondition { viewModel.uiState.value.bookmarks.size == 1 }
         val restored = repository.observeBookmarks().first().single()
-        assertEquals(removed.bookId, restored.bookId)
-        assertEquals(removed.chapterId, restored.chapterId)
-        assertEquals(removed.verseId, restored.verseId)
-        assertEquals(removed.verseStart, restored.verseStart)
+        assertEquals(removed.anchor, restored.anchor)
+        assertEquals(removed.chapterNumber, restored.chapterNumber)
     }
 }

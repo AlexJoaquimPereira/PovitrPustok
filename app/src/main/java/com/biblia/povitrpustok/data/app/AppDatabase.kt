@@ -14,9 +14,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * cache). It is completely separate from the immutable Bible SQLite
  * assets, which are never written or migrated.
  *
- * Version 2 adds the date-keyed liturgical cache
- * (corrective phase Issue 10) via [MIGRATION_1_2] — existing bookmarks and
- * reading state are preserved (no destructive fallback).
+ * Version 2 adds the date-keyed liturgical cache (corrective phase Issue 10)
+ * via [MIGRATION_1_2]. Version 3 replaces corpus-row-id bookmark identity with
+ * a stable [com.biblia.povitrpustok.domain.model.VerseAnchor], an app-owned
+ * UUID, and updated/deleted timestamps via [MIGRATION_2_3]. Both migrations
+ * preserve existing user rows.
  */
 @Database(
     entities = [
@@ -25,7 +27,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         LiturgicalDayCacheEntity::class,
         LiturgicalReadingEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -70,13 +72,60 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** Rebuilds bookmarks with a UUID and the stable anchor index. */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `bookmarks_new` (" +
+                        "`id` TEXT NOT NULL, " +
+                        "`bookId` TEXT NOT NULL, " +
+                        "`chapterPosition` INTEGER NOT NULL, " +
+                        "`verseStart` INTEGER NOT NULL, " +
+                        "`verseEnd` INTEGER NOT NULL, " +
+                        "`startOffset` INTEGER NOT NULL, " +
+                        "`endOffset` INTEGER NOT NULL, " +
+                        "`chapterNumber` INTEGER NOT NULL, " +
+                        "`createdAt` INTEGER NOT NULL, " +
+                        "`updatedAt` INTEGER NOT NULL, " +
+                        "`deletedAt` INTEGER, " +
+                        "PRIMARY KEY(`id`))"
+                )
+                // Create the anchor index before copying so duplicate anchors
+                // from the old row-id identity collapse instead of aborting
+                // the upgrade. Oldest row wins.
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS `index_bookmarks_anchor` " +
+                        "ON `bookmarks_new` (`bookId`, `chapterPosition`, `verseStart`, " +
+                        "`verseEnd`, `startOffset`, `endOffset`)"
+                )
+                db.execSQL(
+                    "INSERT OR IGNORE INTO `bookmarks_new` (" +
+                        "`id`,`bookId`,`chapterPosition`,`verseStart`,`verseEnd`," +
+                        "`startOffset`,`endOffset`,`chapterNumber`,`createdAt`,`updatedAt`,`deletedAt`) " +
+                        "SELECT " +
+                        "lower(hex(randomblob(4))) || '-' || " +
+                        "lower(hex(randomblob(2))) || '-' || " +
+                        "'4' || substr(lower(hex(randomblob(2))), 2) || '-' || " +
+                        "substr('89ab', abs(random()) % 4 + 1, 1) || " +
+                        "substr(lower(hex(randomblob(2))), 2) || '-' || " +
+                        "lower(hex(randomblob(6))), " +
+                        "`bookId`, `chapterPosition`, " +
+                        "`verseStart`, `verseEnd`, 0, 0, `chapterNumber`, `createdAt`, " +
+                        "`createdAt`, NULL FROM `bookmarks` " +
+                        "ORDER BY `createdAt` ASC, `id` ASC"
+                )
+                db.execSQL("DROP TABLE `bookmarks`")
+                db.execSQL("ALTER TABLE `bookmarks_new` RENAME TO `bookmarks`")
+            }
+        }
+
         fun create(context: Context): AppDatabase =
             Room.databaseBuilder(
                 context.applicationContext,
                 AppDatabase::class.java,
                 DATABASE_NAME
             )
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 // Audit P3-8: installing an older build over a newer database
                 // must not crash. Only app state (bookmarks, reading position,
                 // liturgical cache) lives here; the corpus is separate and

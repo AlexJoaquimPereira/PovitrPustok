@@ -8,16 +8,16 @@ import org.junit.Test
 class BookmarkDestinationTest {
 
     @Test
-    fun destination_uses_stable_location_not_corpus_rowids() {
+    fun destination_uses_stable_anchor_not_corpus_rowids() {
         val bookmark = Bookmark(
-            id = 1,
-            bookId = "jakob",
-            chapterId = 999_999, // stale corpus row id
-            chapterPosition = 3,
-            verseId = 888_888, // stale corpus row id
+            id = "8d5e...",
+            anchor = VerseAnchor(
+                bookId = "jakob",
+                chapterPosition = 3,
+                verseStart = 5,
+                verseEnd = 6
+            ),
             chapterNumber = 1,
-            verseStart = 5,
-            verseEnd = 6,
             createdAt = 0
         )
 

@@ -15,7 +15,7 @@ the app never re-imports, rewrites or "fixes" it.
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 487 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 51 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
+| **Tests** | 489 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 51 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
 
 ---
 
@@ -343,7 +343,7 @@ in the app:
 PovitrPustok/
 ├── app/
 │   ├── build.gradle.kts
-│   ├── schemas/                         # exported Room schemas (v1, v2)
+│   ├── schemas/                         # exported Room schemas (v1–v3)
 │   └── src/
 │       ├── main/
 │       │   ├── AndroidManifest.xml
@@ -357,7 +357,7 @@ PovitrPustok/
 │       │   │   ├── feature/{books,reader,search,reference,bookmarks,dailyreading}
 │       │   │   └── ui/{theme, HomeScreen, HomeViewModel}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
-│       ├── test/                        # 487 JVM unit tests + HTML fixtures
+│       ├── test/                        # 489 JVM unit tests + HTML fixtures
 │       └── androidTest/                 # 51 instrumented tests
 ├── gradle/libs.versions.toml            # version catalog
 ├── build.gradle.kts, settings.gradle.kts, gradle.properties
@@ -474,10 +474,10 @@ If the file is absent, the release signing config is simply left unset and the p
 
 | Suite | Count | Runner | Notes |
 |---|---|---|---|
-| JVM unit tests | **487** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
+| JVM unit tests | **489** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
 | Instrumented tests | **51** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 47 executed / 0 failed / 4 skips (3 FTS5-only + 1 network-dependent Daily Reading) |
 
-29 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
+32 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
 assets or Room. Room migrations are validated by `MigrationTestHelper` against the checked-in
 `app/schemas/` JSON; the debug variant carries those schemas as test assets, the release APK does
 not. The migration suite runs under `testDebugUnitTest`; `testReleaseUnitTest` is not a supported

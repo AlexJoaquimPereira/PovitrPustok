@@ -2,7 +2,9 @@ package com.biblia.povitrpustok.feature.reader
 
 import com.biblia.povitrpustok.domain.model.Bookmark
 import com.biblia.povitrpustok.domain.model.ReadingState
+import com.biblia.povitrpustok.domain.model.VerseAnchor
 import com.biblia.povitrpustok.domain.repository.BookmarkRepository
+import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -17,45 +19,36 @@ class FakeBookmarkRepository : BookmarkRepository {
 
     override fun observeBookmarks(): Flow<List<Bookmark>> = _bookmarks
 
-    override fun observeBookmarksForChapter(bookId: String, chapterId: Long): Flow<List<Bookmark>> =
+    override fun observeBookmarksForChapter(
+        bookId: String,
+        chapterPosition: Int
+    ): Flow<List<Bookmark>> =
         _bookmarks.map { bookmarks ->
-            bookmarks.filter { it.bookId == bookId && it.chapterId == chapterId }
+            bookmarks.filter {
+                it.anchor.bookId == bookId && it.anchor.chapterPosition == chapterPosition
+            }
         }
 
-    override suspend fun isBookmarked(bookId: String, chapterId: Long, verseId: Long): Boolean =
-        _bookmarks.value.any { it.bookId == bookId && it.chapterId == chapterId && it.verseId == verseId }
+    override suspend fun isBookmarked(anchor: VerseAnchor): Boolean =
+        _bookmarks.value.any { it.anchor == anchor }
 
-    override suspend fun addBookmark(
-        bookId: String,
-        chapterId: Long,
-        chapterPosition: Int,
-        chapterNumber: Int,
-        verseId: Long,
-        verseStart: Int,
-        verseEnd: Int
-    ): Bookmark? {
+    override suspend fun addBookmark(anchor: VerseAnchor, chapterNumber: Int): Bookmark? {
+        if (_bookmarks.value.any { it.anchor == anchor }) return null
         val bookmark = Bookmark(
-            id = _bookmarks.value.size + 1L,
-            bookId = bookId,
-            chapterId = chapterId,
-            chapterPosition = chapterPosition,
-            verseId = verseId,
+            id = UUID.randomUUID().toString(),
+            anchor = anchor,
             chapterNumber = chapterNumber,
-            verseStart = verseStart,
-            verseEnd = verseEnd,
             createdAt = System.currentTimeMillis()
         )
         _bookmarks.value = _bookmarks.value + bookmark
         return bookmark
     }
 
-    override suspend fun removeBookmark(bookId: String, chapterId: Long, verseId: Long) {
-        _bookmarks.value = _bookmarks.value.filterNot {
-            it.bookId == bookId && it.chapterId == chapterId && it.verseId == verseId
-        }
+    override suspend fun removeBookmark(anchor: VerseAnchor) {
+        _bookmarks.value = _bookmarks.value.filterNot { it.anchor == anchor }
     }
 
-    override suspend fun removeBookmarkById(id: Long) {
+    override suspend fun removeBookmarkById(id: String) {
         _bookmarks.value = _bookmarks.value.filterNot { it.id == id }
     }
 

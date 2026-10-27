@@ -6,8 +6,10 @@ import com.biblia.povitrpustok.core.result.BibleBookNotFoundException
 import com.biblia.povitrpustok.core.result.BibleChapterNotFoundException
 import com.biblia.povitrpustok.core.result.BibleDataException
 import com.biblia.povitrpustok.domain.model.BibleCatalog
+import com.biblia.povitrpustok.domain.model.Bookmark
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.ReaderPassageSpec
+import com.biblia.povitrpustok.domain.model.VerseAnchor
 import com.biblia.povitrpustok.domain.repository.BibleRepository
 import com.biblia.povitrpustok.domain.repository.BookNameRepository
 import com.biblia.povitrpustok.domain.repository.BookmarkRepository
@@ -175,7 +177,9 @@ class ReaderViewModel @Inject constructor(
                     )
                     observePassageBookmarks(
                         bookId = bookId,
-                        chapterIds = chapterContents.values.map { it.chapter.id }.distinct()
+                        chapterPositions = chapterContents.values
+                            .map { it.chapter.position }
+                            .distinct()
                     )
                     bookmarkRepository.updateReadingState(bookId, firstContent.chapter.position)
                     return@launch
@@ -201,7 +205,7 @@ class ReaderViewModel @Inject constructor(
                         target == null,
                     passage = passage
                 )
-                observeChapterBookmarks(bookId, content.chapter.id)
+                observeChapterBookmarks(bookId, content.chapter.position)
                 bookmarkRepository.updateReadingState(bookId, chapterPosition)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
@@ -259,27 +263,58 @@ class ReaderViewModel @Inject constructor(
      * a verse in the second chapter of a cross-chapter reading must show its
      * bookmark tab too.
      */
-    private fun observePassageBookmarks(bookId: String, chapterIds: List<Long>) {
+    private fun observePassageBookmarks(bookId: String, chapterPositions: List<Int>) {
         bookmarkObservation?.cancel()
         bookmarkObservation = viewModelScope.launch {
             combine(
-                chapterIds.map { bookmarkRepository.observeBookmarksForChapter(bookId, it) }
+                chapterPositions.map {
+                    bookmarkRepository.observeBookmarksForChapter(bookId, it)
+                }
             ) { chapterLists ->
-                chapterLists.flatMap { it }.map { it.verseId }.toSet()
-            }.collect { ids ->
-                _uiState.update { it.copy(bookmarkedVerseIds = ids) }
+                chapterLists.flatMap { it }
+            }.collect { bookmarks ->
+                _uiState.update { state ->
+                    state.copy(bookmarkedVerseIds = state.verseIdsFor(bookmarks))
+                }
             }
         }
     }
 
     /** Observes the chapter-scoped bookmark set (Phase 9, no N+1). */
-    private fun observeChapterBookmarks(bookId: String, chapterId: Long) {
+    private fun observeChapterBookmarks(bookId: String, chapterPosition: Int) {
         bookmarkObservation?.cancel()
         bookmarkObservation = viewModelScope.launch {
-            bookmarkRepository.observeBookmarksForChapter(bookId, chapterId).collect { bookmarks ->
-                _uiState.update { it.copy(bookmarkedVerseIds = bookmarks.map { bookmark -> bookmark.verseId }.toSet()) }
-            }
+            bookmarkRepository.observeBookmarksForChapter(bookId, chapterPosition)
+                .collect { bookmarks ->
+                    _uiState.update { state ->
+                        state.copy(bookmarkedVerseIds = state.verseIdsFor(bookmarks))
+                    }
+                }
         }
+    }
+
+    /**
+     * Maps stable bookmark anchors to the row ids of the currently rendered
+     * verses. The row id is presentation state only; the bookmark itself is
+     * never keyed by it.
+     */
+    private fun ReaderUiState.verseIdsFor(
+        bookmarks: List<Bookmark>
+    ): Set<Long> {
+        val chapters = if (passageChapters.isNotEmpty()) {
+            passageChapters.map { part -> part.chapter.position to part.verses }
+        } else {
+            listOfNotNull(chapter?.let { it.position to verses })
+        }
+        return bookmarks.mapNotNull { bookmark ->
+            val versesForChapter = chapters.firstOrNull {
+                it.first == bookmark.anchor.chapterPosition
+            }?.second.orEmpty()
+            versesForChapter.firstOrNull { verse ->
+                verse.verseStart == bookmark.anchor.verseStart &&
+                    verse.verseEnd == bookmark.anchor.verseEnd
+            }?.id
+        }.toSet()
     }
 
     /**
@@ -330,29 +365,25 @@ class ReaderViewModel @Inject constructor(
             // the persisted state, not the possibly-stale UI snapshot. Rapid
             // taps therefore alternate add/remove instead of duplicating.
             bookmarkToggleMutex.withLock {
-                val bookmarked = bookmarkRepository.isBookmarked(bookId, chapter.id, verseId)
+                val anchor = VerseAnchor(
+                    bookId = bookId,
+                    chapterPosition = chapter.position,
+                    verseStart = verse.verseStart,
+                    verseEnd = verse.verseEnd
+                )
+                val bookmarked = bookmarkRepository.isBookmarked(anchor)
                 if (bookmarked) {
-                    bookmarkRepository.removeBookmark(bookId, chapter.id, verseId)
+                    bookmarkRepository.removeBookmark(anchor)
                 } else {
                     bookmarkRepository.addBookmark(
-                        bookId = bookId,
-                        chapterId = chapter.id,
-                        chapterPosition = chapter.position,
-                        chapterNumber = chapter.number,
-                        verseId = verse.id,
-                        verseStart = verse.verseStart,
-                        verseEnd = verse.verseEnd
+                        anchor = anchor,
+                        chapterNumber = chapter.number
                     )
                 }
                 _events.tryEmit(
                     ReaderEvent.BookmarkChanged(
-                        bookId = bookId,
-                        chapterId = chapter.id,
-                        chapterPosition = chapter.position,
+                        anchor = anchor,
                         chapterNumber = chapter.number,
-                        verseId = verseId,
-                        verseStart = verse.verseStart,
-                        verseEnd = verse.verseEnd,
                         added = !bookmarked,
                         bookName = state.bookDisplayName
                     )
@@ -371,20 +402,11 @@ class ReaderViewModel @Inject constructor(
         viewModelScope.launch {
             bookmarkToggleMutex.withLock {
                 if (event.added) {
-                    bookmarkRepository.removeBookmark(
-                        bookId = event.bookId,
-                        chapterId = event.chapterId,
-                        verseId = event.verseId
-                    )
+                    bookmarkRepository.removeBookmark(event.anchor)
                 } else {
                     bookmarkRepository.addBookmark(
-                        bookId = event.bookId,
-                        chapterId = event.chapterId,
-                        chapterPosition = event.chapterPosition,
-                        chapterNumber = event.chapterNumber,
-                        verseId = event.verseId,
-                        verseStart = event.verseStart,
-                        verseEnd = event.verseEnd
+                        anchor = event.anchor,
+                        chapterNumber = event.chapterNumber
                     )
                 }
             }

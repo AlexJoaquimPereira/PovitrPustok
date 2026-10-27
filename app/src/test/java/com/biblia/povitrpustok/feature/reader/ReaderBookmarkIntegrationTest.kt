@@ -11,6 +11,7 @@ import com.biblia.povitrpustok.core.database.AssetBibleDatabaseProvider
 import com.biblia.povitrpustok.data.app.AppDatabase
 import com.biblia.povitrpustok.data.app.BookmarkRepositoryImpl
 import com.biblia.povitrpustok.data.bible.BibleRepositoryImpl
+import com.biblia.povitrpustok.domain.model.VerseAnchor
 import com.biblia.povitrpustok.domain.repository.BibleRepository
 import com.biblia.povitrpustok.domain.repository.BookmarkRepository
 import kotlinx.coroutines.flow.first
@@ -31,7 +32,7 @@ import org.robolectric.Shadows.shadowOf
 /**
  * Reader bookmark integration over the real corpus and the real mutable
  * AppDatabase (Phase 9 §24–§26): add/remove, coexistence with the target
- * highlight, Job duplicate-chapter bookmarks distinguishable by chapterId,
+ * highlight, Job duplicate-chapter bookmarks distinguishable by chapter position,
  * reading state, and the Bible-content separation invariant.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -93,12 +94,34 @@ class ReaderBookmarkIntegrationTest {
         // add
         viewModel.toggleBookmark()
         awaitCondition { viewModel.uiState.value.bookmarkedVerseIds.contains(firstVerse.id) }
-        assertTrue(runBlocking { bookmarkRepository.isBookmarked("jakob", viewModel.uiState.value.chapter!!.id, firstVerse.id) })
+        assertTrue(
+            runBlocking {
+                bookmarkRepository.isBookmarked(
+                    VerseAnchor(
+                        bookId = "jakob",
+                        chapterPosition = viewModel.uiState.value.chapter!!.position,
+                        verseStart = firstVerse.verseStart,
+                        verseEnd = firstVerse.verseEnd
+                    )
+                )
+            }
+        )
 
         // remove
         viewModel.toggleBookmark()
         awaitCondition { !viewModel.uiState.value.bookmarkedVerseIds.contains(firstVerse.id) }
-        assertFalse(runBlocking { bookmarkRepository.isBookmarked("jakob", viewModel.uiState.value.chapter!!.id, firstVerse.id) })
+        assertFalse(
+            runBlocking {
+                bookmarkRepository.isBookmarked(
+                    VerseAnchor(
+                        bookId = "jakob",
+                        chapterPosition = viewModel.uiState.value.chapter!!.position,
+                        verseStart = firstVerse.verseStart,
+                        verseEnd = firstVerse.verseEnd
+                    )
+                )
+            }
+        )
     }
 
     @Test
@@ -120,7 +143,7 @@ class ReaderBookmarkIntegrationTest {
     }
 
     @Test
-    fun job_duplicate_chapter_bookmarks_are_distinguishable_by_chapter_id() {
+    fun job_duplicate_chapter_bookmarks_are_distinguishable_by_chapter_position() {
         val jobChapter26Verse = runBlocking { bibleRepository.getChapter("Jobachem_Pustok", 26).verses.first() }
         val jobChapter27Verse = runBlocking { bibleRepository.getChapter("Jobachem_Pustok", 27).verses.first() }
         assertEquals("both Job records carry number 26", 26, jobChapter26Verse.chapterNumber)
@@ -142,7 +165,7 @@ class ReaderBookmarkIntegrationTest {
         val bookmarks = runBlocking { bookmarkRepository.observeBookmarks().first() }
         assertEquals("two separate bookmarks", 2, bookmarks.size)
         assertEquals("chapterNumber is 26 for both", setOf(26), bookmarks.map { it.chapterNumber }.toSet())
-        assertEquals("chapterIds must differ", 2, bookmarks.map { it.chapterId }.toSet().size)
+        assertEquals("chapter positions must differ", 2, bookmarks.map { it.anchor.chapterPosition }.toSet().size)
         assertTrue(bookmarks.any { it.chapterPosition == 26 })
         assertTrue(bookmarks.any { it.chapterPosition == 27 })
     }
@@ -162,10 +185,18 @@ class ReaderBookmarkIntegrationTest {
         awaitCondition { viewModel.uiState.value.bookmarkedVerseIds.contains(rangeVerse.id) }
 
         val bookmarks = runBlocking { bookmarkRepository.observeBookmarks().first() }
-        val saved = bookmarks.first { it.chapterId == chapter16.id }
-        assertEquals(11, saved.verseStart)
-        assertEquals(12, saved.verseEnd)
-        assertEquals("one source record", 1, bookmarks.count { it.chapterId == chapter16.id && it.verseId == rangeVerse.id })
+        val saved = bookmarks.first { it.anchor.chapterPosition == chapter16.position }
+        assertEquals(11, saved.anchor.verseStart)
+        assertEquals(12, saved.anchor.verseEnd)
+        assertEquals(
+            "one source record",
+            1,
+            bookmarks.count {
+                it.anchor.chapterPosition == chapter16.position &&
+                    it.anchor.verseStart == rangeVerse.verseStart &&
+                    it.anchor.verseEnd == rangeVerse.verseEnd
+            }
+        )
     }
 
     @Test

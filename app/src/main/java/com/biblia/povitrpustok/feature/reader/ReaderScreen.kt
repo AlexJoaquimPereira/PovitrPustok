@@ -160,7 +160,7 @@ fun ReaderScreen(
                         },
                         event.bookName,
                         event.chapterNumber,
-                        event.verseStart
+                        event.anchor.verseStart
                     )
                     val result = snackbarHostState.showSnackbar(
                         message = message,

@@ -2,7 +2,9 @@ package com.biblia.povitrpustok.data.app
 
 import com.biblia.povitrpustok.domain.model.Bookmark
 import com.biblia.povitrpustok.domain.model.ReadingState
+import com.biblia.povitrpustok.domain.model.VerseAnchor
 import com.biblia.povitrpustok.domain.repository.BookmarkRepository
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
@@ -27,59 +29,54 @@ class BookmarkRepositoryImpl @Inject constructor(
     override fun observeBookmarks(): Flow<List<Bookmark>> =
         bookmarkDao.observeAll().map { entities -> entities.map { it.toDomain() } }
 
-    override fun observeBookmarksForChapter(bookId: String, chapterId: Long): Flow<List<Bookmark>> =
-        bookmarkDao.observeForChapter(bookId, chapterId).map { entities -> entities.map { it.toDomain() } }
+    override fun observeBookmarksForChapter(
+        bookId: String,
+        chapterPosition: Int
+    ): Flow<List<Bookmark>> =
+        bookmarkDao.observeForChapter(bookId, chapterPosition)
+            .map { entities -> entities.map { it.toDomain() } }
 
-    override suspend fun isBookmarked(bookId: String, chapterId: Long, verseId: Long): Boolean =
+    override suspend fun isBookmarked(anchor: VerseAnchor): Boolean =
         withContext(Dispatchers.IO) {
-            bookmarkDao.isBookmarked(bookId, chapterId, verseId)
+            bookmarkDao.isBookmarked(
+                bookId = anchor.bookId,
+                chapterPosition = anchor.chapterPosition,
+                verseStart = anchor.verseStart,
+                verseEnd = anchor.verseEnd,
+                startOffset = anchor.startOffset,
+                endOffset = anchor.endOffset
+            )
         }
 
     override suspend fun addBookmark(
-        bookId: String,
-        chapterId: Long,
-        chapterPosition: Int,
-        chapterNumber: Int,
-        verseId: Long,
-        verseStart: Int,
-        verseEnd: Int
+        anchor: VerseAnchor,
+        chapterNumber: Int
     ): Bookmark? = withContext(Dispatchers.IO) {
-        val createdAt = System.currentTimeMillis()
-        val rowId = bookmarkDao.insert(
-            BookmarkEntity(
-                bookId = bookId,
-                chapterId = chapterId,
-                chapterPosition = chapterPosition,
-                verseId = verseId,
-                chapterNumber = chapterNumber,
-                verseStart = verseStart,
-                verseEnd = verseEnd,
-                createdAt = createdAt
-            )
+        val now = System.currentTimeMillis()
+        val bookmark = Bookmark(
+            id = UUID.randomUUID().toString(),
+            anchor = anchor,
+            chapterNumber = chapterNumber,
+            createdAt = now,
+            updatedAt = now
         )
-        if (rowId == -1L) {
-            null
-        } else {
-            Bookmark(
-                id = rowId,
-                bookId = bookId,
-                chapterId = chapterId,
-                chapterPosition = chapterPosition,
-                verseId = verseId,
-                chapterNumber = chapterNumber,
-                verseStart = verseStart,
-                verseEnd = verseEnd,
-                createdAt = createdAt
-            )
-        }
+        val rowId = bookmarkDao.insert(bookmark.toEntity())
+        if (rowId == -1L) null else bookmark
     }
 
-    override suspend fun removeBookmark(bookId: String, chapterId: Long, verseId: Long) =
+    override suspend fun removeBookmark(anchor: VerseAnchor) =
         withContext(Dispatchers.IO) {
-            bookmarkDao.deleteByLocation(bookId, chapterId, verseId)
+            bookmarkDao.deleteByAnchor(
+                bookId = anchor.bookId,
+                chapterPosition = anchor.chapterPosition,
+                verseStart = anchor.verseStart,
+                verseEnd = anchor.verseEnd,
+                startOffset = anchor.startOffset,
+                endOffset = anchor.endOffset
+            )
         }
 
-    override suspend fun removeBookmarkById(id: Long) =
+    override suspend fun removeBookmarkById(id: String) =
         withContext(Dispatchers.IO) {
             bookmarkDao.deleteById(id)
         }
@@ -103,17 +100,36 @@ class BookmarkRepositoryImpl @Inject constructor(
             readingStateDao.clear()
         }
 
+    private fun Bookmark.toEntity(): BookmarkEntity =
+        BookmarkEntity(
+            id = id,
+            bookId = anchor.bookId,
+            chapterPosition = anchor.chapterPosition,
+            verseStart = anchor.verseStart,
+            verseEnd = anchor.verseEnd,
+            startOffset = anchor.startOffset,
+            endOffset = anchor.endOffset,
+            chapterNumber = chapterNumber,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt
+        )
+
     private fun BookmarkEntity.toDomain(): Bookmark =
         Bookmark(
             id = id,
-            bookId = bookId,
-            chapterId = chapterId,
-            chapterPosition = chapterPosition,
-            verseId = verseId,
+            anchor = VerseAnchor(
+                bookId = bookId,
+                chapterPosition = chapterPosition,
+                verseStart = verseStart,
+                verseEnd = verseEnd,
+                startOffset = startOffset,
+                endOffset = endOffset
+            ),
             chapterNumber = chapterNumber,
-            verseStart = verseStart,
-            verseEnd = verseEnd,
-            createdAt = createdAt
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt
         )
 
     private fun ReadingStateEntity.toDomain(): ReadingState =

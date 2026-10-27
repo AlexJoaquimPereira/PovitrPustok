@@ -2,41 +2,33 @@ package com.biblia.povitrpustok.domain.repository
 
 import com.biblia.povitrpustok.domain.model.Bookmark
 import com.biblia.povitrpustok.domain.model.ReadingState
+import com.biblia.povitrpustok.domain.model.VerseAnchor
 import kotlinx.coroutines.flow.Flow
 
 /**
  * Bookmark + reading-state repository (implementation plan §6, §19).
  *
- * Exposes domain models only — Room entities never leave the data layer.
- * Bookmark operations touch only the mutable application database and
- * never the immutable Bible databases.
+ * Bookmark identity is the stable [VerseAnchor], never a corpus row id.
+ * Reading state already uses the stable book id + chapter position.
  */
 interface BookmarkRepository {
 
     fun observeBookmarks(): Flow<List<Bookmark>>
 
-    /** Bookmarks within one chapter — the chapter-scoped query the Reader uses. */
-    fun observeBookmarksForChapter(bookId: String, chapterId: Long): Flow<List<Bookmark>>
+    /** Bookmarks within one chapter position — the chapter-scoped Reader query. */
+    fun observeBookmarksForChapter(bookId: String, chapterPosition: Int): Flow<List<Bookmark>>
 
-    suspend fun isBookmarked(bookId: String, chapterId: Long, verseId: Long): Boolean
+    suspend fun isBookmarked(anchor: VerseAnchor): Boolean
 
     /**
-     * Adds a bookmark for the exact location. Adding the same location
-     * again is a no-op (returns null) — duplicates are not created.
+     * Adds a bookmark for the exact anchor. Adding the same anchor again is
+     * a no-op (returns null) — duplicates are not created.
      */
-    suspend fun addBookmark(
-        bookId: String,
-        chapterId: Long,
-        chapterPosition: Int,
-        chapterNumber: Int,
-        verseId: Long,
-        verseStart: Int,
-        verseEnd: Int
-    ): Bookmark?
+    suspend fun addBookmark(anchor: VerseAnchor, chapterNumber: Int): Bookmark?
 
-    suspend fun removeBookmark(bookId: String, chapterId: Long, verseId: Long)
+    suspend fun removeBookmark(anchor: VerseAnchor)
 
-    suspend fun removeBookmarkById(id: Long)
+    suspend fun removeBookmarkById(id: String)
 
     fun observeReadingState(): Flow<ReadingState?>
 

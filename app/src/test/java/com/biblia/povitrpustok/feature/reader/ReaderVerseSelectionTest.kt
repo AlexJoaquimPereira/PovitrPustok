@@ -13,6 +13,7 @@ import com.biblia.povitrpustok.domain.repository.BibleRepository
 import com.biblia.povitrpustok.domain.repository.BookmarkRepository
 import com.biblia.povitrpustok.domain.model.Bookmark
 import com.biblia.povitrpustok.domain.model.ReadingState
+import com.biblia.povitrpustok.domain.model.VerseAnchor
 import com.biblia.povitrpustok.core.result.BibleBookNotFoundException
 import com.biblia.povitrpustok.core.result.BibleChapterNotFoundException
 import kotlinx.coroutines.Dispatchers
@@ -98,30 +99,32 @@ class ReaderVerseSelectionTest {
         val added = mutableListOf<Bookmark>()
 
         override fun observeBookmarks(): Flow<List<Bookmark>> = bookmarks
-        override fun observeBookmarksForChapter(bookId: String, chapterId: Long): Flow<List<Bookmark>> = bookmarks
+        override fun observeBookmarksForChapter(
+            bookId: String,
+            chapterPosition: Int
+        ): Flow<List<Bookmark>> = bookmarks
 
-        override suspend fun isBookmarked(bookId: String, chapterId: Long, verseId: Long): Boolean =
-            bookmarks.value.any { it.bookId == bookId && it.chapterId == chapterId && it.verseId == verseId }
+        override suspend fun isBookmarked(anchor: VerseAnchor): Boolean =
+            bookmarks.value.any { it.anchor == anchor }
 
-        override suspend fun addBookmark(
-            bookId: String, chapterId: Long, chapterPosition: Int, chapterNumber: Int,
-            verseId: Long, verseStart: Int, verseEnd: Int
-        ): Bookmark? {
+        override suspend fun addBookmark(anchor: VerseAnchor, chapterNumber: Int): Bookmark? {
+            if (bookmarks.value.any { it.anchor == anchor }) return null
             val bookmark = Bookmark(
-                id = bookmarks.value.size + 1L, bookId = bookId, chapterId = chapterId,
-                chapterPosition = chapterPosition, verseId = verseId, chapterNumber = chapterNumber,
-                verseStart = verseStart, verseEnd = verseEnd, createdAt = System.currentTimeMillis()
+                id = java.util.UUID.randomUUID().toString(),
+                anchor = anchor,
+                chapterNumber = chapterNumber,
+                createdAt = System.currentTimeMillis()
             )
             bookmarks.value = bookmarks.value + bookmark
             added += bookmark
             return bookmark
         }
 
-        override suspend fun removeBookmark(bookId: String, chapterId: Long, verseId: Long) {
-            bookmarks.value = bookmarks.value.filterNot { it.bookId == bookId && it.chapterId == chapterId && it.verseId == verseId }
+        override suspend fun removeBookmark(anchor: VerseAnchor) {
+            bookmarks.value = bookmarks.value.filterNot { it.anchor == anchor }
         }
 
-        override suspend fun removeBookmarkById(id: Long) {
+        override suspend fun removeBookmarkById(id: String) {
             bookmarks.value = bookmarks.value.filterNot { it.id == id }
         }
 
@@ -176,7 +179,7 @@ class ReaderVerseSelectionTest {
         runCurrent()
 
         assertEquals(1, bookmarks.added.size)
-        assertEquals("bookmark must target verse 5", verse5, bookmarks.added.single().verseId)
+        assertEquals("bookmark must target verse 5", 5, bookmarks.added.single().anchor.verseStart)
 
         viewModel.toggleBookmark()
         runCurrent()
@@ -195,12 +198,12 @@ class ReaderVerseSelectionTest {
         viewModel.onVerseSelected(verse5); runCurrent(); viewModel.toggleBookmark(); runCurrent()
         viewModel.onVerseSelected(verse7); runCurrent(); viewModel.toggleBookmark(); runCurrent()
 
-        val ids = bookmarks.bookmarks.value.map { it.verseId }.toSet()
-        assertEquals(setOf(verse5, verse7), ids)
+        val ids = bookmarks.bookmarks.value.map { it.anchor.verseStart }.toSet()
+        assertEquals(setOf(5, 7), ids)
 
         // removing one leaves the other
         viewModel.onVerseSelected(verse5); runCurrent(); viewModel.toggleBookmark(); runCurrent()
-        assertEquals(setOf(verse7), bookmarks.bookmarks.value.map { it.verseId }.toSet())
+        assertEquals(setOf(7), bookmarks.bookmarks.value.map { it.anchor.verseStart }.toSet())
     }
 
     @Test

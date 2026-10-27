@@ -11,6 +11,7 @@ import com.biblia.povitrpustok.domain.model.ChapterContent
 import com.biblia.povitrpustok.domain.model.Heading
 import com.biblia.povitrpustok.domain.model.IntroductionBlock
 import com.biblia.povitrpustok.domain.model.ReaderPassageSpec
+import com.biblia.povitrpustok.domain.model.VerseAnchor
 import com.biblia.povitrpustok.domain.model.Verse
 import com.biblia.povitrpustok.domain.repository.BibleRepository
 import kotlinx.coroutines.CompletableDeferred
@@ -166,13 +167,13 @@ class ReaderViewModelTest {
             )
             val bookmarks = FakeBookmarkRepository()
             bookmarks.addBookmark(
-                bookId = bookId,
-                chapterId = ch2.id,
-                chapterPosition = ch2.position,
-                chapterNumber = ch2.number,
-                verseId = 2000L,
-                verseStart = 1,
-                verseEnd = 1
+                anchor = VerseAnchor(
+                    bookId = bookId,
+                    chapterPosition = ch2.position,
+                    verseStart = 1,
+                    verseEnd = 1
+                ),
+                chapterNumber = ch2.number
             )
             val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository())
 
@@ -226,11 +227,11 @@ class ReaderViewModelTest {
 
             assertTrue(
                 "the bookmark must be stored against chapter 2",
-                bookmarks.isBookmarked(bookId, ch2.id, 2000L)
+                bookmarks.isBookmarked(VerseAnchor(bookId, ch2.position, 1, 1))
             )
             assertFalse(
                 "it must not be stored against the first chapter",
-                bookmarks.isBookmarked(bookId, ch1.id, 2000L)
+                bookmarks.isBookmarked(VerseAnchor(bookId, ch1.position, 1, 1))
             )
         }
 
@@ -323,15 +324,15 @@ class ReaderViewModelTest {
             assertEquals(1, events.size)
             val event = events.single() as ReaderEvent.BookmarkChanged
             assertTrue(event.added)
-            assertEquals(bookId, event.bookId)
-            assertEquals(ch1.id, event.chapterId)
-            assertTrue(bookmarks.isBookmarked(bookId, ch1.id, verseId))
+            assertEquals(bookId, event.anchor.bookId)
+            assertEquals(ch1.position, event.anchor.chapterPosition)
+            assertTrue(bookmarks.isBookmarked(VerseAnchor(bookId, ch1.position, 1, 1)))
 
             // Undo reverses the same verse, without a second confirmation.
             viewModel.undoBookmarkChange(event)
             advanceUntilIdle()
             assertEquals(1, events.size)
-            assertFalse(bookmarks.isBookmarked(bookId, ch1.id, verseId))
+            assertFalse(bookmarks.isBookmarked(VerseAnchor(bookId, ch1.position, 1, 1)))
         }
 
     @Test
@@ -362,7 +363,7 @@ class ReaderViewModelTest {
             viewModel.toggleBookmarkFor(1000L)
             advanceUntilIdle()
             val event = events.single() as ReaderEvent.BookmarkChanged
-            assertTrue(bookmarks.isBookmarked(bookId, ch1.id, 1000L))
+            assertTrue(bookmarks.isBookmarked(VerseAnchor(bookId, ch1.position, 1, 1)))
 
             // The snackbar action can arrive after the user navigates on.
             viewModel.selectChapter(2)
@@ -370,7 +371,7 @@ class ReaderViewModelTest {
             viewModel.undoBookmarkChange(event)
             advanceUntilIdle()
 
-            assertFalse(bookmarks.isBookmarked(bookId, ch1.id, 1000L))
+            assertFalse(bookmarks.isBookmarked(VerseAnchor(bookId, ch1.position, 1, 1)))
         }
 
     @Test
@@ -548,7 +549,7 @@ class ReaderViewModelTest {
         viewModel.toggleBookmark()
         advanceUntilIdle()
 
-        val saved = bookmarks.observeBookmarksForChapter(bookId, ch1.id).first()
+        val saved = bookmarks.observeBookmarksForChapter(bookId, ch1.position).first()
         assertTrue(
             "two rapid toggles must end unbookmarked, got ${saved.size} row(s)",
             saved.isEmpty()

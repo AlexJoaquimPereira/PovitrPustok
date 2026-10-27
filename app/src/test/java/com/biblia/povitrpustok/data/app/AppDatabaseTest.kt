@@ -2,6 +2,7 @@ package com.biblia.povitrpustok.data.app
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import java.util.UUID
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -35,16 +36,23 @@ class AppDatabaseTest {
         context.deleteDatabase(AppDatabase.DATABASE_NAME)
     }
 
-    private fun entity(verseId: Long = 5L, chapterId: Long = 1L, bookId: String = "jakob") =
+    private fun entity(
+        id: String = UUID.randomUUID().toString(),
+        verseStart: Int = 5,
+        chapterPosition: Int = 1,
+        bookId: String = "jakob"
+    ) =
         BookmarkEntity(
+            id = id,
             bookId = bookId,
-            chapterId = chapterId,
-            chapterPosition = 1,
-            verseId = verseId,
+            chapterPosition = chapterPosition,
+            verseStart = verseStart,
+            verseEnd = verseStart,
+            startOffset = 0,
+            endOffset = 0,
             chapterNumber = 1,
-            verseStart = 5,
-            verseEnd = 5,
-            createdAt = 1000L
+            createdAt = 1000L,
+            updatedAt = 1000L
         )
 
     @Test
@@ -56,7 +64,7 @@ class AppDatabaseTest {
         val bookmarks = dao.observeAll().first()
         assertEquals(1, bookmarks.size)
         assertEquals("jakob", bookmarks[0].bookId)
-        assertEquals(5L, bookmarks[0].verseId)
+        assertEquals(5, bookmarks[0].verseStart)
         db.close()
     }
 
@@ -65,7 +73,7 @@ class AppDatabaseTest {
         val db = AppDatabase.create(context)
         val dao = db.bookmarkDao()
         val first = dao.insert(entity())
-        val second = dao.insert(entity(verseId = 5L, chapterId = 1L, bookId = "jakob"))
+        val second = dao.insert(entity(id = UUID.randomUUID().toString()))
         assertTrue(first > 0)
         assertEquals("duplicate insert must be ignored", -1L, second)
         assertEquals(1, dao.observeAll().first().size)
@@ -73,12 +81,12 @@ class AppDatabaseTest {
     }
 
     @Test
-    fun different_chapter_id_is_a_distinct_bookmark() = runBlocking {
+    fun different_chapter_position_is_a_distinct_bookmark() = runBlocking {
         val db = AppDatabase.create(context)
         val dao = db.bookmarkDao()
-        // Job duplicate chapter records: same chapterNumber, distinct chapterId
-        dao.insert(entity(verseId = 5L, chapterId = 26L))
-        dao.insert(entity(verseId = 5L, chapterId = 27L))
+        // Job duplicate chapter records: same chapterNumber, distinct position
+        dao.insert(entity(chapterPosition = 26))
+        dao.insert(entity(chapterPosition = 27))
         assertEquals(2, dao.observeAll().first().size)
         db.close()
     }
@@ -87,8 +95,9 @@ class AppDatabaseTest {
     fun delete_removes_a_bookmark() = runBlocking {
         val db = AppDatabase.create(context)
         val dao = db.bookmarkDao()
-        val id = dao.insert(entity())
-        dao.deleteById(id)
+        val entity = entity()
+        dao.insert(entity)
+        dao.deleteById(entity.id)
         assertTrue(dao.observeAll().first().isEmpty())
         db.close()
     }
@@ -99,13 +108,20 @@ class AppDatabaseTest {
         val dao = db.bookmarkDao()
         assertEquals(0, dao.observeAll().first().size)
 
-        dao.insert(entity(verseId = 1L))
+        dao.insert(entity(verseStart = 1))
         assertEquals(1, dao.observeAll().first().size)
 
-        dao.insert(entity(verseId = 2L))
+        dao.insert(entity(verseStart = 2))
         assertEquals(2, dao.observeAll().first().size)
 
-        dao.deleteByLocation("jakob", 1L, 1L)
+        dao.deleteByAnchor(
+            bookId = "jakob",
+            chapterPosition = 1,
+            verseStart = 1,
+            verseEnd = 1,
+            startOffset = 0,
+            endOffset = 0
+        )
         assertEquals(1, dao.observeAll().first().size)
         db.close()
     }
@@ -113,14 +129,14 @@ class AppDatabaseTest {
     @Test
     fun bookmark_persists_across_database_recreation() = runBlocking {
         val first = AppDatabase.create(context)
-        first.bookmarkDao().insert(entity(verseId = 42L))
+        first.bookmarkDao().insert(entity(verseStart = 42))
         first.close()
 
         // Reopen the same file — the bookmark must survive.
         val second = AppDatabase.create(context)
         val bookmarks = second.bookmarkDao().observeAll().first()
         assertEquals(1, bookmarks.size)
-        assertEquals(42L, bookmarks[0].verseId)
+        assertEquals(42, bookmarks[0].verseStart)
         second.close()
     }
 
