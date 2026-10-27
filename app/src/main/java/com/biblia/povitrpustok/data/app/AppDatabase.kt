@@ -26,7 +26,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         LiturgicalReadingEntity::class
     ],
     version = 2,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
 

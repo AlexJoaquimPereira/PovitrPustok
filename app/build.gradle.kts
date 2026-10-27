@@ -65,6 +65,11 @@ android {
     buildFeatures {
         compose = true
     }
+    sourceSets {
+        // MigrationTestHelper reads the exported schemas from the debug
+        // variant's assets; release APKs do not ship the schema JSON.
+        getByName("debug").assets.directories += "$projectDir/schemas"
+    }
     testOptions {
         unitTests {
             // Needed for Robolectric: expose android resources/assets to JVM tests.
@@ -80,6 +85,10 @@ android {
             }
         }
     }
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
@@ -112,6 +121,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    testImplementation(libs.room.testing)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.kotlinx.coroutines.test)
