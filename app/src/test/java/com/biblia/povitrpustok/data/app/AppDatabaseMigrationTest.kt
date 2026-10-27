@@ -19,6 +19,10 @@ import org.robolectric.RobolectricTestRunner
  * beside the current v2 schema, so MigrationTestHelper can recreate a real
  * v1 database, run [AppDatabase.MIGRATION_1_2], and validate the result
  * against the exported v2 schema.
+ *
+ * These tests run under `testDebugUnitTest`; the schema JSON is carried as a
+ * debug-variant asset so Robolectric can read it. Release unit tests are not a
+ * supported schema-test target (the release APK does not ship the schemas).
  */
 @RunWith(RobolectricTestRunner::class)
 class AppDatabaseMigrationTest {
@@ -31,7 +35,9 @@ class AppDatabaseMigrationTest {
 
     @After
     fun tearDown() {
-        InstrumentationRegistry.getInstrumentation().targetContext.deleteDatabase(TEST_DB)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        context.deleteDatabase(TEST_DB)
+        context.deleteDatabase(AppDatabase.DATABASE_NAME)
     }
 
     @Test
@@ -132,6 +138,37 @@ class AppDatabaseMigrationTest {
             )
         } finally {
             database.close()
+        }
+    }
+
+    @Test
+    fun production_builder_applies_migration_1_to_2() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        context.deleteDatabase(AppDatabase.DATABASE_NAME)
+
+        helper.createDatabase(AppDatabase.DATABASE_NAME, 1).apply {
+            execSQL(
+                "INSERT INTO bookmarks " +
+                    "(bookId,chapterId,chapterPosition,verseId,chapterNumber,verseStart,verseEnd,createdAt) " +
+                    "VALUES ('jakob',1,1,4,1,5,5,1)"
+            )
+            execSQL(
+                "INSERT INTO reading_state (id,bookId,chapterPosition,updatedAt) " +
+                    "VALUES (1,'jakob',3,1)"
+            )
+            close()
+        }
+
+        val roomDatabase = AppDatabase.create(context)
+        try {
+            val database = roomDatabase.openHelper.writableDatabase
+            assertEquals("production builder must reach schema v2", 2, database.version)
+            assertEquals(1, scalar(database, "SELECT count(*) FROM bookmarks"))
+            assertEquals(1, scalar(database, "SELECT count(*) FROM reading_state"))
+            assertEquals(0, scalar(database, "SELECT count(*) FROM liturgical_day_cache"))
+        } finally {
+            roomDatabase.close()
+            context.deleteDatabase(AppDatabase.DATABASE_NAME)
         }
     }
 
