@@ -645,12 +645,14 @@ Settings > About opens a landing page; every disclosure type has its own page un
 | Source edition | Diocesan acknowledgement and copyright for the Konkani corpus |
 | API & data | Links to the source website, repository and licence for external data (Daily Reading) |
 | Software licences | Third-party licence links, plus the entry to the App licence page with the complete Apache-2.0 text |
-| Credits | Contributors and other acknowledgements |
+| Credits | Project page: maintainer GitHub link and API non-affiliation note. Specific source/API/licence acknowledgements live on their own pages. |
 
 **Rules**
 
 * Any new API, data source, licence or acknowledgement must get a **dedicated page** with a source
   link, its licence/attribution, and tests. Do not fold new disclosures into an existing page.
+* Credits is a project page, not a second disclosure index. Do not repeat source-edition, API or
+  licence text there; the About landing is the directory.
 * The app's own licence page must **always show the complete licence text**, never a link or a
   summary.
 * UI/UX research and Figma files were removed in 1.2.3 and must not be reintroduced.
