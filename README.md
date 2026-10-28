@@ -170,6 +170,9 @@ content objects.
 | `about/licenses/app` | App licence (full Apache-2.0 text) | — |
 | `about/credits` | Credits | — |
 
+The About disclosures are under `about/…`. `settings` is the reader-preferences screen, not an
+About route.
+
 Back-stack behaviour is the standard push/pop of Navigation Compose: Books → Chapters →
 Introduction and Reader targets pop via `popBackStack()`.
 
@@ -335,8 +338,9 @@ in the app:
 
 | Observation | Handling |
 |---|---|
-| **John 1 starts at verse 2** (50 records; no verse 1 record). | Rendered exactly as the database contains; documented by `JohnChapterOneDataTest`. |
-| **147 of 150 Psalms have no `verse_start = 1` record** (their first record is verse 2). | The app displays `verse_start` verbatim — there is no application-side offset. |
+| **John 1 starts at verse 1** after the prefix repair; **Psalm 92** is the only psalm with no verse-1 record. | Verified by `JohnChapterOneDataTest` and `PsalmRealDataTest`; the app applies no offset. |
+| **23 chapters start after verse 1** in the source numbering (e.g. Daniel 6, Esther 5, Jeremias 3/4/5/17/50, Job 26/24, Psalm 92, Acts 2/4/7/8/15, Galatians 1, Revelation 13, 2 Corinthians 12, Luke 1/4, Matthew 27, Romans 1, Titus 1). | Rendered verbatim; `tools/corpus/audit_corpus.py` reports the full set. |
+| **Two chapters have all headings anchored to verse 1** (John 5 and John 15). | Headings render at the source anchor; no guessed positions. Reported by `tools/corpus/audit_corpus.py`. |
 | **`korintkarant1/2` have short display names** in the corpus. | Not silently corrected; display names are Capitalize-Cased only. |
 | **`books.position` follows importer filename order**, not the Catholic canonical order. | Canonical ordering comes from the explicit `BibleCanonicalOrder`, not from `books.position`. |
 | **Duplicate chapter numbers** (e.g. Job) and repeated/chapter-1 anomalies. | Chapters are addressed by `position`, never by `number`. |
@@ -355,27 +359,26 @@ PovitrPustok/
 │   └── src/
 │       ├── main/
 │       │   ├── AndroidManifest.xml
-│       │   ├── assets/bible/            # 73 corpus databases (git-ignored)
+│       │   ├── assets/{bible,licenses,packs}/  # corpus (git-ignored), licence texts, pack manifests
 │       │   ├── java/com/biblia/povitrpustok/
 │       │   │   ├── BibleApplication.kt  # @HiltAndroidApp
 │       │   │   ├── MainActivity.kt
-│       │   │   ├── core/{database,html,navigation,result}
-│       │   │   ├── data/{app,bible,di,liturgy}
+│       │   │   ├── core/{database,html,navigation,pack,result}
+│       │   │   ├── data/{app,bible,di,liturgy,preferences}
 │       │   │   ├── domain/{model,reference,repository}
-│       │   │   ├── feature/{books,reader,search,reference,bookmarks,dailyreading}
-│       │   │   └── ui/{theme, HomeScreen, HomeViewModel}
+│       │   │   ├── feature/{about,bookmarks,books,common,dailyreading,reader,reference,search,settings}
+│       │   │   └── ui/{theme,components, HomeScreen, HomeViewModel}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
 │       ├── test/                        # 538 JVM unit tests + HTML fixtures
 │       └── androidTest/                 # 54 instrumented tests
+├── docs/                                 # rights, content-pack and release documentation
+├── tools/{corpus,release}/               # corpus importer/audit, release packaging
 ├── gradle/libs.versions.toml            # version catalog
 ├── build.gradle.kts, settings.gradle.kts, gradle.properties
 ├── gradlew, gradlew.bat, gradle/wrapper/
+├── LICENSE, NOTICE
 └── README.md
 ```
-
-Reserved (currently empty) package directories exist in the working tree for planned work:
-`core/util`, `domain/usecase`, `feature/{history,notes}`, `ui/{components,typography}`.
-Because git does not track empty directories, a fresh clone will not contain them.
 
 ---
 
@@ -405,9 +408,13 @@ python3 tools/corpus/generate_manifest.py
 python3 tools/corpus/generate_manifest.py --check
 ```
 
-Otherwise place a verified copy at `app/src/main/assets/bible/<BookId>.sqlite` and run the manifest
-check. Without the corpus, unit tests can be run with `-PskipCorpusTests`; the 137 real-corpus
-tests are then reported as skipped. CI uses the same switch when the private-artifact secrets are
+For an authorised local build, place the 73 `.sqlite` files in
+`app/src/main/assets/bible/` and run the manifest check. Never commit, redistribute, or publish the
+source XML or the SQLite files. A built APK may be distributed only with the rights holder's
+permission.
+
+Without the corpus, unit tests can be run with `-PskipCorpusTests`; the 149 corpus-dependent tests
+are then reported as skipped. CI uses the same switch when the private-artifact secrets are
 absent. See `tools/corpus/README.md` for the `CORPUS_ARCHIVE_*` secrets.
 
 The file names must match `databaseAsset` in
@@ -439,6 +446,20 @@ source, not the installed app. Ensure you have distribution permission before pu
 
 </details>
 
+### Installing and updating (Obtainium)
+
+Povitr Pustok is distributed through **GitHub Releases + Obtainium**; there is no Play Store or
+F-Droid build.
+
+1. Install Obtainium.
+2. Add `https://github.com/AlexJoaquimPereira/PovitrPustok`.
+3. The repository is private. Configure a GitHub token with read access (fine-grained token:
+   **Contents: Read**) in Obtainium before refreshing.
+4. Obtainium checks releases and offers updates. You can also download the APK from a release and
+   verify it against the attached `SHA256SUMS`.
+
+Requires Android 11 (API 30) or newer.
+
 ### Building
 
 ```bash
@@ -450,6 +471,9 @@ source, not the installed app. Ensure you have distribution permission before pu
 
 # Unit tests
 ./gradlew :app:testDebugUnitTest
+
+# Unit tests without the private corpus
+./gradlew :app:testDebugUnitTest -PskipCorpusTests
 
 # Compile instrumented tests (running them needs a device/emulator)
 ./gradlew :app:assembleDebugAndroidTest
@@ -504,17 +528,19 @@ schema-test target.
   `$HOME/.m2` and writes a download lock there, so point it at a writable directory:
 
 ```bash
-export ROBOLECTRIC_USER_HOME=/path/to/writable/dir   # containing .m2/repository android-all jars
+export ROBOLECTRIC_USER_HOME=/path/to/robolectric-home   # containing .m2/repository android-all jars
 ./gradlew :app:testDebugUnitTest
 ```
 
 **Real-content tests.** Most data-layer and reader tests run against the **real corpus assets**,
 not synthetic fixtures, and assert semantic preservation rather than exact serialisation.
 
-**Documented skips.** Two tests call `Assume.assumeTrue(...)`: `BibleDatabaseProviderTest` and
-`CorpusGateTest`. Both skip the FTS5-`MATCH` parity check under Robolectric (desktop SQLite does
-not provide the same FTS5 build). On devices without FTS5 the three `BibleFtsInstrumentedTest`
-cases skip as well; the search path is still covered by the scan fallback tests.
+**Documented skips.** Corpus-dependent tests use `CorpusAvailabilityRule` and skip when
+`-PskipCorpusTests` is set. `BibleDatabaseProviderTest` and `CorpusGateTest` additionally call
+`Assume.assumeTrue(...)` to skip the FTS5-`MATCH` parity check under Robolectric (desktop SQLite
+does not provide the same FTS5 build); `BibleSearchRepositoryTest` uses the same corpus guard for
+its real-hit fallback test. On devices without FTS5 the three `BibleFtsInstrumentedTest` cases skip
+as well; the search path is still covered by the scan fallback tests.
 
 **Instrumented coverage.** `BibleFtsInstrumentedTest` verifies FTS5 on devices whose SQLite
 provides it, including a full-path `MATCH` test. On builds without FTS5 these three tests skip;
@@ -561,23 +587,22 @@ current corpus. Build the artifact you need from source instead.
 **Known limitations**
 
 * The on-device FTS5 `MATCH` path is verified only on hardware whose SQLite includes FTS5.
-  The test POCO M2 Pro (API 31) does not, so its three FTS5-only tests skip; search there uses the
-  scan fallback (SEARCH-04). This does not affect the shipped fallback behavior.
+  The API 35 emulator and many OEM builds do not, so their three FTS5-only tests skip; search there
+  uses the scan fallback (SEARCH-04). This does not affect the shipped fallback behavior.
 * Release-variant instrumentation is not runnable because R8 shrinks test-runner dependencies; the
   R8 release is covered by app-level smoke tests instead. Debug instrumentation remains the UI gate.
 * The corpus is copyrighted and not committed. CI runs without it unless the private
   `CORPUS_ARCHIVE_*` secrets are configured; a locally built APK requires the private corpus.
-* Lint reports style warnings ("Modifier parameter should be the first optional parameter"); there
-  are no lint errors.
-* John 1 starts at verse 2, and 147 Psalms lack a verse-1 record. This is source data,
-  deliberately not "fixed" — see [§7](#7-corpus-characteristics-and-known-data-quirks).
+* Lint reports 0 errors; warnings are dependency/target-SDK notices and Modifier-parameter style
+  warnings.
+* 23 chapters start after verse 1 in the source numbering, and John 5/15 headings are all anchored
+  to verse 1. These are source quirks, deliberately not "fixed" — see
+  [§7](#7-corpus-characteristics-and-known-data-quirks).
 
-**Planned (reserved packages, not yet implemented)**
+**Not implemented yet**
 
-* Reading history (`feature/history`)
-* Notes (`feature/notes`)
-* Shared UI components and a standalone typography module (`ui/components`, `ui/typography`)
-* Use-case layer (`domain/usecase`) and core utilities (`core/util`)
+* Reading history, notes, a standalone typography module, a use-case layer, and core utilities.
+  No routes or code exist for them, and a fresh clone contains no empty placeholder directories.
 
 **Not implemented by design:** polling / background synchronisation for liturgical data
 (no WorkManager scheduling), a general-purpose HTML engine, and any mutation or re-import of the
