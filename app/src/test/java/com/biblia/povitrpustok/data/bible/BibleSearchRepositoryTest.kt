@@ -10,6 +10,7 @@ import com.biblia.povitrpustok.core.result.BibleDatabaseAccessException
 import com.biblia.povitrpustok.domain.model.BibleBook
 import com.biblia.povitrpustok.domain.model.BibleCatalog
 import com.biblia.povitrpustok.domain.model.Testament
+import com.biblia.povitrpustok.testutil.CorpusAvailabilityRule
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -17,6 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeFalse
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -63,6 +65,10 @@ class BibleSearchRepositoryTest {
 
     @Test
     fun search_works_without_fts5_and_returns_real_hits() = runBlocking {
+        assumeFalse(
+            "Real-corpus test skipped: no private corpus artifact in this run.",
+            System.getProperty(CorpusAvailabilityRule.CORPUS_SKIP_PROPERTY) == "true"
+        )
         val provider = AssetBibleDatabaseProvider(context)
         try {
             val repository = BibleSearchRepositoryImpl(provider)
