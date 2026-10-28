@@ -41,6 +41,11 @@ android {
                 storePassword = keystoreProperties["storePassword"] as String
                 keyAlias = keystoreProperties["keyAlias"] as String
                 keyPassword = keystoreProperties["keyPassword"] as String
+                // minSdk is 30, so every supported device verifies APK
+                // Signature Scheme v3. v1 (JAR signing) is unnecessary at
+                // this minSdk; v3 supersedes v2 for supported devices.
+                enableV1Signing = false
+                enableV3Signing = true
             }
         }
     }
