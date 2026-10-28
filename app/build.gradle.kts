@@ -110,6 +110,7 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
+    implementation(libs.gson)
 
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)

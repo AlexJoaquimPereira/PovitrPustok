@@ -11,6 +11,7 @@ room = "2.7.2"
 hilt = "2.60.1"
 navigation = "2.9.3"
 retrofit = "3.0.0"
+gson = "2.13.1"
 # KSP must match the Kotlin version used by AGP 9 built-in Kotlin (2.2.10).
 ksp = "2.2.10-2.0.2"
 # Compose compiler plugin version follows the Kotlin version (2.2.10).
@@ -40,6 +41,7 @@ hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref="hilt"
 navigation-compose = { module="androidx.navigation:navigation-compose", version.ref="navigation" }
 retrofit = { module="com.squareup.retrofit2:retrofit", version.ref="retrofit" }
 converter-gson = { module="com.squareup.retrofit2:converter-gson", version.ref="retrofit" }
+gson = { module="com.google.code.gson:gson", version.ref="gson" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
