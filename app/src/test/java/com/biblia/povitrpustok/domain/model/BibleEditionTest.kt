@@ -14,6 +14,7 @@ class BibleEditionTest {
         assertEquals("kok-Latn", BibleEditions.DEFAULT.languageTag)
         assertEquals(73, BibleEditions.DEFAULT.canon.size)
         assertEquals(BibleCatalog.books.map { it.id }.toSet(), BibleEditions.DEFAULT.canon)
+        assertEquals(setOf(BibleEditions.KONKANI_ID), BibleEditions.all)
     }
 
     @Test

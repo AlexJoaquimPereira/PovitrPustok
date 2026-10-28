@@ -42,6 +42,12 @@ object BibleEditions {
 
     val DEFAULT: Edition = KONKANI
 
+    /**
+     * Every edition id [byId] can resolve. Rights-register coverage and any
+     * future edition picker iterate this set instead of duplicating ids.
+     */
+    val all: Set<String> = setOf(KONKANI_ID)
+
     fun byId(id: String?): Edition? = when (id) {
         null, KONKANI_ID -> KONKANI
         else -> null
