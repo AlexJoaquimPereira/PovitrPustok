@@ -107,14 +107,16 @@ with a `ContentPackException` subtype rather than serving partial content.
    ```
 
 4. Write `manifest.json` with the exact relative paths and digests.
-5. Run the licence gate:
+5. Add a `shipped` row to `docs/rights.md` whose `covers` includes the pack id, and run
+   `RightsRegisterTest`.
+6. Run the licence gate:
 
    ```bash
    ./gradlew :app:testDebugUnitTest \
      --tests 'com.biblia.povitrpustok.core.pack.LicenceManifestTest'
    ```
 
-6. Run the full JVM suite and lint before committing.
+7. Run the full JVM suite and lint before committing.
 
 The gate (`LicenceManifestTest`) loads every real pack with the production
 parser and loader. It fails on a missing licence/attribution row, a calendar

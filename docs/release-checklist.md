@@ -27,6 +27,8 @@ F-Droid, or CI-published APK.
 - [ ] Update README test counts, routes, or architecture notes if the release changes them.
 - [ ] Draft the release notes from [`release-notes-template.md`](release-notes-template.md).
 - [ ] Confirm no `.sqlite`, corpus XML, `keystore.properties`, or JKS file is staged.
+- [ ] Every shipped text/data/pack has a current row in `docs/rights.md`, and
+      `RightsRegisterTest` passes.
 
 ## 3. Verify and package
 

@@ -127,6 +127,14 @@ testing but **not** the FTS5 verification item.
 - The repository is private; Obtainium needs a GitHub token with read access. The corpus is not in
   git history, so visibility is an access-control choice, not a corpus-protection requirement.
 
+## Rights and licensing
+
+- `docs/rights.md` is the rights register. Every shipped text, data set, and content pack needs a
+  row; `RightsRegisterTest` fails on a missing row, uncovered edition/pack, or expired term.
+- Never add a content pack without a `shipped` rights row whose `covers` includes the pack id.
+- The corpus is used with permission and is not Apache-2.0. Do not imply diocesan production or
+  relicense the corpus.
+
 ## Documentation and local-only files
 
 - `README.md` is the product/architecture reference.

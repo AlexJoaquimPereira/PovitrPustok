@@ -608,6 +608,8 @@ Bible corpus from inside the app.
 * Section references of the form "implementation plan §N" in source KDoc point into that document.
 * [`docs/content-packs.md`](docs/content-packs.md) defines the bundled content-pack format, the
   licence/expiry gate, and the ship-in-APK lifecycle. No packs ship in 1.3.0.
+* [`docs/rights.md`](docs/rights.md) is the rights register for every shipped or planned text,
+  data set, and content pack; `RightsRegisterTest` enforces coverage and expiry.
 * [`docs/release-checklist.md`](docs/release-checklist.md) and
   [`docs/release-notes-template.md`](docs/release-notes-template.md) define the GitHub
   Releases/Obtainium release procedure.
