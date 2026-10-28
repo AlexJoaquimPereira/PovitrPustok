@@ -41,7 +41,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.core.html.BibleHtmlDocument
-import com.biblia.povitrpustok.core.html.BibleHtmlParser
+import com.biblia.povitrpustok.core.html.BibleHtmlDocumentCache
 import com.biblia.povitrpustok.core.html.BibleHtmlRenderer
 import com.biblia.povitrpustok.core.html.BibleHtmlText
 import com.biblia.povitrpustok.domain.model.IntroductionBlock
@@ -185,7 +185,7 @@ private fun Modifier.readingColumn(): Modifier =
  */
 private fun IntroductionBlock.repeatsName(bookDisplayName: String?): Boolean {
     if (bookDisplayName.isNullOrBlank()) return false
-    val blockText = BibleHtmlRenderer.render(BibleHtmlParser().parse(html)).text
+    val blockText = BibleHtmlRenderer.render(BibleHtmlDocumentCache.shared.get(html)).text
     return blockText.normalizedForComparison() == bookDisplayName.normalizedForComparison()
 }
 
@@ -196,7 +196,9 @@ private fun String.normalizedForComparison(): String =
 
 @Composable
 private fun IntroductionBlockView(block: IntroductionBlock, modifier: Modifier = Modifier) {
-    val document: BibleHtmlDocument = remember(block.html) { BibleHtmlParser().parse(block.html) }
+    val document: BibleHtmlDocument = remember(block.html) {
+        BibleHtmlDocumentCache.shared.get(block.html)
+    }
     val isHeading = block.type == TITLE_BLOCK_TYPE
     BibleHtmlText(
         document = document,

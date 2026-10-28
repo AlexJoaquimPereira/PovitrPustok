@@ -55,7 +55,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.core.html.BibleHtmlDocument
-import com.biblia.povitrpustok.core.html.BibleHtmlParser
+import com.biblia.povitrpustok.core.html.BibleHtmlDocumentCache
 import com.biblia.povitrpustok.core.html.BibleHtmlText
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.Heading
@@ -73,16 +73,20 @@ import kotlinx.coroutines.delay
  * Reusable reader components (implementation plan §42–§43).
  *
  * All Scripture and heading HTML is rendered exclusively through the
- * existing [BibleHtmlParser] + [BibleHtmlText] pipeline; components never
- * touch raw HTML strings, `text_plain`, or the database.
+ * existing parser + [BibleHtmlText] pipeline; components never touch raw
+ * HTML strings, `text_plain`, or the database.
  */
 
-private val htmlParser = BibleHtmlParser()
+private val htmlCache = BibleHtmlDocumentCache.shared
 
-/** Parses (and caches per recomposition) heading/verse HTML. */
+/**
+ * Parses once per distinct HTML string and reuses the bounded content-level
+ * cache across compositions (F1-21). `remember` still avoids a cache lookup
+ * on ordinary recompositions.
+ */
 @Composable
 private fun rememberDocument(html: String): BibleHtmlDocument =
-    remember(html) { htmlParser.parse(html) }
+    remember(html) { htmlCache.get(html) }
 
 /** Chapter number as a quiet overline; the corpus heading is the title (F-25). */
 @Composable
