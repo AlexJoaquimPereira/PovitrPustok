@@ -38,5 +38,6 @@ distributed under that permission. The app is independent and is not produced by
 
 ## Install
 
-- **Obtainium:** add `https://github.com/AlexJoaquimPereira/PovitrPustok` and refresh.
+- **Obtainium:** configure a GitHub token with read access to this private repository, add
+  `https://github.com/AlexJoaquimPereira/PovitrPustok`, and refresh.
 - **Manual:** download the APK and verify it against `SHA256SUMS`.

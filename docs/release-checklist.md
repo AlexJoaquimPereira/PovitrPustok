@@ -3,16 +3,18 @@
 Povitr Pustok ships through **GitHub Releases + Obtainium**. There is no Play Store,
 F-Droid, or CI-published APK.
 
-> **Repository visibility.** Anonymous Obtainium installs require a public repository.
-> The repository is currently private; either make it public before tagging or document
-> that users need a GitHub token. Do not publish a "public" release while the repository
-> is private.
+> **Private repository.** Releases are distributed from a private repository by owner
+> decision. Anonymous downloads are not available; Obtainium must be configured with a
+> GitHub token that can read the repository (fine-grained token: Contents: Read). The
+> repository history contains no corpus, keystore, or secret blobs, so this is an
+> access-control choice, not a corpus-protection requirement.
 
 ## 1. One-time setup
 
 - [ ] The release key exists outside the repository; `keystore.properties` points to it.
 - [ ] Two offline encrypted backups of the JKS and its passwords exist, and a restore has
       been tested in a throwaway directory.
+      *Current key: owner confirmed both backups and a tested restore on 2026-10-28.*
 - [ ] The signing certificate SHA-256 is recorded and matches every release:
       `AD:D0:11:B3:87:7E:31:63:BE:D1:4E:0A:A8:A4:FB:AD:B6:F8:3E:A1:23:5B:38:42:AC:ED:C7:99:35:26:A2:61`.
 - [ ] `ANDROID_HOME` points at an SDK with build-tools 36.0.0; the Gradle daemon uses JDK 25.
@@ -56,9 +58,10 @@ F-Droid, or CI-published APK.
       committed file); create an annotated tag `v<version>`; push `master` and the tag.
 - [ ] GitHub release: title, notes, and the APK, AAB, and `SHA256SUMS` assets.
 - [ ] Never attach corpus files, source XML, debug/test APKs, R8 mapping files, or keystores.
-- [ ] Confirm the release is publicly reachable and the APK downloads without authentication
-      (or document the authenticated Obtainium path).
-- [ ] Obtainium: refresh and confirm it sees the new version and installs it.
+- [ ] Confirm the release is visible to the Obtainium token; the repository is private, so
+      anonymous downloads are not expected.
+- [ ] Obtainium: configure a GitHub token with read access, refresh, and confirm it sees the
+      new version and installs it.
 
 ## 6. Post-release
 

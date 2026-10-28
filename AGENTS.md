@@ -124,6 +124,8 @@ testing but **not** the FTS5 verification item.
   APKs, mapping files, or keystore material.
 - Verify the signer certificate and the 73 corpus assets before publishing. Push only after the
   owner's explicit approval.
+- The repository is private; Obtainium needs a GitHub token with read access. The corpus is not in
+  git history, so visibility is an access-control choice, not a corpus-protection requirement.
 
 ## Documentation and local-only files
 

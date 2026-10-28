@@ -478,7 +478,7 @@ If the file is absent, the release signing config is simply left unset and the p
 (producing an unsigned release artifact). Follow [`docs/release-checklist.md`](docs/release-checklist.md)
 before publishing; [`tools/release/package_release.sh`](tools/release/package_release.sh) builds the
 signed APK/AAB, verifies the corpus payload, and writes `SHA256SUMS`. CI never publishes release
-artifacts.
+artifacts. The repository is private; Obtainium requires a GitHub token with read access.
 
 ---
 
