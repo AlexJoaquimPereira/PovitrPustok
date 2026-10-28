@@ -135,6 +135,13 @@ testing but **not** the FTS5 verification item.
 - The corpus is used with permission and is not Apache-2.0. Do not imply diocesan production or
   relicense the corpus.
 
+## Performance
+
+- `docs/performance.md` records the first-use baseline and budgets. Re-run
+  `FirstUsePerformanceTest` isolated after clearing app data; do not compare a single run.
+- The reader and book-introduction rendering use `BibleHtmlDocumentCache` (bounded LRU) so
+  scroll-back/recomposition does not reparse the same HTML. Keep the cache bounded.
+
 ## Documentation and local-only files
 
 - `README.md` is the product/architecture reference.

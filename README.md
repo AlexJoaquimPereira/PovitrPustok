@@ -15,7 +15,7 @@ the app never re-imports, rewrites or "fixes" it.
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 538 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 54 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
+| **Tests** | 542 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 55 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
 
 ---
 
@@ -369,8 +369,8 @@ PovitrPustok/
 │       │   │   ├── feature/{about,bookmarks,books,common,dailyreading,reader,reference,search,settings}
 │       │   │   └── ui/{theme,components, HomeScreen, HomeViewModel}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
-│       ├── test/                        # 538 JVM unit tests + HTML fixtures
-│       └── androidTest/                 # 54 instrumented tests
+│       ├── test/                        # 542 JVM unit tests + HTML fixtures
+│       └── androidTest/                 # 55 instrumented tests
 ├── docs/                                 # rights, content-pack and release documentation
 ├── tools/{corpus,release}/               # corpus importer/audit, release packaging
 ├── gradle/libs.versions.toml            # version catalog
@@ -510,8 +510,8 @@ artifacts. The repository is private; Obtainium requires a GitHub token with rea
 
 | Suite | Count | Runner | Notes |
 |---|---|---|---|
-| JVM unit tests | **538** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
-| Instrumented tests | **54** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 50 executed / 0 failed / 4 skips (3 FTS5-only + 1 network-dependent Daily Reading) |
+| JVM unit tests | **542** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
+| Instrumented tests | **55** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 51 executed / 0 failed / 4 skips (3 FTS5-only + 1 network-dependent Daily Reading) |
 
 34 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
 assets or Room. Room migrations are validated by `MigrationTestHelper` against the checked-in
@@ -545,6 +545,8 @@ as well; the search path is still covered by the scan fallback tests.
 **Instrumented coverage.** `BibleFtsInstrumentedTest` verifies FTS5 on devices whose SQLite
 provides it, including a full-path `MATCH` test. On builds without FTS5 these three tests skip;
 the repository/search instrumented tests still run through the scan fallback.
+`FirstUsePerformanceTest` logs the first-use baseline (Books, search, chapter); run it isolated
+after clearing app data. See [`docs/performance.md`](docs/performance.md).
 
 **Device gate (required).** The on-device FTS5 suite is not part of the JVM suite and cannot be
 replaced by Robolectric:
@@ -635,6 +637,8 @@ Bible corpus from inside the app.
   licence/expiry gate, and the ship-in-APK lifecycle. No packs ship in 1.3.0.
 * [`docs/rights.md`](docs/rights.md) is the rights register for every shipped or planned text,
   data set, and content pack; `RightsRegisterTest` enforces coverage and expiry.
+* [`docs/performance.md`](docs/performance.md) records the F1-21 first-use baseline, budgets, and
+  the parser-cache result.
 * [`docs/release-checklist.md`](docs/release-checklist.md) and
   [`docs/release-notes-template.md`](docs/release-notes-template.md) define the GitHub
   Releases/Obtainium release procedure.
