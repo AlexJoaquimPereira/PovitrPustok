@@ -464,7 +464,8 @@ source, not the installed app. Ensure you have distribution permission before pu
 ### Release signing
 
 Release signing is configured from `keystore.properties` at the repository root. **This file and
-all keystores are git-ignored and must never be committed.**
+all keystores are git-ignored and must never be committed.** Release APKs are signed with APK
+Signature Scheme v3 (`minSdk` is 30, so every supported device verifies it).
 
 ```properties
 storeFile=/absolute/or/relative/path/to/keystore.jks
@@ -474,7 +475,10 @@ keyPassword=…
 ```
 
 If the file is absent, the release signing config is simply left unset and the project still builds
-(producing an unsigned release artifact).
+(producing an unsigned release artifact). Follow [`docs/release-checklist.md`](docs/release-checklist.md)
+before publishing; [`tools/release/package_release.sh`](tools/release/package_release.sh) builds the
+signed APK/AAB, verifies the corpus payload, and writes `SHA256SUMS`. CI never publishes release
+artifacts.
 
 ---
 
@@ -541,6 +545,7 @@ Artifacts are produced by Gradle under `app/build/outputs/` (never committed):
 | `:app:assembleDebug` | `app/build/outputs/apk/debug/app-debug.apk` |
 | `:app:assembleRelease` | `app/build/outputs/apk/release/app-release.apk` (signed only when `keystore.properties` exists; otherwise `app-release-unsigned.apk`) |
 | `:app:bundleRelease` | `app/build/outputs/bundle/release/app-release.aab` |
+| `tools/release/package_release.sh` | `app/build/outputs/release/<name>/` with the versioned APK/AAB, `SHA256SUMS`, and `BUILD-INFO.txt` |
 
 Release builds are R8-optimized (`optimization.enable = true`): the signed APK is ≈**12.2 MB**
 (down from ≈38.0 MB unminified). `app/build/outputs/mapping/release/mapping.txt` is kept locally
@@ -603,6 +608,9 @@ Bible corpus from inside the app.
 * Section references of the form "implementation plan §N" in source KDoc point into that document.
 * [`docs/content-packs.md`](docs/content-packs.md) defines the bundled content-pack format, the
   licence/expiry gate, and the ship-in-APK lifecycle. No packs ship in 1.3.0.
+* [`docs/release-checklist.md`](docs/release-checklist.md) and
+  [`docs/release-notes-template.md`](docs/release-notes-template.md) define the GitHub
+  Releases/Obtainium release procedure.
 * Earlier releases are tagged in git (`v1.0.0` through `v1.2.4`); release notes are published in
   the corresponding GitHub releases.
 

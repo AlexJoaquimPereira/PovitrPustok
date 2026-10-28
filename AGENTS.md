@@ -115,6 +115,16 @@ testing but **not** the FTS5 verification item.
   `adb install --user 0 -r -t app/build/outputs/apk/debug/app-debug.apk` first.
 - `adb devices` may list multiple transports; always set `ANDROID_SERIAL` for deterministic runs.
 
+## Releases
+
+- Follow `docs/release-checklist.md`; use `docs/release-notes-template.md` for GitHub release notes.
+- Build signed artifacts locally with `tools/release/package_release.sh`. CI never publishes an
+  APK/AAB and must not produce a release artifact without the private corpus.
+- Attach the versioned APK, AAB, and `SHA256SUMS`; never attach corpus files, source XML, debug/test
+  APKs, mapping files, or keystore material.
+- Verify the signer certificate and the 73 corpus assets before publishing. Push only after the
+  owner's explicit approval.
+
 ## Documentation and local-only files
 
 - `README.md` is the product/architecture reference.
