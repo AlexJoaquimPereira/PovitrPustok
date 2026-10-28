@@ -82,6 +82,17 @@ jobs:
         if: env.CORPUS_ARCHIVE_URL != ''
         run: ./gradlew :app:assembleRelease
 
+      # The release artifact is built locally from an authorised corpus
+      # checkout and signed with the owner's key. CI must never produce or
+      # upload one without the private corpus.
+      - name: Assert no release artifact without corpus
+        if: env.CORPUS_ARCHIVE_URL == ''
+        run: |
+          if find app/build/outputs/apk/release -type f -name '*.apk' 2>/dev/null | grep -q .; then
+            echo "::error::A release APK was produced without the private corpus."
+            exit 1
+          fi
+
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
