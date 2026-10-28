@@ -248,14 +248,7 @@ fun PovitrPustokNavHost() {
         }
 
         composable(AppDestination.ABOUT_CREDITS) {
-            AboutCreditsScreen(
-                onBack = { navController.popBackStack() },
-                onOpenSourceEdition = {
-                    navController.navigate(AppDestination.ABOUT_SOURCE_EDITION)
-                },
-                onOpenApi = { navController.navigate(AppDestination.ABOUT_API) },
-                onOpenLicenses = { navController.navigate(AppDestination.ABOUT_LICENSES) }
-            )
+            AboutCreditsScreen(onBack = { navController.popBackStack() })
         }
 
         composable(

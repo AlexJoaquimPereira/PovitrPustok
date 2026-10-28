@@ -170,20 +170,6 @@ fun AboutSectionLabel(
     )
 }
 
-/** Section title in the serif voice, one step below a page title. */
-@Composable
-fun AboutBlockTitle(
-    text: String,
-    modifier: Modifier = Modifier
-) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.onSurface,
-        modifier = modifier.semantics { heading() }
-    )
-}
-
 /** The masthead rule from Home, reused as the page's one accent line. */
 @Composable
 fun AboutRule(modifier: Modifier = Modifier) {
@@ -404,57 +390,10 @@ fun AboutLinkRow(
     }
 }
 
-/**
- * An in-page link to another About page, styled as a quiet accent line with a
- * chevron. Used where a prose block needs its own way in.
- */
-@Composable
-fun AboutInlineLink(
-    text: String,
-    onClick: () -> Unit,
-    tag: String,
-    modifier: Modifier = Modifier
-) {
-    val colorScheme = MaterialTheme.colorScheme
-
-    Surface(
-        onClick = onClick,
-        modifier = modifier
-            .fillMaxWidth()
-            .testTag(tag),
-        color = Color.Transparent,
-        contentColor = colorScheme.primary
-    ) {
-        Row(
-            modifier = Modifier
-                .heightIn(min = 48.dp)
-                .padding(vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge,
-                color = colorScheme.primary
-            )
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = colorScheme.primary,
-                modifier = Modifier
-                    .padding(start = 2.dp)
-                    .size(16.dp)
-            )
-        }
-    }
-}
-
 /** Open a URI without letting a missing browser crash the page. */
 private fun UriHandler.openSafely(url: String) {
     runCatching { openUri(url) }
 }
 
-/**
- * Universalis Goa calendar. Referenced from both the API page and Credits, so
- * the address lives in one place and the two pages cannot drift apart.
- */
+/** Universalis Goa calendar reference, linked from the API & data page. */
 internal const val UNIVERSALIS_GOA_URL = "https://universalis.com/asia.india.goa/calendar.htm"

@@ -1,5 +1,8 @@
 package com.biblia.povitrpustok.ui
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -49,6 +52,8 @@ class AboutUiTest {
         composeRule.onNodeWithTag("about.api").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithTag("about.licenses").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithTag("about.credits").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("independent, unofficial publication", substring = true)
+            .assertIsDisplayed()
 
         composeRule.onNodeWithTag("about.back").performClick()
         waitForTag("settings.back")
@@ -63,6 +68,8 @@ class AboutUiTest {
 
         composeRule.onNodeWithTag("about.source.copyright")
             .assertTextContains("Bible text © Archdiocese of Goa and Daman", substring = true)
+        composeRule.onNodeWithText("Dhormprantik Povitr Pustokachea Vavracho Kendr")
+            .assertIsDisplayed()
         composeRule.onNodeWithText("CP/2163/2017", substring = true).assertDoesNotExist()
         composeRule.onNodeWithText("No part of this work", substring = true).assertDoesNotExist()
 
@@ -80,6 +87,8 @@ class AboutUiTest {
         composeRule.onNodeWithTag("about.api.repo").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithTag("about.api.license").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithTag("about.api.reference").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("maintained by cpbjr", substring = true)
+            .assertIsDisplayed()
 
         composeRule.onNodeWithTag("about.api.back").performClick()
         waitForTag("about.screen")
@@ -107,15 +116,66 @@ class AboutUiTest {
     }
 
     @Test
-    fun credits_links_to_the_three_disclosure_pages() {
+    fun licences_page_lists_app_runtime_test_and_build_sections() {
+        openAboutFromSettings()
+        composeRule.onNodeWithTag("about.licenses").performScrollTo().performClick()
+        waitForTag("about.licenses.screen")
+
+        composeRule.onNodeWithTag("about.licenses.app").assertIsDisplayed()
+        composeRule.onNodeWithTag("about.licenses.runtime").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("about.licenses.component.kotlin")
+            .performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("about.licenses.test").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("about.licenses.component.junit")
+            .performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("about.licenses.build").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("about.licenses.component.gradle")
+            .performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun licences_section_labels_are_talkback_headings() {
+        openAboutFromSettings()
+        composeRule.onNodeWithTag("about.licenses").performScrollTo().performClick()
+        waitForTag("about.licenses.screen")
+
+        listOf("about.licenses.runtime", "about.licenses.test", "about.licenses.build")
+            .forEach { tag ->
+                composeRule.onNodeWithTag(tag)
+                    .performScrollTo()
+                    .assert(SemanticsMatcher.expectValue(SemanticsProperties.Heading, Unit))
+            }
+    }
+
+    @Test
+    fun licences_rows_merge_label_licence_and_destination() {
+        openAboutFromSettings()
+        composeRule.onNodeWithTag("about.licenses").performScrollTo().performClick()
+        waitForTag("about.licenses.screen")
+
+        composeRule.onNodeWithTag("about.licenses.component.kotlin")
+            .performScrollTo()
+            .assertTextContains("Kotlin", substring = true)
+            .assertTextContains("2.2.10", substring = true)
+            .assertTextContains("Apache License 2.0", substring = true)
+            .assertTextContains("github.com/JetBrains/kotlin", substring = true)
+    }
+
+    @Test
+    fun credits_links_to_the_project_repository_without_duplicating_disclosures() {
         openAboutFromSettings()
         composeRule.onNodeWithTag("about.credits").performScrollTo().performClick()
         waitForTag("about.credits.screen")
 
         composeRule.onNodeWithTag("about.credits.github").performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithTag("about.credits.source").performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithTag("about.credits.api").performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithTag("about.credits.licenses").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("about.credits.source").assertDoesNotExist()
+        composeRule.onNodeWithTag("about.credits.api").assertDoesNotExist()
+        composeRule.onNodeWithTag("about.credits.licenses").assertDoesNotExist()
+        composeRule.onNodeWithTag("about.credits.reference").assertDoesNotExist()
+        composeRule.onNodeWithText("Dhormprantik", substring = true).assertDoesNotExist()
+        composeRule.onNodeWithText("Diocesan Centre for Biblical Apostolate", substring = true)
+            .assertDoesNotExist()
+        composeRule.onNodeWithText("Universalis", substring = true).assertDoesNotExist()
         composeRule.onNodeWithText("Alex Pereira", substring = true).assertDoesNotExist()
 
         composeRule.onNodeWithTag("about.credits.back").performClick()
