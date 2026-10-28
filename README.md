@@ -601,6 +601,8 @@ Bible corpus from inside the app.
   *Note: this working document is currently **not** tracked by git, so it will be absent from a
   fresh clone.*
 * Section references of the form "implementation plan §N" in source KDoc point into that document.
+* [`docs/content-packs.md`](docs/content-packs.md) defines the bundled content-pack format, the
+  licence/expiry gate, and the ship-in-APK lifecycle. No packs ship in 1.3.0.
 * Earlier releases are tagged in git (`v1.0.0` through `v1.2.4`); release notes are published in
   the corresponding GitHub releases.
 
