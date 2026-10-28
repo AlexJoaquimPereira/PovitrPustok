@@ -16,7 +16,7 @@ Status meanings:
 
 Every bundled content pack must add a row whose `covers` contains the pack id. Every Bible edition
 must be covered by a row. Expiry is `none` or an ISO-8601 date; the date is inclusive, and the test
-fails after it passes.
+fails after it passes. Cell text must not contain a literal `|`; the build-time parser splits on it.
 
 <!-- rights-register:start -->
 | id | content | status | owner | licence | attribution | covers | territory | expiry | evidence |
@@ -24,7 +24,7 @@ fails after it passes.
 | app-code | Povitr Pustok application code | shipped | Alex Pereira | Apache-2.0 | Copyright 2026 Alex Pereira | - | worldwide | none | `LICENSE`; `NOTICE`; `assets/licenses/Apache-2.0.txt`; `assets/licenses/NOTICE.txt` |
 | konkani-corpus | Konkani (Romi) Bible corpus, 73 books | shipped | Archdiocese of Goa and Daman | © Archdiocese of Goa and Daman; used with permission; not Apache-2.0 | Konkani Bible text © Archdiocese of Goa and Daman | konkani-romi | worldwide (permission on file; scope to confirm) | none | Permission on file; `NOTICE`; `tools/corpus/README.md`; source XML and SQLite are not in git |
 | catholic-readings-api | Catholic Readings API (Daily Reading) | network | cpbjr / Catholic Readings API | MIT | Catholic Readings API (cpbjr.github.io) | - | worldwide | none | `https://github.com/cpbjr/catholic-readings-api/blob/main/LICENSE`; `AboutApiScreen.kt` |
-| software-libraries | Third-party libraries packaged in the APK | shipped | Various component authors | Apache-2.0, MIT, EPL-1.0 (per component) | See About > Software licences | - | worldwide | none | `LicenceCatalog.kt`; `AboutLicensesScreen.kt` |
+| software-libraries | Third-party libraries packaged in the APK | shipped | Various component authors | Apache-2.0 (runtime components) | See About > Software licences | - | worldwide | none | `LicenceCatalog.kt` (runtime list); `AboutLicensesScreen.kt` |
 | goa-calendar-overrides | Goan particular-calendar corrections in code | pending | Goan particular-calendar sources (to confirm) | pending | Goan particular calendar corrections | - | IN | none | `GoaCalendarOverrides.kt`; `AboutApiScreen.kt`; roadmap C1-07 |
 | webc | World English Bible, Catholic edition (WEBC) | planned | Public domain | Public domain | World English Bible, Catholic edition | - | worldwide | none | Planned 1.4 (roadmap S1-03); not shipped |
 | douay-rheims | Douay-Rheims Bible | planned | Public domain | Public domain | Douay-Rheims Bible | - | worldwide | none | Planned 1.4 (roadmap S1-04); not shipped |
@@ -46,6 +46,7 @@ fails after it passes.
 - No content packs ship in 1.3.0. A future pack must add a `shipped` row whose `covers` includes
   the pack id; `RightsRegisterTest` fails otherwise.
 - The register points at the evidence; it does not replace the licence texts or the permission
-  letter.
+  letter. Test/build-only components (JUnit EPL-1.0, Robolectric MIT) appear in the in-app
+  catalogue but are not packaged and are not shipped content.
 - The app code is Apache-2.0. The Konkani corpus is **not** Apache-2.0; the `NOTICE` and the
   Source edition page state the rights holder and the permission.

@@ -23,14 +23,17 @@ class RightsRegisterTest {
         val root = repoRoot()
         val rows = validate(
             markdown = File(root, "docs/rights.md").readText(),
-            // Keep this in sync when BibleEditions gains another edition.
-            editions = setOf(BibleEditions.KONKANI.id),
+            editions = BibleEditions.all,
             packs = bundledPackIds(root),
             today = LocalDate.now()
         )
 
         assertTrue(rows.isNotEmpty())
-        assertTrue(rows.any { it.id == "konkani-corpus" && "konkani-romi" in it.covers })
+        assertTrue(
+            rows.any {
+                it.id == "konkani-corpus" && BibleEditions.KONKANI_ID in it.covers
+            }
+        )
     }
 
     @Test
@@ -131,7 +134,8 @@ class RightsRegisterTest {
             check(row.territory.isNotBlank()) { "row '${row.id}' has no territory" }
             check(row.evidence.isNotBlank()) { "row '${row.id}' has no evidence" }
             if (row.status == "shipped" || row.status == "network") {
-                check(row.licence.lowercase() !in PENDING_LICENCES) {
+                val licence = row.licence.lowercase()
+                check(PENDING_LICENCE_MARKERS.none { licence.contains(it) }) {
                     "row '${row.id}' is ${row.status} but has no confirmed licence"
                 }
             }
@@ -261,6 +265,6 @@ class RightsRegisterTest {
             "software-libraries"
         )
         val STATUSES = setOf("shipped", "network", "pending", "planned")
-        val PENDING_LICENCES = setOf("pending", "tbd", "unknown", "")
+        val PENDING_LICENCE_MARKERS = setOf("pending", "tbd", "unknown", "to confirm")
     }
 }
