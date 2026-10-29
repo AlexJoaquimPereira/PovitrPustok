@@ -417,6 +417,13 @@ private fun ReaderTopBar(
     onOpenAbout: () -> Unit
 ) {
     var menuOpen by remember { mutableStateOf(false) }
+    // A long book name in a fixed-height bar loses its ending at 2x. One step
+    // down keeps more of the name visible, matching Settings and About.
+    val titleStyle = if (LocalDensity.current.fontScale >= AppBreakpoints.ExtraLargeFontScale) {
+        MaterialTheme.typography.titleSmall
+    } else {
+        MaterialTheme.typography.titleMedium
+    }
     TopAppBar(
         modifier = Modifier.testTag("reader.topbar"),
         title = {
@@ -429,7 +436,7 @@ private fun ReaderTopBar(
                 },
                 englishName = state.book?.englishName,
                 layout = BookNameLayout.INLINE,
-                style = MaterialTheme.typography.titleMedium
+                style = titleStyle
             )
         },
         navigationIcon = {
@@ -673,35 +680,64 @@ private fun coversWholeChapter(
  * whole chapter. Additive: filtering itself is unchanged.
  */
 @Composable
-private fun PassageBanner(
+internal fun PassageBanner(
     state: ReaderUiState,
     onShowFullChapter: () -> Unit
 ) {
+    // At 2x the button and the verse label cannot share a narrow row: the
+    // label breaks mid-word ("Verse / s 31…"). Stack them so both stay whole.
+    val stacked = LocalDensity.current.fontScale >= AppBreakpoints.ExtraLargeFontScale
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant,
         modifier = Modifier.fillMaxWidth().testTag("reader.passage_banner")
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = passageLabel(state),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-            TextButton(
-                onClick = onShowFullChapter,
+        if (stacked) {
+            Column(
                 modifier = Modifier
-                    .heightIn(min = 48.dp)
-                    .testTag("reader.show_full_chapter")
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
             ) {
-                Text(text = stringResource(R.string.reader_show_full_chapter))
+                Text(
+                    text = passageLabel(state),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                TextButton(
+                    onClick = onShowFullChapter,
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .heightIn(min = 48.dp)
+                        .testTag("reader.show_full_chapter")
+                ) {
+                    Text(text = stringResource(R.string.reader_show_full_chapter))
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = passageLabel(state),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                TextButton(
+                    onClick = onShowFullChapter,
+                    modifier = Modifier
+                        .heightIn(min = 48.dp)
+                        .testTag("reader.show_full_chapter")
+                ) {
+                    Text(text = stringResource(R.string.reader_show_full_chapter))
+                }
             }
         }
     }
