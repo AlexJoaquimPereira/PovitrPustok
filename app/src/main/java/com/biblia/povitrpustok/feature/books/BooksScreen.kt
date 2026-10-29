@@ -2,6 +2,7 @@ package com.biblia.povitrpustok.feature.books
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
@@ -29,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SingleChoiceSegmentedButtonRowScope
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -42,6 +45,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -58,6 +63,7 @@ import com.biblia.povitrpustok.domain.model.BibleBook
 import com.biblia.povitrpustok.domain.model.BibleCatalog
 import com.biblia.povitrpustok.domain.model.BookDisplayName
 import com.biblia.povitrpustok.domain.model.Testament
+import com.biblia.povitrpustok.ui.adaptive.AppBreakpoints
 import com.biblia.povitrpustok.ui.components.englishBookNameVisible
 import com.biblia.povitrpustok.ui.theme.OverlineTextStyle
 import kotlinx.coroutines.launch
@@ -215,50 +221,106 @@ internal fun firstRowIndexes(
  * currently at the top of the list, and tapping one jumps the *same*
  * canonical list to that section's first row. The jump is instant rather than
  * animated — flicking through ~40 rows would be slower and more disorienting
- * than arriving. 48 dp minimum targets keep it usable at 2x font scale; the
- * labels wrap to two lines instead of clipping.
+ * than arriving.
+ *
+ * From 1.5x font scale the two names no longer share a phone's width: side by
+ * side they either ellipsize ("Old Testam…") or wrap to different heights,
+ * which breaks the pill. The control therefore stacks into two full-width
+ * rows, where each label keeps its full words and both targets stay the same
+ * size. At normal scales the side-by-side control is unchanged.
  */
 @Composable
-private fun TestamentJump(
+internal fun TestamentJump(
     inNewTestament: Boolean,
     onJumpToOldTestament: () -> Unit,
     onJumpToNewTestament: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val stacked = LocalDensity.current.fontScale >= AppBreakpoints.LargeFontScale
     Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        SingleChoiceSegmentedButtonRow(
-            // Compact: full width on a phone, a toolbar-sized control on a
-            // tablet or in landscape.
-            modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth()
+        Column(
+            modifier = Modifier
+                .widthIn(max = 420.dp)
+                .fillMaxWidth()
+                // One selection group in the stacked layout, so TalkBack keeps
+                // announcing the two segments as one choice. The side-by-side
+                // row brings its own group.
+                .then(if (stacked) Modifier.selectableGroup() else Modifier),
+            verticalArrangement = Arrangement.spacedBy(if (stacked) 8.dp else 0.dp)
         ) {
-            SegmentedButton(
-                selected = !inNewTestament,
-                onClick = onJumpToOldTestament,
-                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = 48.dp)
-                    .testTag("books.jump.old"),
-                icon = {},
-                label = { JumpLabel(stringResource(R.string.old_testament)) }
-            )
-            SegmentedButton(
-                selected = inNewTestament,
-                onClick = onJumpToNewTestament,
-                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = 48.dp)
-                    .testTag("books.jump.new"),
-                icon = {},
-                label = { JumpLabel(stringResource(R.string.new_testament)) }
-            )
+            if (stacked) {
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    TestamentSegment(
+                        selected = !inNewTestament,
+                        onClick = onJumpToOldTestament,
+                        label = stringResource(R.string.old_testament),
+                        tag = "books.jump.old",
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 1),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    TestamentSegment(
+                        selected = inNewTestament,
+                        onClick = onJumpToNewTestament,
+                        label = stringResource(R.string.new_testament),
+                        tag = "books.jump.new",
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 1),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            } else {
+                SingleChoiceSegmentedButtonRow(
+                    // Compact: full width on a phone, a toolbar-sized control
+                    // on a tablet or in landscape.
+                    modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth()
+                ) {
+                    TestamentSegment(
+                        selected = !inNewTestament,
+                        onClick = onJumpToOldTestament,
+                        label = stringResource(R.string.old_testament),
+                        tag = "books.jump.old",
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                        modifier = Modifier.weight(1f)
+                    )
+                    TestamentSegment(
+                        selected = inNewTestament,
+                        onClick = onJumpToNewTestament,
+                        label = stringResource(R.string.new_testament),
+                        tag = "books.jump.new",
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
         }
     }
+}
+
+/** One half of [TestamentJump]; a 48 dp target in both layouts. */
+@Composable
+private fun SingleChoiceSegmentedButtonRowScope.TestamentSegment(
+    selected: Boolean,
+    onClick: () -> Unit,
+    label: String,
+    tag: String,
+    shape: Shape,
+    modifier: Modifier = Modifier
+) {
+    SegmentedButton(
+        selected = selected,
+        onClick = onClick,
+        shape = shape,
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .testTag(tag),
+        icon = {},
+        label = { JumpLabel(label) }
+    )
 }
 
 @Composable
@@ -382,7 +444,9 @@ fun BookListItem(
                     text = localName,
                     style = MaterialTheme.typography.bodyLarge,
                     color = colorScheme.onSurface,
-                    maxLines = 1,
+                    // The list row grows at 2x: the book name is the content,
+                    // so a second line beats an ellipsis.
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 if (englishBookNameVisible()) {

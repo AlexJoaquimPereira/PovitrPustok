@@ -39,6 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
+import com.biblia.povitrpustok.ui.adaptive.AppBreakpoints
 import com.biblia.povitrpustok.ui.components.BookName
 import com.biblia.povitrpustok.ui.components.BookNameLayout
 import com.biblia.povitrpustok.ui.components.EmptyState
@@ -67,6 +68,14 @@ fun BookChaptersScreen(
     LaunchedEffect(bookId) { viewModel.load(bookId) }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // The bar has one fixed line, so at 2x the book name steps down one size
+    // instead of losing its ending to an ellipsis.
+    val titleStyle = if (LocalDensity.current.fontScale >= AppBreakpoints.ExtraLargeFontScale) {
+        MaterialTheme.typography.titleSmall
+    } else {
+        MaterialTheme.typography.titleMedium
+    }
+
     Scaffold(
         topBar = {
             Column {
@@ -79,7 +88,8 @@ fun BookChaptersScreen(
                             englishName = state.book?.englishName,
                             // One line in the app bar: the English label yields
                             // space (and ellipsizes) before the local name.
-                            layout = BookNameLayout.INLINE
+                            layout = BookNameLayout.INLINE,
+                            style = titleStyle
                         )
                     },
                     navigationIcon = {
