@@ -15,7 +15,7 @@ the app never re-imports, rewrites or "fixes" it.
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 575 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 72 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
+| **Tests** | 575 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 80 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
 
 ---
 
@@ -449,7 +449,7 @@ PovitrPustok/
 │       │   │   └── ui/{adaptive,theme,components, AppVersion, HomeScreen, HomeViewModel, PovitrPustokApp}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
 │       ├── test/                        # 575 JVM unit tests + HTML fixtures
-│       └── androidTest/                 # 72 instrumented tests
+│       └── androidTest/                 # 80 instrumented tests
 ├── docs/                                 # architecture, rights, content-pack, performance and release documentation
 ├── tools/{corpus,release}/               # corpus importer/audit, release packaging
 ├── gradle/libs.versions.toml            # version catalog
@@ -592,7 +592,7 @@ made private again, Obtainium needs a GitHub token with read access.
 | Suite | Count | Runner | Notes |
 |---|---|---|---|
 | JVM unit tests | **550** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
-| Instrumented tests | **72** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 68 executed / 0 failed / 4 skips (3 FTS5-only + 1 network-dependent Daily Reading) |
+| Instrumented tests | **80** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 76 executed / 0 failed / 4 skips (3 FTS5-only + 1 network-dependent Daily Reading) |
 
 36 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
 assets or Room. Room migrations are validated by `MigrationTestHelper` against the checked-in
