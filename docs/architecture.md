@@ -23,6 +23,26 @@ The corpus is immutable content: the app never re-imports, rewrites, or
 migrates the Bible databases. Only application state lives in Room. Compose and
 ViewModels never touch SQLite or Room directly.
 
+## Navigation shell (1.3.1)
+
+`PovitrPustokApp` (`ui/PovitrPustokApp.kt`) owns the single `NavHostController`
+and renders `PovitrPustokNavHost`, so the graph and route contract are unchanged.
+`MainActivity` supplies only the theme and the shell.
+
+The Material 3 adaptive navigation suite is visible only on
+`AppDestination.TOP_LEVEL` (`home`, `books`, `more`): compact windows get the
+bottom navigation bar, medium/expanded windows get the navigation rail. Detail
+routes render without the suite and keep their own top bars. Tab taps use
+`popUpTo(Home) { saveState = true }`, `launchSingleTop = true` and
+`restoreState = true`, so tabs do not duplicate on the back stack and Back from
+a tab returns Home.
+
+`ui/adaptive/AppBreakpoints.kt` is the single source for the 600 dp
+compact/medium boundary and the existing 360 dp / 480 dp height / 1.5x / 2x
+screen thresholds.
+The suite consumes only the navigation bar/rail inset it owns; each screen
+keeps its own `safeDrawing` handling, so insets are not applied twice.
+
 ## Room schema v3
 
 `AppDatabase` (`povitr_pustok_app.db`) is version **3** with `exportSchema =

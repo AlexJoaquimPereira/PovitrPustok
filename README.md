@@ -15,7 +15,7 @@ the app never re-imports, rewrites or "fixes" it.
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 542 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 55 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
+| **Tests** | 550 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 63 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
 
 ---
 
@@ -152,19 +152,32 @@ Each control writes through immediately to `SharedPreferences` and applies to th
 composition; the preview uses the real Scripture text style. Settings also shows the app version
 and the entry to **About**.
 
+### 2.10 More
+A short hub for the secondary entries that do not need their own top-level tab: **Search**,
+**Bookmarks**, **Daily Reading**, **Go to reference**, and **Settings & about**. It opens the
+same routes as Home and does not load or duplicate any Bible content.
+
 ---
 
 ## 3. Screens and navigation
 
-Navigation uses a single `NavController`/back stack (Navigation Compose). Routes are declared in
+Navigation uses a single `NavController`/back stack (Navigation Compose). The controller is
+owned by the `PovitrPustokApp` shell (`ui/PovitrPustokApp.kt`); routes are declared in
 `core/navigation/AppDestination.kt` and wired in `core/navigation/PovitrPustokNavHost.kt`.
 Navigation arguments are compact identifiers (book id, chapter position, optional verse target,
 optional edition id) — never HTML or content objects.
 
+The shell shows the Material 3 adaptive navigation suite only on the top-level destinations:
+**Home** (`home`), **Bible** (`books`) and **More** (`more`). Compact windows use the bottom
+navigation bar; medium and expanded windows use the navigation rail. Detail screens (Reader,
+Search, Bookmarks, Daily Reading, Reference, Settings, About, chapters and introduction) hide
+the suite and keep their existing top bar and back handling.
+
 | Route | Screen | Arguments |
 |---|---|---|
 | `home` | Home launcher | — |
-| `books` | Books catalogue | — |
+| `books` | Books catalogue (Bible tab) | — |
+| `more` | More hub (Search, Bookmarks, Daily Reading, Reference, Settings) | — |
 | `books/{bookId}` | Chapter selection | `bookId` |
 | `books/{bookId}/introduction` | Book introduction | `bookId` |
 | `reader/{bookId}/{chapterPosition}?verseId=&verseStart=&verseEnd=&passages=&targetVerse=&editionId=` | Reader | `bookId`, `chapterPosition`, optional verse target / passage, optional edition |
@@ -183,8 +196,10 @@ optional edition id) — never HTML or content objects.
 The About disclosures are under `about/…`. `settings` is the reader-preferences screen, not an
 About route. `editionId` is optional everywhere and defaults to `konkani-romi`.
 
-Back-stack behaviour is the standard push/pop of Navigation Compose: Books → Chapters →
-Introduction and Reader targets pop via `popBackStack()`.
+Back-stack behaviour: top-level tab taps pop to Home with saved state, set `launchSingleTop`
+and restore the target's state, so switching tabs never piles up duplicate destinations and
+Back from a tab returns Home. Detail flows keep the standard push/pop of Navigation Compose:
+Books → Chapters → Introduction and Reader targets pop via `popBackStack()`.
 
 ---
 
@@ -249,7 +264,7 @@ single-module decision — is [`docs/architecture.md`](docs/architecture.md).
 | `data/preferences` | Persisted reading preferences (`SharedPreferences`) |
 | `data/di` | Hilt bindings |
 | `feature/*` | One package per screen: `Screen`, `UiState`, `ViewModel` |
-| `ui` | Home screen/ViewModel, shared components and the Material 3 theme |
+| `ui` | Home screen/ViewModel, app shell, adaptive breakpoints, shared components and the Material 3 theme |
 
 ---
 
@@ -418,11 +433,11 @@ PovitrPustok/
 │       │   │   ├── core/{database,html,navigation,pack,result}
 │       │   │   ├── data/{app,bible,di,liturgy,preferences}
 │       │   │   ├── domain/{model,reference,repository}
-│       │   │   ├── feature/{about,bookmarks,books,common,dailyreading,reader,reference,search,settings}
-│       │   │   └── ui/{theme,components, AppVersion, HomeScreen, HomeViewModel}
+│       │   │   ├── feature/{about,bookmarks,books,common,dailyreading,more,reader,reference,search,settings}
+│       │   │   └── ui/{adaptive,theme,components, AppVersion, HomeScreen, HomeViewModel, PovitrPustokApp}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
-│       ├── test/                        # 542 JVM unit tests + HTML fixtures
-│       └── androidTest/                 # 55 instrumented tests
+│       ├── test/                        # 550 JVM unit tests + HTML fixtures
+│       └── androidTest/                 # 63 instrumented tests
 ├── docs/                                 # architecture, rights, content-pack, performance and release documentation
 ├── tools/{corpus,release}/               # corpus importer/audit, release packaging
 ├── gradle/libs.versions.toml            # version catalog
@@ -564,10 +579,10 @@ made private again, Obtainium needs a GitHub token with read access.
 
 | Suite | Count | Runner | Notes |
 |---|---|---|---|
-| JVM unit tests | **542** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
-| Instrumented tests | **55** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 51 executed / 0 failed / 4 skips (3 FTS5-only + 1 network-dependent Daily Reading) |
+| JVM unit tests | **550** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
+| Instrumented tests | **63** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 59 executed / 0 failed / 4 skips (3 FTS5-only + 1 network-dependent Daily Reading) |
 
-34 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
+36 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
 assets or Room. Room migrations are validated by `MigrationTestHelper` against the checked-in
 `app/schemas/` JSON; the debug variant carries those schemas as test assets, the release APK does
 not. The migration suite runs under `testDebugUnitTest`; `testReleaseUnitTest` is not a supported
