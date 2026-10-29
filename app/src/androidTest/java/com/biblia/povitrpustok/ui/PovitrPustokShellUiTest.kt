@@ -1,5 +1,6 @@
 package com.biblia.povitrpustok.ui
 
+import android.os.SystemClock
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -10,9 +11,11 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.biblia.povitrpustok.MainActivity
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -71,6 +74,72 @@ class PovitrPustokShellUiTest {
 
         composeRule.onNodeWithTag("home.notice").assertIsDisplayed()
         composeRule.onNodeWithTag("nav.home").assertIsSelected()
+    }
+
+    @Test
+    fun repeated_tab_switches_leave_no_duplicate_back_entries() {
+        // The standard top-level pattern must pop to the graph start while
+        // saving state, so repeating Home <-> Bible can never grow the stack.
+        repeat(3) {
+            composeRule.onNodeWithTag("nav.bible").performClick()
+            composeRule.onNodeWithTag("books.jump.old").assertIsDisplayed()
+            composeRule.onNodeWithTag("nav.home").performClick()
+            composeRule.onNodeWithTag("home.notice").assertIsDisplayed()
+        }
+        composeRule.onNodeWithTag("nav.bible").performClick()
+        composeRule.onNodeWithTag("books.jump.old").assertIsDisplayed()
+
+        pressSystemBack()
+        composeRule.onNodeWithTag("home.notice").assertIsDisplayed()
+        composeRule.onNodeWithTag("nav.home").assertIsSelected()
+
+        // Home is the graph start. If a duplicate tab entry were left behind,
+        // this Back would pop to it and the app would stay in the foreground.
+        assertBackLeavesTheApp()
+    }
+
+    @Test
+    fun more_detail_back_returns_to_more() {
+        composeRule.onNodeWithTag("nav.more").performClick()
+        composeRule.onNodeWithTag("more.screen").assertIsDisplayed()
+
+        composeRule.onNodeWithTag("more.settings").performClick()
+        composeRule.onNodeWithTag("settings.back").assertIsDisplayed()
+        composeRule.onNodeWithTag("nav.more").assertDoesNotExist()
+
+        pressSystemBack()
+        composeRule.onNodeWithTag("more.screen").assertIsDisplayed()
+        composeRule.onNodeWithTag("nav.more").assertIsSelected()
+    }
+
+    private fun pressSystemBack() {
+        composeRule.activityRule.scenario.onActivity {
+            it.onBackPressedDispatcher.onBackPressed()
+        }
+        composeRule.waitForIdle()
+    }
+
+    /**
+     * Back on Home must leave the foreground. With the standard top-level
+     * pattern the stack holds one entry, so the system Back is not consumed by
+     * the NavHost; a duplicate tab entry would keep the activity RESUMED.
+     *
+     * The platform may either finish the activity or move the task to the
+     * background, so the assertion is "no longer resumed", not "destroyed".
+     */
+    private fun assertBackLeavesTheApp(timeoutMillis: Long = 5_000) {
+        composeRule.activityRule.scenario.onActivity {
+            it.onBackPressedDispatcher.onBackPressed()
+        }
+        val deadline = SystemClock.uptimeMillis() + timeoutMillis
+        while (SystemClock.uptimeMillis() < deadline) {
+            if (composeRule.activityRule.scenario.state != Lifecycle.State.RESUMED) return
+            SystemClock.sleep(50)
+        }
+        fail(
+            "Back on Home left the app resumed: repeated tab switches left a " +
+                "duplicate destination on the back stack"
+        )
     }
 
     @Test
