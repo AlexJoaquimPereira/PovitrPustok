@@ -377,7 +377,7 @@ private fun AboutFooter(
  * Stays full width in every layout, including the stacked large-font one.
  */
 @Composable
-private fun ContinueReadingCard(
+internal fun ContinueReadingCard(
     bookName: String,
     updatedAt: Long,
     onClick: () -> Unit,
@@ -426,7 +426,10 @@ private fun ContinueReadingCard(
                     text = bookName,
                     style = MaterialTheme.typography.titleMedium,
                     color = contentColor,
-                    maxLines = 1,
+                    // At 2x the card grows instead of truncating the book
+                    // name; the longest Konkani titles need three lines on a
+                    // phone at 200%.
+                    maxLines = 3,
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(2.dp))
