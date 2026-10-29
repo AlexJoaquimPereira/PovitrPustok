@@ -170,7 +170,10 @@ private fun BookmarkRow(
                 localName = localName,
                 englishName = englishName,
                 layout = BookNameLayout.INLINE,
-                style = MaterialTheme.typography.titleSmall
+                style = MaterialTheme.typography.titleSmall,
+                // At 2x a long Konkani book name wraps to a second line rather
+                // than losing its ending to an ellipsis.
+                localMaxLines = 2
             )
             Text(
                 text = if (bookmark.verseStart == bookmark.verseEnd) {
