@@ -62,6 +62,7 @@ import com.biblia.povitrpustok.domain.model.ReadingPreferences
 import com.biblia.povitrpustok.domain.model.ScriptureSize
 import com.biblia.povitrpustok.feature.about.AboutEntryRow
 import com.biblia.povitrpustok.feature.about.AboutRowGroup
+import com.biblia.povitrpustok.ui.adaptive.AppBreakpoints
 import com.biblia.povitrpustok.ui.rememberAppVersionName
 import com.biblia.povitrpustok.ui.theme.LocalReadingPreferences
 import com.biblia.povitrpustok.ui.theme.LocalScripturePalette
@@ -163,7 +164,7 @@ private fun SettingsTopBar(onBack: () -> Unit) {
     // "Settings & About" is the longest bar title in the app. Above 1.5x the
     // title steps down one size so it stays on one line instead of wrapping
     // into a fixed-height bar, which would clip the words.
-    val titleStyle = if (fontScale >= 1.5f) {
+    val titleStyle = if (fontScale >= AppBreakpoints.LargeFontScale) {
         MaterialTheme.typography.titleMedium
     } else {
         MaterialTheme.typography.titleLarge

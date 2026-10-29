@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
+import com.biblia.povitrpustok.ui.adaptive.AppBreakpoints
 
 /**
  * Shared book-name presentation (F-12): one local-language name everywhere,
@@ -26,7 +27,8 @@ enum class BookNameLayout { STACKED, INLINE }
  * use this predicate so the threshold cannot drift.
  */
 @Composable
-fun englishBookNameVisible(): Boolean = LocalDensity.current.fontScale < 2f
+fun englishBookNameVisible(): Boolean =
+    LocalDensity.current.fontScale < AppBreakpoints.ExtraLargeFontScale
 
 /**
  * Renders [localName] as the primary label and [englishName] as a secondary

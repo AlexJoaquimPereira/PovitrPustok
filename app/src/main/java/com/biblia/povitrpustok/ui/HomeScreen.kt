@@ -46,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.BibleCatalog
 import com.biblia.povitrpustok.domain.model.ReadingState
+import com.biblia.povitrpustok.ui.adaptive.AppBreakpoints
 import com.biblia.povitrpustok.ui.theme.OverlineTextStyle
 import com.biblia.povitrpustok.ui.theme.ReadingColumnMaxWidth
 
@@ -118,7 +119,7 @@ fun HomeScreen(
             // A landscape phone is ~370 dp tall once the bars are subtracted;
             // tightening the masthead there buys back a destination or two
             // before the first scroll without dropping the identity lines.
-            val compact = maxHeight < 480.dp
+            val compact = maxHeight < AppBreakpoints.CompactHeight
 
             Column(
                 modifier = Modifier
@@ -245,7 +246,7 @@ fun HomeScreen(
  * keeps the two-column grid at 1x.
  */
 internal fun homeStacksDestinations(maxWidth: Dp, fontScale: Float): Boolean =
-    fontScale >= 1.5f || maxWidth < 360.dp
+    fontScale >= AppBreakpoints.LargeFontScale || maxWidth < AppBreakpoints.HomeGridMinWidth
 
 /** One secondary destination, in the order it is numbered on screen. */
 private class HomeDestination(

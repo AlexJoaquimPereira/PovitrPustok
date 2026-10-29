@@ -88,6 +88,7 @@ import com.biblia.povitrpustok.domain.model.BibleEditions
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.ReaderPassageCodec
 import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
+import com.biblia.povitrpustok.ui.adaptive.AppBreakpoints
 import com.biblia.povitrpustok.ui.components.BookName
 import com.biblia.povitrpustok.ui.components.BookNameLayout
 
@@ -499,7 +500,7 @@ private fun ReaderActionBar(
             .orEmpty()
         // F-27/Day 20 matrix: at 2x the full "Chapter 3" ellipsized to
         // "Chapter…", which says nothing. Keep the numeral and describe it.
-        val compactSelector = LocalDensity.current.fontScale >= 1.5f
+        val compactSelector = LocalDensity.current.fontScale >= AppBreakpoints.LargeFontScale
         TextButton(
             onClick = onOpenChapterPicker,
             enabled = state.chapter != null && state.chapters.isNotEmpty(),
@@ -575,7 +576,7 @@ private fun ChapterPickerSheet(
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val columns = if (LocalDensity.current.fontScale >= 1.5f) 3 else 5
+    val columns = if (LocalDensity.current.fontScale >= AppBreakpoints.LargeFontScale) 3 else 5
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,

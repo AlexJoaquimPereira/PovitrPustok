@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.biblia.povitrpustok.R
+import com.biblia.povitrpustok.ui.adaptive.AppBreakpoints
 import com.biblia.povitrpustok.ui.theme.OverlineTextStyle
 import com.biblia.povitrpustok.ui.theme.ReadingColumnMaxWidth
 
@@ -124,7 +125,7 @@ private fun AboutTopBar(
     val fontScale = LocalDensity.current.fontScale
     // A long title steps down one size at large font scales so it stays on one
     // line inside the fixed-height bar instead of clipping.
-    val titleStyle = if (fontScale >= 1.5f) {
+    val titleStyle = if (fontScale >= AppBreakpoints.LargeFontScale) {
         MaterialTheme.typography.titleMedium
     } else {
         MaterialTheme.typography.titleLarge
