@@ -3,11 +3,11 @@
 Povitr Pustok ships through **GitHub Releases + Obtainium**. There is no Play Store,
 F-Droid, or CI-published APK.
 
-> **Private repository.** Releases are distributed from a private repository by owner
-> decision. Anonymous downloads are not available; Obtainium must be configured with a
-> GitHub token that can read the repository (fine-grained token: Contents: Read). The
-> repository history contains no corpus, keystore, or secret blobs, so this is an
-> access-control choice, not a corpus-protection requirement.
+> **Public repository.** Releases are distributed from a public repository, so Obtainium can
+> read them anonymously. The repository history contains no corpus, keystore, or secret blobs,
+> so visibility is an access-control choice, not a corpus-protection requirement. If the
+> repository is made private again, Obtainium needs a GitHub token that can read it
+> (fine-grained token: Contents: Read).
 
 ## 1. One-time setup
 
@@ -61,10 +61,9 @@ F-Droid, or CI-published APK.
       committed file); create an annotated tag `v<version>`; push `master` and the tag.
 - [ ] GitHub release: title, notes, and the APK, AAB, and `SHA256SUMS` assets.
 - [ ] Never attach corpus files, source XML, debug/test APKs, R8 mapping files, or keystores.
-- [ ] Confirm the release is visible to the Obtainium token; the repository is private, so
-      anonymous downloads are not expected.
-- [ ] Obtainium: configure a GitHub token with read access, refresh, and confirm it sees the
-      new version and installs it.
+- [ ] Confirm the release is publicly visible; Obtainium can refresh without a token.
+- [ ] Obtainium: add the repository, refresh, and confirm it sees the new version and installs it.
+      If the repository is private again, configure a GitHub token with read access first.
 
 ## 6. Post-release
 

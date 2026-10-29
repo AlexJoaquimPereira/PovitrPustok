@@ -505,8 +505,9 @@ F-Droid build.
 
 1. Install Obtainium.
 2. Add `https://github.com/AlexJoaquimPereira/PovitrPustok`.
-3. The repository is private. Configure a GitHub token with read access (fine-grained token:
-   **Contents: Read**) in Obtainium before refreshing.
+3. The repository is public, so Obtainium can refresh it without a token. If the repository is
+   made private again, configure a GitHub token with read access (fine-grained token:
+   **Contents: Read**) before refreshing.
 4. Obtainium checks releases and offers updates. You can also download the APK from a release and
    verify it against the attached `SHA256SUMS`.
 
@@ -554,7 +555,8 @@ If the file is absent, the release signing config is simply left unset and the p
 (producing an unsigned release artifact). Follow [`docs/release-checklist.md`](docs/release-checklist.md)
 before publishing; [`tools/release/package_release.sh`](tools/release/package_release.sh) builds the
 signed APK/AAB, verifies the corpus payload, and writes `SHA256SUMS`. CI never publishes release
-artifacts. The repository is private; Obtainium requires a GitHub token with read access.
+artifacts. The repository is public, so Obtainium can read releases without a token. If it is
+made private again, Obtainium needs a GitHub token with read access.
 
 ---
 
