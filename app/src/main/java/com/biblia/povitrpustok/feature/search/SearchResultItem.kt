@@ -68,7 +68,9 @@ fun SearchResultItem(
                 text = displayName,
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
+                // At 2x the book name may need a second line; the reference
+                // keeps its own space, so the name wraps instead of vanishing.
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f, fill = false)
             )
