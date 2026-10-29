@@ -6,8 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.biblia.povitrpustok.core.navigation.PovitrPustokNavHost
 import com.biblia.povitrpustok.domain.repository.ReadingPreferencesRepository
+import com.biblia.povitrpustok.ui.PovitrPustokApp
 import com.biblia.povitrpustok.ui.theme.BibleTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -28,7 +28,7 @@ class MainActivity : ComponentActivity() {
             val preferences by readingPreferencesRepository.preferences
                 .collectAsStateWithLifecycle()
             BibleTheme(preferences = preferences) {
-                PovitrPustokNavHost()
+                PovitrPustokApp()
             }
         }
     }

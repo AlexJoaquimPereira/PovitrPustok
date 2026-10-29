@@ -88,6 +88,7 @@ class AppDestinationTest {
             AppDestination.DAILY_READING,
             AppDestination.BOOKMARKS,
             AppDestination.BOOKS,
+            AppDestination.MORE,
             AppDestination.BOOK_CHAPTERS,
             AppDestination.BOOK_INTRODUCTION,
             AppDestination.READER,
@@ -101,7 +102,7 @@ class AppDestinationTest {
             AppDestination.ABOUT_APP_LICENSE,
             AppDestination.ABOUT_CREDITS
         )
-        assertEquals(16, routes.size)
+        assertEquals(17, routes.size)
         assertEquals("settings", AppDestination.SETTINGS)
         assertEquals("about", AppDestination.ABOUT)
         assertEquals("about/source-edition", AppDestination.ABOUT_SOURCE_EDITION)
@@ -117,5 +118,16 @@ class AppDestinationTest {
         assertTrue(!AppDestination.READER.contains("chapterNumber"))
         assertTrue(!AppDestination.READER.contains("SearchResult"))
         assertTrue(!AppDestination.READER.contains("text_plain"))
+    }
+
+    @Test
+    fun top_level_routes_are_home_bible_and_more() {
+        assertEquals("more", AppDestination.MORE)
+        assertEquals(
+            setOf(AppDestination.HOME, AppDestination.BOOKS, AppDestination.MORE),
+            AppDestination.TOP_LEVEL
+        )
+        assertTrue(AppDestination.READER !in AppDestination.TOP_LEVEL)
+        assertTrue(AppDestination.SETTINGS !in AppDestination.TOP_LEVEL)
     }
 }

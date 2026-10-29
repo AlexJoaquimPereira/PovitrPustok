@@ -1,5 +1,11 @@
 <resources>
     <string name="app_name">Povitr Pustok</string>
+    <!-- Adaptive navigation suite (F2-02): top-level destinations. -->
+    <string name="nav_home">Home</string>
+    <string name="nav_bible">Bible</string>
+    <string name="nav_more">More</string>
+    <string name="more_title">More</string>
+    <string name="more_subtitle_settings">Reading, theme and about</string>
     <string name="home_bible">Bible</string>
     <string name="home_overline">KONKANI CATHOLIC BIBLE</string>
     <string name="home_subtitle_bible">%1$d books</string>

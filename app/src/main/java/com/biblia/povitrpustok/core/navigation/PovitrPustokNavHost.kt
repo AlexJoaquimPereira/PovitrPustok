@@ -5,11 +5,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.biblia.povitrpustok.feature.about.AboutApiScreen
 import com.biblia.povitrpustok.feature.about.AboutAppLicenseScreen
@@ -22,6 +24,7 @@ import com.biblia.povitrpustok.feature.books.BookIntroductionScreen
 import com.biblia.povitrpustok.feature.books.BooksScreen
 import com.biblia.povitrpustok.feature.bookmarks.BookmarksScreen
 import com.biblia.povitrpustok.feature.dailyreading.DailyReadingScreen
+import com.biblia.povitrpustok.feature.more.MoreScreen
 import com.biblia.povitrpustok.feature.reader.ReaderScreen
 import com.biblia.povitrpustok.feature.reference.ReferenceEntryScreen
 import com.biblia.povitrpustok.feature.search.SearchScreen
@@ -43,11 +46,14 @@ private const val NAV_SLIDE_MS = 220
 private const val NAV_SLIDE_DIVISOR = 16
 
 @Composable
-fun PovitrPustokNavHost() {
-    val navController = rememberNavController()
+fun PovitrPustokNavHost(
+    navController: NavHostController,
+    modifier: Modifier = Modifier
+) {
     NavHost(
         navController = navController,
         startDestination = AppDestination.HOME,
+        modifier = modifier.fillMaxSize(),
         // F-19: short, declarative transitions. Compose honours the system
         // animation scale, including 0 (instant).
         enterTransition = {
@@ -77,6 +83,16 @@ fun PovitrPustokNavHost() {
                 },
                 onOpenDailyReading = { navController.navigate(AppDestination.DAILY_READING) },
                 onOpenAbout = { navController.navigate(AppDestination.SETTINGS) }
+            )
+        }
+
+        composable(AppDestination.MORE) {
+            MoreScreen(
+                onOpenSearch = { navController.navigate(AppDestination.search()) },
+                onOpenBookmarks = { navController.navigate(AppDestination.BOOKMARKS) },
+                onOpenDailyReading = { navController.navigate(AppDestination.DAILY_READING) },
+                onOpenReference = { navController.navigate(AppDestination.REFERENCE_ENTRY) },
+                onOpenSettings = { navController.navigate(AppDestination.SETTINGS) }
             )
         }
 

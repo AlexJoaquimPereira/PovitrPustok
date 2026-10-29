@@ -4,7 +4,10 @@ import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -123,10 +126,14 @@ class HomeNavigationUiTest {
         composeRule.onNodeWithTag("home.hero").assertIsDisplayed()
         composeRule.onNodeWithTag("home.grid").assertIsDisplayed()
 
-        // F-11: the labels stay unique click targets; subtitles must not
-        // introduce a second match for any of them.
+        // F-11: the labels stay unique click targets inside the Home grid;
+        // subtitles must not introduce a second match for any of them. The
+        // adaptive suite adds a separate "Bible" label outside the grid, so
+        // scope the one-node rule to the grid rather than weakening it.
         listOf("Bible", "Search", "Bookmarks").forEach { label ->
-            composeRule.onAllNodesWithText(label).assertCountEquals(1)
+            composeRule.onAllNodes(
+                hasText(label) and hasAnyAncestor(hasTestTag("home.grid"))
+            ).assertCountEquals(1)
         }
     }
 
@@ -146,7 +153,7 @@ class HomeNavigationUiTest {
 
     @Test
     fun search_returns_james_results() {
-        composeRule.onNodeWithText("Search").performClick()
+        composeRule.onNodeWithTag("home.search").performClick()
         composeRule.onNode(hasSetTextAction()).performTextInput("subhagi")
 
         composeRule.waitUntil(timeoutMillis = 10_000) {
@@ -159,7 +166,7 @@ class HomeNavigationUiTest {
 
     @Test
     fun system_back_returns_home_from_books() {
-        composeRule.onNodeWithText("Bible").performClick()
+        composeRule.onNodeWithTag("home.bible").performClick()
         composeRule.waitForIdle()
 
         composeRule.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }

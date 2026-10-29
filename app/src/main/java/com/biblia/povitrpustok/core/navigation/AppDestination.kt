@@ -11,7 +11,17 @@ object AppDestination {
 
     const val HOME = "home"
 
+    /** Bible tab: the existing Books catalogue. */
     const val BOOKS = "books"
+
+    /** More hub: Search, Bookmarks, Daily Reading, Reference and Settings. */
+    const val MORE = "more"
+
+    /**
+     * Destinations that carry the adaptive navigation suite. Detail screens
+     * keep their own top bar and are deliberately absent.
+     */
+    val TOP_LEVEL: Set<String> = setOf(HOME, BOOKS, MORE)
 
     /** books/{bookId} — chapter selection for one book. */
     const val BOOK_CHAPTERS = "books/{bookId}"
