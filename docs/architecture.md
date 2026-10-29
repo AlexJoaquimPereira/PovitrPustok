@@ -169,6 +169,22 @@ calendar pack is regenerated yearly before its expiry. **No packs ship in
 1.3.0.** The format and lifecycle are documented in
 [`docs/content-packs.md`](content-packs.md).
 
+## English TTS boundary
+
+F2-10 adds `core/tts` as a Compose-free seam. `EnglishTextToSpeech` owns one
+`TextToSpeechEngine` and exposes `StateFlow<TtsStatus>`; it checks
+`isLanguageAvailable(Locale.ENGLISH)` and then selects English, reporting
+`MissingLanguageData` (`-1`) and `LanguageNotSupported` (`-2`) as distinct
+states. Initialization failure keeps the platform error code. The port exposes
+only language checks/selection, `speak`, `stop`, and `shutdown`, so tests drive
+a fake engine without a device.
+
+`AndroidTextToSpeechEngineFactory` is the production adapter. Hilt provides the
+factory only, never a controller or engine; the owner (F2-11) controls the
+controller's lifecycle and must call `shutdown()`. There is no background
+service, audio-focus handling, SSML language switching, network use, or Konkani
+voice path: callers must not pass Romi Konkani to this English-only controller.
+
 ## Module boundary
 
 1.3.0 stays a single `:app` module (F1-23). Do not modularize for its own sake.
@@ -186,4 +202,5 @@ annotations force a split.
 | Stable anchors and bookmark identity | `BookmarkDestinationTest`, `BookmarksViewModelTest`, `ReaderBookmarkIntegrationTest`, `ReaderViewModelTest` |
 | Edition seam | `BibleEditionTest`, `AssetBibleDatabaseProviderEditionTest`, `BibleRepositoryEditionTest` |
 | Content-pack format and licence gate | `ContentPackTest`, `ContentPackManifestParserTest`, `ContentPackLoaderTest`, `LicenceManifestTest` |
+| English TTS wrapper | `EnglishTextToSpeechTest` |
 | Rights register | `RightsRegisterTest` |

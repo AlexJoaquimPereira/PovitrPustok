@@ -246,6 +246,17 @@ There is no visible feature change; the licences and reading-preference pages al
 design record — schema/migration rules, anchor identity, edition keying, pack validation, and the
 single-module decision — is [`docs/architecture.md`](docs/architecture.md).
 
+### English TTS boundary (1.3.1)
+
+`core/tts` is the UI-free seam for English text-to-speech. `EnglishTextToSpeech` owns one engine
+through the `TextToSpeechEngine` port, exposes a `StateFlow<TtsStatus>`, checks and selects
+`Locale.ENGLISH`, and distinguishes missing language data (`-1`) from an unsupported language
+(`-2`). It offers only `speak`, `stop`, and `shutdown`. The production adapter is
+`AndroidTextToSpeechEngineFactory`; Hilt provides the factory, never a controller or a live engine,
+so the owner (F2-11) controls the lifecycle and calls `shutdown()`. There is no background service,
+audio-focus takeover, SSML language switching, network use, or Konkani voice path; callers must not
+feed Romi Konkani to this English-only controller.
+
 ### Package responsibilities
 
 | Package | Responsibility |
@@ -255,6 +266,7 @@ single-module decision — is [`docs/architecture.md`](docs/architecture.md).
 | `core/navigation` | Route contract and navigation graph |
 | `core/pack` | Bundled content-pack source, manifest parser, checksum-verifying loader |
 | `core/result` | `BibleDataException` and `ContentPackException` hierarchies |
+| `core/tts` | English-only `TextToSpeech` controller behind an injectable engine port (no Compose, service, audio focus, or network) |
 | `domain/model` | Pure domain models (books, chapters, verses, headings, liturgy, bookmarks, editions, packs) |
 | `domain/reference` | Book-name matcher and Scripture reference parser (pure) |
 | `domain/repository` | Repository interfaces (the domain boundary) |
