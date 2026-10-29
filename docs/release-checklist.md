@@ -45,6 +45,9 @@ F-Droid, or CI-published APK.
       certificate.
 - [ ] `jarsigner -verify` accepts the AAB.
 - [ ] Record the APK and AAB SHA-256 values from `SHA256SUMS`.
+- [ ] Visually check the adaptive navigation suite on a compact phone and an expanded/rail
+      window: no double insets, no content hidden behind the bar/rail, and detail screens hide
+      the suite.
 
 ## 4. Upgrade test
 
