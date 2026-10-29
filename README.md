@@ -604,6 +604,10 @@ export ROBOLECTRIC_USER_HOME=/path/to/robolectric-home   # containing .m2/reposi
 **Real-content tests.** Most data-layer and reader tests run against the **real corpus assets**,
 not synthetic fixtures, and assert semantic preservation rather than exact serialisation.
 
+**Connected tests need the corpus.** The instrumented suite also uses the real corpus; without
+`app/src/main/assets/bible`, a `connectedDebugAndroidTest` run fails rather than skipping. CI
+only runs the instrumented job when the private corpus secret is present.
+
 **Documented skips.** Corpus-dependent tests use `CorpusAvailabilityRule` and skip when
 `-PskipCorpusTests` is set. `BibleDatabaseProviderTest` and `CorpusGateTest` additionally call
 `Assume.assumeTrue(...)` to skip the FTS5-`MATCH` parity check under Robolectric (desktop SQLite
