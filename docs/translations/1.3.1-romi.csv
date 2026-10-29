@@ -1,0 +1,125 @@
+key,scope,english,romi,notes
+nav_home,translate,Home,,
+nav_bible,translate,Bible,,
+nav_more,translate,More,,
+more_title,translate,More,,
+more_subtitle_settings,translate,"Reading, theme and about",,
+back,translate,Back,,
+reader_add_bookmark,translate,Add bookmark,,
+reader_remove_bookmark,translate,Remove bookmark,,
+reader_bookmark_added,translate,Bookmarked · %1$s %2$d:%3$d,,
+reader_bookmark_removed,translate,Bookmark removed · %1$s %2$d:%3$d,,
+reader_bookmark_undo,translate,Undo,,
+reader_verse_actions,translate,Verse actions,,
+reader_copy_verse,translate,Copy verse,,
+reader_share_verse,translate,Share verse,,
+reader_share_chooser,translate,Share verse,,
+reader_verse_copied,translate,Verse copied,,
+bookmarks_title,translate,Bookmarks,,
+bookmarks_empty,translate,No bookmarks yet.,,
+bookmarks_empty_body,translate,Tap the bookmark icon while reading to save a place.,,
+bookmarks_browse_books,translate,Browse books,,
+bookmarks_remove,translate,Remove bookmark,,
+bookmarks_removed,translate,Bookmark removed,,
+bookmark_reference,translate,%1$d:%2$d,,
+bookmark_reference_range,translate,%1$d:%2$d–%3$d,,
+reader_retry,translate,Retry,,
+reader_error_book_missing,translate,This book could not be opened.,,
+reader_error_chapter_missing,translate,This chapter is not available.,,
+reader_error_load_failed,translate,The chapter could not be loaded.,,
+reader_chapter_of,translate,Chapter %1$d of %2$d,,
+reader_chapter_number,translate,Chapter %1$d,,
+reader_selected_verse,translate,Chapter %1$d · verse %2$d,,
+reader_verse_state_target,translate,Target verse,,
+reader_verse_state_selected,translate,Selected,,
+reader_verse_state_bookmarked,translate,Bookmarked,,
+reader_previous_chapter,translate,Previous chapter,,
+reader_next_chapter,translate,Next chapter,,
+chapter_selector_label,translate,Chapter %1$s,,
+chapter_picker_title,translate,Choose a chapter,,
+chapter_picker_current,translate,Current chapter,,
+verse_range,translate,%1$d–%2$d,,
+reader_verse_only,translate,Verse %1$d,,
+reader_passage_label,translate,Passage,,
+reader_passage_verses,translate,Verses %1$s,,
+reader_passage_chapters,translate,Passage · %1$d chapters,,
+reader_show_full_chapter,translate,Show full chapter,,
+reader_target_missing,translate,Verse not found — showing the chapter.,,
+reader_dismiss,translate,Dismiss,,
+settings_title,translate,Settings,,
+settings_section_reading,translate,READING,,
+settings_section_about,translate,ABOUT,,
+settings_about_title,translate,About Povitr Pustok,,
+settings_about_subtitle,translate,"Source edition, data, licences and credits",,
+settings_scripture_size,translate,Scripture size,,
+settings_scripture_size_caption,translate,On top of your device text size.,,
+settings_scripture_size_small,translate,Small,,
+settings_scripture_size_medium,translate,Medium,,
+settings_scripture_size_large,translate,Large,,
+settings_scripture_size_extra_large,translate,Extra large,,
+settings_scripture_size_short_small,translate,S,,
+settings_scripture_size_short_medium,translate,M,,
+settings_scripture_size_short_large,translate,L,,
+settings_scripture_size_short_extra_large,translate,XL,,
+settings_preview,translate,PREVIEW,,
+settings_preview_body,translate,This is how Scripture will look in the reader. Adjust the size and spacing until it reads comfortably.,,
+settings_preview_red_letter_sample,translate,Aa,,
+settings_preview_red_letter,translate,Words of Jesus,,
+settings_line_spacing,translate,Line spacing,,
+settings_line_spacing_compact,translate,Compact,,
+settings_line_spacing_normal,translate,Normal,,
+settings_line_spacing_relaxed,translate,Relaxed,,
+settings_red_letter,translate,Red letter,,
+settings_red_letter_caption,translate,Words of Jesus appear in red where the Bible text marks them.,,
+settings_theme,translate,Theme,,
+settings_theme_caption,translate,System follows your device setting.,,
+settings_theme_system,translate,System,,
+settings_theme_light,translate,Light,,
+settings_theme_dark,translate,Dark,,
+about_title,translate,About,,
+about_app_title,translate,About Povitr Pustok,,
+about_version_value,translate,Version %1$s,,
+about_version_unknown,translate,Version unknown,,
+about_independent_note,keep English,"This app is an independent, unofficial publication. It is not produced or endorsed by the Diocesan Centre for Biblical Apostolate.",,Legal/proper name; review before translating.
+about_privacy_note,keep English,"No accounts, no analytics, no telemetry. Daily Reading sends only the date it is asking for.",,Legal/proper name; review before translating.
+about_source_title,translate,Source edition,,
+about_source_subtitle,translate,The Konkani Bible text and its rights holder,,
+about_source_centre,keep English,Dhormprantik Povitr Pustokachea Vavracho Kendr,,Legal/proper name; review before translating.
+about_source_centre_english,keep English,"(Goa Diocesan Centre for Biblical Apostolate, St. Pius X, Pastoral Institute, Old-Goa 403 402)",,Legal/proper name; review before translating.
+about_api_title,translate,API & data,,
+about_api_subtitle,translate,"Daily Reading source, privacy and reference",,
+about_api_lead,keep English,"Daily Reading uses the Catholic Readings API, maintained by cpbjr.",,Legal/proper name; review before translating.
+about_api_body,keep English,"The app sends only the date it is asking for. It collects no personal data, keeps no account and sends no analytics.",,Legal/proper name; review before translating.
+about_api_links_label,translate,LINKS,,
+about_api_website,review,Website,,Proper name/link label; owner decides.
+about_api_repo,review,GitHub repository,,Proper name/link label; owner decides.
+about_api_license,review,MIT License,,Proper name/link label; owner decides.
+about_api_note,keep English,"The feed follows the US calendar. Goan celebrations are corrected locally, and proper readings are not yet bundled with the app.",,Legal/proper name; review before translating.
+about_api_reference_label,translate,REFERENCE,,
+about_api_reference_title,review,Universalis Goa,,Proper name/link label; owner decides.
+about_api_reference_body,keep English,Used for manual cross-checking only. Nothing from Universalis is bundled in the app or copied into its data.,,Legal/proper name; review before translating.
+about_licenses_title,translate,Software licences,,
+about_licenses_subtitle,translate,Open-source libraries and their licences,,
+about_licenses_lead,keep English,The app code is released under the Apache License 2.0. Every third-party library keeps its own licence; the full Apache-2.0 text is on the App licence page.,,Legal/proper name; review before translating.
+about_licenses_app_title,review,App code — Apache License 2.0 — full text,,Proper name/link label; owner decides.
+about_licenses_app_subtitle,translate,"The complete licence, as distributed with the app.",,
+about_licenses_runtime,translate,RUNTIME LIBRARIES,,
+about_licenses_test,translate,TEST ONLY,,
+about_licenses_test_note,keep English,Used by the test suites; not part of the app.,,Legal/proper name; review before translating.
+about_licenses_build,translate,BUILD TOOLING,,
+about_licenses_build_note,keep English,Used to compile the app; not distributed in the APK.,,Legal/proper name; review before translating.
+about_licenses_link_note,keep English,Links open the project's repository or licence page.,,Legal/proper name; review before translating.
+about_licenses_transitive,translate,transitive,,
+about_license_apache,keep English,Apache License 2.0,,Legal/proper name; review before translating.
+about_license_epl,keep English,EPL-1.0,,Legal/proper name; review before translating.
+about_license_mit,keep English,MIT,,Legal/proper name; review before translating.
+about_app_license_title,translate,App licence,,
+about_app_license_lead,keep English,"The app's source code is released under the Apache License, Version 2.0. The complete text is reproduced below.",,Legal/proper name; review before translating.
+about_app_license_notice_title,translate,NOTICE,,
+about_app_license_notice_lead,keep English,The NOTICE file distributed with the app.,,Legal/proper name; review before translating.
+about_app_license_unavailable,keep English,The licence text could not be read from the app package.,,Legal/proper name; review before translating.
+about_credits_title,translate,Credits,,
+about_credits_subtitle,translate,People and projects this app relies on,,
+about_credits_lead,keep English,"Povitr Pustok is a free, independent, open-source project, built and maintained by one person.",,Legal/proper name; review before translating.
+about_credits_github,review,GitHub,,Proper name/link label; owner decides.
+about_credits_independent,keep English,"Independent project, not affiliated with the Catholic Readings API maintainer.",,Legal/proper name; review before translating.
