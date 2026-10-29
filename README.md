@@ -706,7 +706,7 @@ Bible corpus from inside the app.
 * [`docs/release-checklist.md`](docs/release-checklist.md) and
   [`docs/release-notes-template.md`](docs/release-notes-template.md) define the GitHub
   Releases/Obtainium release procedure; [`docs/releases/`](docs/releases) holds dry-run records.
-* Earlier releases are tagged in git (`v1.0.0` through `v1.2.4`); release notes are published in
+* Earlier releases are tagged in git (`v1.0.0` through `v1.3.0`); release notes are published in
   the corresponding GitHub releases.
 
 ---
