@@ -15,7 +15,7 @@ the app never re-imports, rewrites or "fixes" it.
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 550 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 72 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
+| **Tests** | 575 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 72 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
 
 ---
 
@@ -436,7 +436,7 @@ PovitrPustok/
 │       │   │   ├── feature/{about,bookmarks,books,common,dailyreading,more,reader,reference,search,settings}
 │       │   │   └── ui/{adaptive,theme,components, AppVersion, HomeScreen, HomeViewModel, PovitrPustokApp}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
-│       ├── test/                        # 550 JVM unit tests + HTML fixtures
+│       ├── test/                        # 575 JVM unit tests + HTML fixtures
 │       └── androidTest/                 # 72 instrumented tests
 ├── docs/                                 # architecture, rights, content-pack, performance and release documentation
 ├── tools/{corpus,release}/               # corpus importer/audit, release packaging
