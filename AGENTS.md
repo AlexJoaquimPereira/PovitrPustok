@@ -145,6 +145,8 @@ testing but **not** the FTS5 verification item.
 ## Documentation and local-only files
 
 - `README.md` is the product/architecture reference.
+- `docs/architecture.md` records the 1.3.0 schema/anchor/edition/pack design and the
+  single-module decision; keep it in step with schema or seam changes.
 - `TODO.md` and `AUDIT_REPORT.md` are **gitignored local working documents**; do not assume a fresh
   clone contains them. Do not rewrite `AUDIT_REPORT.md` as fixes land.
 - Release notes are published in GitHub releases, not committed as a file.

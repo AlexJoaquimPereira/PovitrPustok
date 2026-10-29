@@ -83,7 +83,8 @@ from the application database.
 * Select a book → chapter grid, or open its **Introduction**.
 
 ### 2.3 Reader
-* One chapter at a time, composed from headings, verses and introduction blocks in source order.
+* One chapter at a time, composed from headings and verses in source order. Book introductions
+  are a separate screen (Books → Introduction), not part of the Reader.
 * Source HTML is parsed into a structured representation and rendered to `AnnotatedString` —
   paragraphs, alignment, italics, bold, `<font color>`, line breaks and entities are preserved.
   Rendered text is always the canonical `verses.text`; `text_plain` is never used for display.
@@ -122,7 +123,10 @@ from the application database.
   produce explicit messages.
 
 ### 2.6 Bookmarks
-* Bookmarks identify an exact location (`bookId` + `chapterId` + `verseId`), unique per location.
+* Bookmarks identify a **stable anchor** — book id, source chapter position, source verse range,
+  and optional offsets — never corpus row ids, which change when the assets are regenerated.
+* Each bookmark has an app-owned UUID and keeps the chapter number only as a display copy;
+  the unique index is the anchor itself.
 * List screen ordered newest-first, with removal and tap-to-open in the Reader.
 * Persisted in the mutable application database; **never** written to the Bible databases.
 
@@ -142,14 +146,20 @@ from the application database.
 Material 3 light and dark themes with a blue reading-focused accent, custom typography and a
 low-noise shape set. The XML `Theme.PovitrPustok` covers only the pre-Compose window.
 
+### 2.9 Settings
+Reading controls: Scripture size, line spacing, red-letter toggle, and light/dark/system theme.
+Each control writes through immediately to `SharedPreferences` and applies to the next
+composition; the preview uses the real Scripture text style. Settings also shows the app version
+and the entry to **About**.
+
 ---
 
 ## 3. Screens and navigation
 
 Navigation uses a single `NavController`/back stack (Navigation Compose). Routes are declared in
-`core/navigation/AppDestination.kt` and wired in `PovitrPustokNavHost.kt`. Navigation arguments are
-always compact identifiers (book id, chapter position, optional verse target) — never HTML or
-content objects.
+`core/navigation/AppDestination.kt` and wired in `core/navigation/PovitrPustokNavHost.kt`.
+Navigation arguments are compact identifiers (book id, chapter position, optional verse target,
+optional edition id) — never HTML or content objects.
 
 | Route | Screen | Arguments |
 |---|---|---|
@@ -157,12 +167,12 @@ content objects.
 | `books` | Books catalogue | — |
 | `books/{bookId}` | Chapter selection | `bookId` |
 | `books/{bookId}/introduction` | Book introduction | `bookId` |
-| `reader/{bookId}/{chapterPosition}?verseId=&verseStart=&verseEnd=` | Reader | `bookId`, `chapterPosition`, optional verse target / passage |
-| `search` | Search | — |
+| `reader/{bookId}/{chapterPosition}?verseId=&verseStart=&verseEnd=&passages=&targetVerse=&editionId=` | Reader | `bookId`, `chapterPosition`, optional verse target / passage, optional edition |
+| `search?editionId=` | Search | optional edition |
 | `reference` | Scripture reference entry | — |
 | `daily-reading` | Daily Reading | — |
 | `bookmarks` | Bookmarks | — |
-| `settings` | Settings | — |
+| `settings` | Settings (reading preferences) | — |
 | `about` | About landing page | — |
 | `about/source-edition` | Source edition disclosure | — |
 | `about/api` | API and data disclosure | — |
@@ -171,7 +181,7 @@ content objects.
 | `about/credits` | Credits | — |
 
 The About disclosures are under `about/…`. `settings` is the reader-preferences screen, not an
-About route.
+About route. `editionId` is optional everywhere and defaults to `konkani-romi`.
 
 Back-stack behaviour is the standard push/pop of Navigation Compose: Books → Chapters →
 Introduction and Reader targets pop via `popBackStack()`.
@@ -205,28 +215,41 @@ Enforced rules (see implementation-plan §46 and the coding-harness rules):
 ### Bible editions
 
 `Edition` / `BibleEditions` declare the edition id, language tag, label, asset pattern, canon and
-licence. Only **Konkani (Romi)** (`konkani-romi`) ships today and is the default everywhere. The
-provider keys handles and copies by `(editionId, bookId)`; the default edition keeps the pre-seam
-`filesDir/bible/` path so existing users do not recopy the corpus. Reader and search routes accept an
-optional `editionId` query parameter, defaulting to Konkani, so the UI is unchanged.
+licence. Only **Konkani (Romi)** (`konkani-romi`) ships today and is the default everywhere.
+`BibleEditions.byId` returns `null` for an unknown id and the provider raises
+`BibleEditionNotFoundException`; nothing silently falls back to another edition. The provider keys
+handles by `(editionId, bookId)`; the default edition keeps the pre-seam `filesDir/bible/` path so
+existing users do not recopy the corpus, while future editions get their own subtree. Reader and
+search routes declare an optional `editionId` query parameter, defaulting to Konkani, so the UI is
+unchanged.
+
+### 1.3.0 data foundations
+
+1.3.0 adds the contracts later releases depend on: **Room schema v3** with stable verse anchors,
+the **edition seam**, and the **bundled content-pack format** with a build-time licence gate.
+There is no visible feature change; the licences and reading-preference pages already shipped. The
+design record — schema/migration rules, anchor identity, edition keying, pack validation, and the
+single-module decision — is [`docs/architecture.md`](docs/architecture.md).
 
 ### Package responsibilities
 
 | Package | Responsibility |
 |---|---|
-| `core/database` | Read-only per-book SQLite handle + asset-backed provider |
-| `core/html` | Corpus HTML parser, node model, diagnostics, renderer, Compose surface |
+| `core/database` | Read-only per-book SQLite handle + edition-aware asset-backed provider |
+| `core/html` | Corpus HTML parser, node model, diagnostics, renderer, Compose surface, bounded document cache |
 | `core/navigation` | Route contract and navigation graph |
-| `core/result` | `BibleDataException` hierarchy |
-| `domain/model` | Pure domain models (books, chapters, verses, headings, liturgy, bookmarks) |
+| `core/pack` | Bundled content-pack source, manifest parser, checksum-verifying loader |
+| `core/result` | `BibleDataException` and `ContentPackException` hierarchies |
+| `domain/model` | Pure domain models (books, chapters, verses, headings, liturgy, bookmarks, editions, packs) |
 | `domain/reference` | Book-name matcher and Scripture reference parser (pure) |
 | `domain/repository` | Repository interfaces (the domain boundary) |
 | `data/app` | Room database, DAOs, entities, bookmark repository |
 | `data/bible` | Bible/search/title repositories, reference resolver, snippet builder |
 | `data/liturgy` | Catholic Readings API client, DTOs, mappers, cache-first repository |
+| `data/preferences` | Persisted reading preferences (`SharedPreferences`) |
 | `data/di` | Hilt bindings |
 | `feature/*` | One package per screen: `Screen`, `UiState`, `ViewModel` |
-| `ui` | Home screen/ViewModel and the Material 3 theme |
+| `ui` | Home screen/ViewModel, shared components and the Material 3 theme |
 
 ---
 
@@ -251,7 +274,7 @@ optional `editionId` query parameter, defaulting to Konkani, so the UI is unchan
 | Network | Retrofit + Gson converter | 3.0.0 |
 | Testing | JUnit4 | 4.13.2 |
 | Testing | Robolectric | 4.16.1 |
-| Testing | AndroidX Test Core, Coroutines Test | 1.7.0, 1.7.3 |
+| Testing | AndroidX Test Core, Coroutines Test | 1.7.0, 1.9.0 |
 | Instrumented | AndroidX JUnit ext, Espresso | 1.1.5, 3.5.1 |
 
 Versions are centralised in [`gradle/libs.versions.toml`](gradle/libs.versions.toml).
@@ -274,15 +297,20 @@ Two build notes worth knowing:
 
 **Preparation lifecycle** (`AssetBibleDatabaseProvider`):
 
-1. The book id is resolved against the static `BibleCatalog` (73 entries) — rendering the catalog
-   never opens a database.
+1. The book id is resolved against the edition-scoped static `BibleCatalog` (73 entries for
+   Konkani) — rendering the catalog never opens a database. An unknown edition or a book outside
+   the edition's canon is rejected before any copy.
 2. On first use the APK asset is copied lazily to `filesDir/bible/<BookId>.sqlite` through a
-   `.sqlite.tmp` file and an atomic rename, so a partial copy is never exposed.
+   `.sqlite.tmp` file and an atomic rename, so a partial copy is never exposed. The shipped
+   Konkani edition keeps this pre-seam path; future editions get their own
+   `filesDir/bible/<editionId>/` subtree.
 3. A `.version` marker holding the app's `versionCode` is written alongside; a missing, stale or
    partial copy is re-copied.
-4. The database is opened with `OPEN_READONLY` and cached for the process lifetime.
-5. `BibleBookNotFoundException` / `BibleDatabaseNotFoundException` / `CorruptBibleDatabaseException`
-   are raised on the corresponding failures.
+4. The database is opened with `OPEN_READONLY` and cached for the process lifetime, keyed by
+   `(editionId, bookId)`.
+5. `BibleEditionNotFoundException` / `BibleBookNotFoundException` /
+   `BibleDatabaseNotFoundException` / `CorruptBibleDatabaseException` are raised on the
+   corresponding failures.
 
 **Schema** (identical in every book database, generated by the external import pipeline):
 
@@ -309,18 +337,23 @@ poetic line breaks must remain representable.
 
 ### 6.2 Mutable application database (Room)
 
-`AppDatabase` (`povitr_pustok_app.db`, **version 2**) holds only application state and is entirely
-separate from the Bible assets.
+`AppDatabase` (`povitr_pustok_app.db`, **version 3**, `exportSchema = true`) holds only
+application state and is entirely separate from the Bible assets. Schemas `1.json`–`3.json` are
+checked in under `app/schemas/`.
 
 | Table | Contents |
 |---|---|
-| `bookmarks` | Exact location (`bookId`, `chapterId`, `verseId`, verse range), unique per location |
-| `reading_state` | Last-read location for *Continue reading* |
+| `bookmarks` | App-owned UUID `id`; stable anchor (`bookId`, `chapterPosition`, `verseStart`, `verseEnd`, `startOffset`, `endOffset`); display `chapterNumber`; `createdAt`/`updatedAt`/`deletedAt`; unique index on the anchor |
+| `reading_state` | Single row: last-read `bookId` + `chapterPosition`, with `updatedAt` |
 | `liturgical_day_cache` | Cached liturgical day, **UNIQUE** on `date` |
 | `liturgical_reading` | Normalised reading rows (type, reference, label, position), FK → day with cascade |
 
-`MIGRATION_1_2` adds the two liturgical cache tables without touching bookmarks or reading state,
-and there is **no destructive fallback**.
+`MIGRATION_1_2` adds the two liturgical cache tables without touching bookmarks or reading state.
+`MIGRATION_2_3` rebuilds `bookmarks` with the UUID and anchor columns, creates the unique anchor
+index before copying, and inserts oldest-first with `INSERT OR IGNORE`, so duplicate anchors
+collapse instead of aborting the upgrade. There is **no destructive fallback on upgrade**; the
+only destructive path is the explicit downgrade fallback, because only app state lives here. See
+[`docs/architecture.md`](docs/architecture.md).
 
 ### 6.3 External liturgical data (Daily Reading)
 
@@ -328,6 +361,25 @@ and there is **no destructive fallback**.
 * `readings/{year}/{monthDay}.json` and `liturgical-calendar/{year}/{monthDay}.json`
 * DTOs are mapped to domain models; **DTOs are never persisted** — only the normalised cache rows are.
 * The API supplies *references*; the local corpus supplies the Bible text.
+
+### 6.4 Bundled content packs
+
+Content packs are data, not code. A pack lives under
+`app/src/main/assets/packs/<pack-id>/` with a `manifest.json` declaring `id`, `type`
+(`json`, `text`, `audio`, or `calendar`), `version`, `locale`, `licence`, `attribution`, optional
+`territory`/`expiry`, a `checksum` map, and `files`.
+
+`ContentPackManifestParser` rejects unknown fields, id/directory mismatches, path escapes,
+non-allow-listed extensions, missing calendar territory/expiry, and expired packs.
+`ContentPackLoader` verifies every declared SHA-256 and fails closed with a typed
+`ContentPackException`. `LicenceManifestTest` loads every real pack with the production
+parser/loader and fails on a missing licence/attribution, missing calendar territory/expiry, an
+expired term, or a checksum mismatch; `RightsRegisterTest` requires a shipped rights row whose
+`covers` includes every bundled pack id.
+
+Packs ship inside the APK and are replaced only by an app update — no remote store, download
+manager, or runtime replacement. **No packs ship in 1.3.0.** See
+[`docs/content-packs.md`](docs/content-packs.md).
 
 ---
 
@@ -367,11 +419,11 @@ PovitrPustok/
 │       │   │   ├── data/{app,bible,di,liturgy,preferences}
 │       │   │   ├── domain/{model,reference,repository}
 │       │   │   ├── feature/{about,bookmarks,books,common,dailyreading,reader,reference,search,settings}
-│       │   │   └── ui/{theme,components, HomeScreen, HomeViewModel}
+│       │   │   └── ui/{theme,components, AppVersion, HomeScreen, HomeViewModel}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
 │       ├── test/                        # 542 JVM unit tests + HTML fixtures
 │       └── androidTest/                 # 55 instrumented tests
-├── docs/                                 # rights, content-pack and release documentation
+├── docs/                                 # architecture, rights, content-pack, performance and release documentation
 ├── tools/{corpus,release}/               # corpus importer/audit, release packaging
 ├── gradle/libs.versions.toml            # version catalog
 ├── build.gradle.kts, settings.gradle.kts, gradle.properties
@@ -586,6 +638,11 @@ current corpus. Build the artifact you need from source instead.
 
 ## 12. Known limitations and roadmap
 
+**Release status.** 1.3.0 is the current development line: stable anchors and Room schema v3,
+the edition seam, the bundled content-pack format, the rights register, and release hygiene. It
+adds no new visible feature. Reading history and notes, English editions, the calendar, and BYOK
+explanations remain later releases.
+
 **Known limitations**
 
 * The on-device FTS5 `MATCH` path is verified only on hardware whose SQLite includes FTS5.
@@ -603,8 +660,10 @@ current corpus. Build the artifact you need from source instead.
 
 **Not implemented yet**
 
-* Reading history, notes, a standalone typography module, a use-case layer, and core utilities.
-  No routes or code exist for them, and a fresh clone contains no empty placeholder directories.
+* Reading history and notes (planned 1.4). There is no use-case layer and there are no separate
+  feature modules; 1.3.0 deliberately keeps the single `:app` module (see
+  [`docs/architecture.md`](docs/architecture.md)).
+* No content packs ship in 1.3.0; the annual calendar pack is planned for 1.5.
 
 **Not implemented by design:** polling / background synchronisation for liturgical data
 (no WorkManager scheduling), a general-purpose HTML engine, and any mutation or re-import of the
@@ -633,6 +692,9 @@ Bible corpus from inside the app.
   *Note: this working document is currently **not** tracked by git, so it will be absent from a
   fresh clone.*
 * Section references of the form "implementation plan §N" in source KDoc point into that document.
+* [`docs/architecture.md`](docs/architecture.md) records the 1.3.0 data foundations: Room
+  schema v3 and migrations, stable verse anchors, the edition seam, the content-pack contract,
+  and the single-module decision.
 * [`docs/content-packs.md`](docs/content-packs.md) defines the bundled content-pack format, the
   licence/expiry gate, and the ship-in-APK lifecycle. No packs ship in 1.3.0.
 * [`docs/rights.md`](docs/rights.md) is the rights register for every shipped or planned text,
@@ -641,7 +703,7 @@ Bible corpus from inside the app.
   the parser-cache result.
 * [`docs/release-checklist.md`](docs/release-checklist.md) and
   [`docs/release-notes-template.md`](docs/release-notes-template.md) define the GitHub
-  Releases/Obtainium release procedure.
+  Releases/Obtainium release procedure; [`docs/releases/`](docs/releases) holds dry-run records.
 * Earlier releases are tagged in git (`v1.0.0` through `v1.2.4`); release notes are published in
   the corresponding GitHub releases.
 
