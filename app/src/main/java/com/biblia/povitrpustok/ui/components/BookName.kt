@@ -33,6 +33,10 @@ fun englishBookNameVisible(): Boolean =
 /**
  * Renders [localName] as the primary label and [englishName] as a secondary
  * one when [englishVisible] is true.
+ *
+ * [localMaxLines] lets a list row wrap a long book name at 2x font scale
+ * instead of losing it to an ellipsis. App bars keep the default single line:
+ * their height is fixed, so a second line would be clipped rather than shown.
  */
 @Composable
 fun BookName(
@@ -42,7 +46,8 @@ fun BookName(
     layout: BookNameLayout = BookNameLayout.STACKED,
     style: TextStyle = MaterialTheme.typography.titleMedium,
     englishStyle: TextStyle = MaterialTheme.typography.bodySmall,
-    englishVisible: Boolean = englishBookNameVisible()
+    englishVisible: Boolean = englishBookNameVisible(),
+    localMaxLines: Int = 1
 ) {
     val showEnglish = englishVisible && !englishName.isNullOrBlank()
     when (layout) {
@@ -51,7 +56,7 @@ fun BookName(
                 text = localName,
                 style = style,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
+                maxLines = localMaxLines,
                 overflow = TextOverflow.Ellipsis
             )
             if (showEnglish) {
@@ -73,7 +78,7 @@ fun BookName(
                 text = localName,
                 style = style,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
+                maxLines = localMaxLines,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f, fill = false)
             )
