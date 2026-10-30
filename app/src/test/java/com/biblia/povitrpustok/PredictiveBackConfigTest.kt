@@ -90,6 +90,7 @@ class PredictiveBackConfigTest {
             "BackHandler",
             "OnBackPressedCallback",
             "onBackPressed()",
+            "addCallback(",
             "KEYCODE_BACK"
         )
     }
