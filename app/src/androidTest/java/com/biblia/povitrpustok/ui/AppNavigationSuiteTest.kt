@@ -69,6 +69,33 @@ class AppNavigationSuiteTest {
         composeRule.onNodeWithTag("nav.more").assertDoesNotExist()
     }
 
+    @Test
+    fun suite_items_meet_the_48dp_touch_target_in_the_bottom_bar() {
+        setSuite(windowWidth = 599.dp)
+        assertSuiteTouchTargets()
+    }
+
+    @Test
+    fun suite_items_meet_the_48dp_touch_target_in_the_rail() {
+        setSuite(windowWidth = 840.dp)
+        // A rail item is narrower than a bar item, so both dimensions matter.
+        assertSuiteTouchTargets()
+    }
+
+    /**
+     * The expanded touch target, not the drawn box: Material 3 items keep their
+     * own visual size and expand the touch/accessibility bounds to 48 dp.
+     */
+    private fun assertSuiteTouchTargets() {
+        listOf("nav.home", "nav.bible", "nav.more").forEach { tag ->
+            val bounds = composeRule.onNodeWithTag(tag).fetchSemanticsNode().touchBoundsInRoot
+            val width = with(composeRule.density) { (bounds.right - bounds.left).toDp() }
+            val height = with(composeRule.density) { (bounds.bottom - bounds.top).toDp() }
+            assertTrue("$tag touch width was $width", width >= 48.dp)
+            assertTrue("$tag touch height was $height", height >= 48.dp)
+        }
+    }
+
     private fun setSuite(windowWidth: Dp) {
         composeRule.setContent {
             BibleTheme {
