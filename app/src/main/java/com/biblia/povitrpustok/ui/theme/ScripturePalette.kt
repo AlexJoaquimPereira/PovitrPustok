@@ -19,9 +19,13 @@ import kotlin.math.pow
  * surfaces (no alpha tints), and [gutterAccent] draws the reader's state
  * markers. [redLetterEnabled] is groundwork for a future reading preference;
  * it is always on until Settings exposes it.
+ *
+ * F2-06: [redLetter], [verseNumber] and [metaText] are [ContrastPair]s from
+ * [ThemeContrastTokens], so each quiet ink travels with the surface it is
+ * drawn on and its ratio is testable. [red] is derived from [redLetter] so
+ * there is exactly one red-letter value per theme.
  */
 data class ScripturePalette(
-    val red: Color,
     val green: Color,
     val blue: Color,
     val navy: Color,
@@ -32,12 +36,18 @@ data class ScripturePalette(
     val target: Color,
     val bookmarked: Color,
     val gutterAccent: Color,
+    val redLetter: ContrastPair,
+    val verseNumber: ContrastPair,
+    val metaText: ContrastPair,
     val redLetterEnabled: Boolean = true
 ) {
+    /** Red-letter ink; the pair also carries the surface it sits on (F2-06). */
+    val red: Color
+        get() = redLetter.text
+
     companion object {
         /** Light reading surface: near-white paper, deep saturated ink. */
         val Light = ScripturePalette(
-            red = Color(0xFFB3261E),
             green = Color(0xFF0E6B36),
             blue = Color(0xFF0B57D0),
             navy = Color(0xFF22315C),
@@ -47,12 +57,14 @@ data class ScripturePalette(
             selection = Color(0xFFE7EEFB),
             target = Color(0xFFDCE9FF),
             bookmarked = Color(0xFFFFF4D6),
-            gutterAccent = LightPrimary
+            gutterAccent = LightPrimary,
+            redLetter = ThemeContrastTokens.Light.redLetter,
+            verseNumber = ThemeContrastTokens.Light.verseNumber,
+            metaText = ThemeContrastTokens.Light.metaText
         )
 
         /** Dark AMOLED surface: true black with lifted, desaturated ink. */
         val Dark = ScripturePalette(
-            red = Color(0xFFFFB4AB),
             green = Color(0xFF7EDCA0),
             blue = Color(0xFFADC6FF),
             navy = Color(0xFFA9B8E8),
@@ -62,7 +74,10 @@ data class ScripturePalette(
             selection = Color(0xFF1B2738),
             target = Color(0xFF22324C),
             bookmarked = Color(0xFF3A2F14),
-            gutterAccent = DarkPrimary
+            gutterAccent = DarkPrimary,
+            redLetter = ThemeContrastTokens.Dark.redLetter,
+            verseNumber = ThemeContrastTokens.Dark.verseNumber,
+            metaText = ThemeContrastTokens.Dark.metaText
         )
     }
 }

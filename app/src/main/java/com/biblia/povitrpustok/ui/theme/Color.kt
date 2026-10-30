@@ -54,6 +54,20 @@ val LightInverseOnSurface = Color(0xFFF1F0F7)
 val LightInversePrimary = Color(0xFFADC6FF)
 val LightScrim = Color(0xFF000000)
 
+// F2-06 reading ink tokens. These are not Material roles: they name the
+// colours the reader draws outside the theme's own text hierarchy.
+//
+// The red-letter ink is the one colour a reader recognises as a convention
+// (the words of Christ), so it is a token per theme rather than one literal
+// red shared by both. Verse numbers and meta text are quiet, small (12 sp /
+// label) ink; they get their own names instead of borrowing a Material role
+// at the call site. Values intentionally alias the existing neutral ink, so
+// making the token explicit did not repaint the reader; ThemeColorsTest pins
+// the contrast ratio so a later retune cannot silently fall below WCAG AA.
+val LightRedLetterInk = Color(0xFFB3261E)
+val LightVerseNumberInk = LightOnSurfaceVariant
+val LightMetaInk = LightOnSurfaceVariant
+
 // Dark (AMOLED) scheme.
 val DarkPrimary = Color(0xFFADC6FF)
 val DarkOnPrimary = Color(0xFF002E69)
@@ -95,3 +109,10 @@ val DarkInverseSurface = Color(0xFFE4E1E9)
 val DarkInverseOnSurface = Color(0xFF1A1B20)
 val DarkInversePrimary = Color(0xFF0B57D0)
 val DarkScrim = Color(0xFF000000)
+
+// F2-06 reading ink tokens, dark AMOLED variant. The red-letter ink is lifted
+// and desaturated so it survives true black without glowing; verse numbers and
+// meta text alias the dark neutral ink.
+val DarkRedLetterInk = Color(0xFFFFB4AB)
+val DarkVerseNumberInk = DarkOnSurfaceVariant
+val DarkMetaInk = DarkOnSurfaceVariant
