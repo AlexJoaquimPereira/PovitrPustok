@@ -291,6 +291,15 @@ class ReaderSpeechController @Inject constructor(
         if (event.utteranceId != current) return
         val state = _state.value
         if (state.verseId == null) return
+        // A standard engine emits nothing after stop(), but a slow or
+        // non-standard one may deliver a late callback. Only a Preparing or
+        // Speaking utterance may change state; a stale event must not turn a
+        // deliberate Pause into an error or dismiss an unavailable notice.
+        if (state.phase != ReaderSpeechPhase.Preparing &&
+            state.phase != ReaderSpeechPhase.Speaking
+        ) {
+            return
+        }
         when (event) {
             is TtsUtteranceEvent.Started ->
                 _state.value = state.copy(phase = ReaderSpeechPhase.Speaking)

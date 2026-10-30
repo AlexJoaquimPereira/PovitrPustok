@@ -329,6 +329,20 @@ class ReaderSpeechControllerTest {
     }
 
     @Test
+    fun a_failed_event_while_paused_does_not_replace_the_pause() =
+        runTest(UnconfinedTestDispatcher()) {
+            val playback = playback()
+            playback.start(1L, verse)
+            val staleId = playback.utteranceId(1L)
+
+            playback.controller.pause()
+            playback.engine.emit(TtsUtteranceEvent.Failed(staleId))
+
+            assertEquals(ReaderSpeechPhase.Paused, playback.controller.state.value.phase)
+            assertNull("a stale failure must not become an error notice", playback.controller.state.value.issue)
+        }
+
+    @Test
     fun a_late_event_after_the_konkani_notice_is_ignored() =
         runTest(UnconfinedTestDispatcher()) {
             val playback = playback()
