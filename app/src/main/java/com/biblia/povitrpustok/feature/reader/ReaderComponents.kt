@@ -96,20 +96,24 @@ fun ChapterHeader(
     verseRange: String? = null,
     positionLabel: String? = null
 ) {
+    // F2-06: the quiet meta ink is a contrast token pair, not a bare Material
+    // role, so chapter overlines and passage ranges are verified against the
+    // surface they are actually drawn on.
+    val metaInk = LocalScripturePalette.current.metaText.text
     Column(modifier = modifier.semantics { heading() }) {
         Text(
             // F-29: "Chapter 3 of 21" orients the reader without new chrome.
             text = (positionLabel ?: stringResource(R.string.reader_chapter_number, chapter.number))
                 .uppercase(),
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = metaInk
         )
         // F-04: passage context belongs in the scrolling header, not the bar.
         if (verseRange != null) {
             Text(
                 text = verseRange,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = metaInk
             )
         }
     }
@@ -300,7 +304,9 @@ fun VerseNumber(
             stringResource(R.string.verse_range, verseStart, verseEnd)
         },
         style = VerseNumberStyle,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        // F2-06: verse numbers use the dedicated quiet-ink token pair. The
+        // number is itself the label, so colour is never the only signal.
+        color = LocalScripturePalette.current.verseNumber.text,
         textAlign = TextAlign.End,
         maxLines = 1,
         softWrap = false,
