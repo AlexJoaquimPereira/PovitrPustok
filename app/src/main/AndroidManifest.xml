@@ -5,10 +5,19 @@
     <!-- Required by the liturgical Daily Reading feature (Retrofit/HTTPS). -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!--
+        F2-07: predictive back. The flag opts the activity into the platform
+        OnBackInvokedDispatcher, so Back is dispatched through the modern API
+        and the system can animate it. Navigation Compose owns every in-app
+        back path (its NavHost callback pops the stack); the app registers no
+        BackHandler or OnBackPressedCallback of its own, so nothing suppresses
+        the system animation. Attribute is ignored below API 33.
+    -->
     <application
         android:name=".BibleApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
+        android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
