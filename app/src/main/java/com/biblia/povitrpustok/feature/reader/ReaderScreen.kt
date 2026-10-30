@@ -451,9 +451,13 @@ private fun verseNumberFor(state: ReaderUiState, verseId: Long?): Int? {
  * missing English voice data, or another app holding the audio — the strip
  * says so instead of staying silent. It is a polite live region, so a screen
  * reader hears the change without being moved out of the verse.
+ *
+ * Visible to the instrumented tests (like [PassageBanner]) so the pause/stop
+ * targets and their labels can be measured without an English edition, which
+ * is the only way to reach the speaking phase today.
  */
 @Composable
-private fun ReaderSpeechBar(
+internal fun ReaderSpeechBar(
     speech: ReaderSpeechState,
     verseNumber: Int?,
     onTogglePause: () -> Unit,

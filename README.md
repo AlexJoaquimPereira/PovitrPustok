@@ -15,7 +15,7 @@ the app never re-imports, rewrites or "fixes" it.
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 625 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 83 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
+| **Tests** | 628 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 95 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
 
 ---
 
@@ -461,8 +461,8 @@ PovitrPustok/
 │       │   │   ├── feature/{about,bookmarks,books,common,dailyreading,more,reader,reference,search,settings}
 │       │   │   └── ui/{adaptive,theme,components, AppVersion, HomeScreen, HomeViewModel, PovitrPustokApp}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
-│       ├── test/                        # 625 JVM unit tests + HTML fixtures
-│       └── androidTest/                 # 83 instrumented tests
+│       ├── test/                        # 628 JVM unit tests + HTML fixtures
+│       └── androidTest/                 # 95 instrumented tests
 ├── docs/                                 # architecture, rights, content-pack, performance and release documentation
 ├── tools/{corpus,release}/               # corpus importer/audit, release packaging
 ├── gradle/libs.versions.toml            # version catalog
@@ -604,8 +604,8 @@ made private again, Obtainium needs a GitHub token with read access.
 
 | Suite | Count | Runner | Notes |
 |---|---|---|---|
-| JVM unit tests | **625** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest`; 2 skip when the host SQLite lacks FTS5 |
-| Instrumented tests | **83** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator 4 tests skip (3 FTS5-only + 1 network-dependent Daily Reading) |
+| JVM unit tests | **628** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest`; 2 skip when the host SQLite lacks FTS5 |
+| Instrumented tests | **95** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 91 executed / 0 failed / 4 skips (3 FTS5-only + 1 network-dependent Daily Reading) |
 
 39 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
 assets or Room. Room migrations are validated by `MigrationTestHelper` against the checked-in
