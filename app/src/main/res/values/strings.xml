@@ -59,6 +59,26 @@
     <string name="reader_share_verse">Share verse</string>
     <string name="reader_share_chooser">Share verse</string>
     <string name="reader_verse_copied">Verse copied</string>
+    <!-- English reading aloud (F2-11) and the missing-voice state (F2-12). -->
+    <string name="reader_read_verse">Read this verse</string>
+    <string name="reader_tts_reading_verse">Reading verse %1$d</string>
+    <string name="reader_tts_reading">Reading aloud</string>
+    <string name="reader_tts_paused_verse">Paused at verse %1$d</string>
+    <string name="reader_tts_paused">Paused</string>
+    <string name="reader_tts_starting">Starting the voice…</string>
+    <string name="reader_tts_pause">Pause reading</string>
+    <string name="reader_tts_resume">Resume reading</string>
+    <string name="reader_tts_stop">Stop reading</string>
+    <string name="reader_tts_no_konkani_voice">No Konkani voice is installed</string>
+    <string name="reader_tts_no_konkani_voice_body">Reading aloud uses the English voice only, so the Romi Konkani text is not spoken.</string>
+    <string name="reader_tts_voice_missing">The English voice is not installed</string>
+    <string name="reader_tts_voice_missing_body">Install an English voice in the device\'s text-to-speech settings, then try again.</string>
+    <string name="reader_tts_voice_unsupported">This device cannot read English aloud</string>
+    <string name="reader_tts_voice_unsupported_body">The installed text-to-speech engine has no English voice.</string>
+    <string name="reader_tts_failed">The voice could not start</string>
+    <string name="reader_tts_failed_body">Nothing was read. Try again, or check the device\'s text-to-speech settings.</string>
+    <string name="reader_tts_audio_busy">Another app is using the audio</string>
+    <string name="reader_tts_audio_busy_body">Reading aloud stayed quiet instead of talking over the other app. Try again in a moment.</string>
     <string name="bookmarks_title">Bookmarks</string>
     <string name="bookmarks_empty">No bookmarks yet.</string>
     <string name="bookmarks_empty_body">Tap the bookmark icon while reading to save a place.</string>

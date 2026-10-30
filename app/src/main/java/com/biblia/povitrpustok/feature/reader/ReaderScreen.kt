@@ -143,6 +143,7 @@ fun ReaderScreen(
         )
     }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val speechState by viewModel.speechState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
@@ -270,6 +271,15 @@ fun ReaderScreen(
                 else -> ReaderLoadingState()
             }
             }
+            // F2-11/F2-12: playback sits above the action bar and never
+            // covers the verse; the bar is empty when nothing is happening.
+            ReaderSpeechBar(
+                speech = speechState,
+                verseNumber = verseNumberFor(state, speechState.verseId),
+                onTogglePause = viewModel::toggleSpeechPause,
+                onStop = viewModel::stopSpeech,
+                onDismiss = viewModel::dismissSpeechIssue
+            )
         }
     }
 
@@ -310,6 +320,10 @@ fun ReaderScreen(
         VerseActionSheet(
             isBookmarked = state.bookmarkedVerseIds.contains(actionVerse.id),
             onDismiss = { actionVerseId = null },
+            onRead = {
+                actionVerseId = null
+                viewModel.readVerse(actionVerse.id)
+            },
             onCopy = {
                 scope.launch {
                     // Compose 1.9's Clipboard API is suspend; copy first, then
@@ -356,6 +370,7 @@ fun ReaderScreen(
 private fun VerseActionSheet(
     isBookmarked: Boolean,
     onDismiss: () -> Unit,
+    onRead: () -> Unit,
     onCopy: () -> Unit,
     onShare: () -> Unit,
     onToggleBookmark: () -> Unit
@@ -369,6 +384,13 @@ private fun VerseActionSheet(
                 text = stringResource(R.string.reader_verse_actions),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+            )
+            // F2-11: reading is a per-verse action like copy/share, so it
+            // belongs in the same sheet rather than in the crowded bar.
+            SheetAction(
+                label = stringResource(R.string.reader_read_verse),
+                tag = "reader.action_read",
+                onClick = onRead
             )
             SheetAction(
                 label = stringResource(R.string.reader_copy_verse),
@@ -407,6 +429,204 @@ private fun SheetAction(label: String, tag: String, onClick: () -> Unit) {
             modifier = Modifier.fillMaxWidth()
         )
     }
+}
+
+/** Verse number of [verseId] in the rendered chapter or passage, for the strip. */
+private fun verseNumberFor(state: ReaderUiState, verseId: Long?): Int? {
+    if (verseId == null) return null
+    return state.verses.firstOrNull { it.id == verseId }?.verseStart
+        ?: state.passageChapters
+            .asSequence()
+            .flatMap { it.verses.asSequence() }
+            .firstOrNull { it.id == verseId }
+            ?.verseStart
+}
+
+/**
+ * F2-11/F2-12: the reader's playback strip, above the action bar.
+ *
+ * Two shapes share one slot. While a verse is being read the strip names it,
+ * shows the word the engine is on, and offers pause/resume and stop. When the
+ * request cannot be spoken at all — Romi Konkani with no Konkani voice,
+ * missing English voice data, or another app holding the audio — the strip
+ * says so instead of staying silent. It is a polite live region, so a screen
+ * reader hears the change without being moved out of the verse.
+ */
+@Composable
+private fun ReaderSpeechBar(
+    speech: ReaderSpeechState,
+    verseNumber: Int?,
+    onTogglePause: () -> Unit,
+    onStop: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    if (!speech.isVisible) return
+    val issue = speech.issue
+    if (issue != null) {
+        SpeechNotice(issue = issue, onDismiss = onDismiss)
+        return
+    }
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("reader.tts_bar")
+            .semantics { liveRegion = LiveRegionMode.Polite }
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = speechTitle(speech, verseNumber),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                // The word `onRangeStart` reported. Highlighting inside the
+                // verse text itself needs addressable rendering (S1-02); until
+                // then this is the range-level feedback, and the verse keeps
+                // its target surface.
+                speech.spokenSegment?.let { segment ->
+                    Text(
+                        text = segment,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+            val speaking = speech.phase == ReaderSpeechPhase.Speaking
+            if (speaking || speech.phase == ReaderSpeechPhase.Paused) {
+                IconButton(
+                    onClick = onTogglePause,
+                    modifier = Modifier.testTag("reader.tts_pause")
+                ) {
+                    Icon(
+                        painter = painterResource(
+                            if (speaking) R.drawable.ic_pause else R.drawable.ic_play_arrow
+                        ),
+                        contentDescription = stringResource(
+                            if (speaking) R.string.reader_tts_pause else R.string.reader_tts_resume
+                        )
+                    )
+                }
+            }
+            IconButton(
+                onClick = onStop,
+                modifier = Modifier.testTag("reader.tts_stop")
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_stop),
+                    contentDescription = stringResource(R.string.reader_tts_stop)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun speechTitle(speech: ReaderSpeechState, verseNumber: Int?): String =
+    when (speech.phase) {
+        ReaderSpeechPhase.Preparing -> stringResource(R.string.reader_tts_starting)
+        ReaderSpeechPhase.Speaking -> if (verseNumber != null) {
+            stringResource(R.string.reader_tts_reading_verse, verseNumber)
+        } else {
+            stringResource(R.string.reader_tts_reading)
+        }
+        ReaderSpeechPhase.Paused -> if (verseNumber != null) {
+            stringResource(R.string.reader_tts_paused_verse, verseNumber)
+        } else {
+            stringResource(R.string.reader_tts_paused)
+        }
+        else -> ""
+    }
+
+/** F2-12: why nothing was spoken. A limitation, never an accusation at the reader. */
+@Composable
+private fun SpeechNotice(issue: ReaderSpeechIssue, onDismiss: () -> Unit) {
+    // At 2x the title, body and button cannot share a narrow row without
+    // eating the page: stack the action under the text, like the passage
+    // banner does.
+    val stacked = LocalDensity.current.fontScale >= AppBreakpoints.ExtraLargeFontScale
+    Surface(
+        color = MaterialTheme.colorScheme.errorContainer,
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("reader.tts_notice")
+            .semantics { liveRegion = LiveRegionMode.Polite }
+    ) {
+        if (stacked) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                SpeechNoticeText(issue)
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .heightIn(min = 48.dp)
+                        .testTag("reader.tts_dismiss")
+                ) {
+                    Text(text = stringResource(R.string.reader_dismiss))
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) { SpeechNoticeText(issue) }
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .heightIn(min = 48.dp)
+                        .testTag("reader.tts_dismiss")
+                ) {
+                    Text(text = stringResource(R.string.reader_dismiss))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SpeechNoticeText(issue: ReaderSpeechIssue) {
+    Text(
+        text = stringResource(speechIssueTitle(issue)),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onErrorContainer
+    )
+    Text(
+        text = stringResource(speechIssueBody(issue)),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onErrorContainer
+    )
+}
+
+private fun speechIssueTitle(issue: ReaderSpeechIssue): Int = when (issue) {
+    ReaderSpeechIssue.NoKonkaniVoice -> R.string.reader_tts_no_konkani_voice
+    ReaderSpeechIssue.EnglishVoiceDataMissing -> R.string.reader_tts_voice_missing
+    ReaderSpeechIssue.EnglishVoiceNotSupported -> R.string.reader_tts_voice_unsupported
+    ReaderSpeechIssue.AudioBusy -> R.string.reader_tts_audio_busy
+    ReaderSpeechIssue.EngineFailed -> R.string.reader_tts_failed
+}
+
+private fun speechIssueBody(issue: ReaderSpeechIssue): Int = when (issue) {
+    ReaderSpeechIssue.NoKonkaniVoice -> R.string.reader_tts_no_konkani_voice_body
+    ReaderSpeechIssue.EnglishVoiceDataMissing -> R.string.reader_tts_voice_missing_body
+    ReaderSpeechIssue.EnglishVoiceNotSupported -> R.string.reader_tts_voice_unsupported_body
+    ReaderSpeechIssue.AudioBusy -> R.string.reader_tts_audio_busy_body
+    ReaderSpeechIssue.EngineFailed -> R.string.reader_tts_failed_body
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
