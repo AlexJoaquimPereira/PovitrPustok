@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -102,6 +103,10 @@ fun ReferenceEntryScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                // F2-07: consume the scaffold's navigation-bar padding before
+                // adding the IME inset, which already includes it (see
+                // SearchScreen for the same pattern).
+                .consumeWindowInsets(innerPadding)
                 .imePadding()
                 .padding(horizontal = 16.dp)
         ) {

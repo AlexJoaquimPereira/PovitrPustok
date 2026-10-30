@@ -3,6 +3,7 @@ package com.biblia.povitrpustok.feature.search
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -92,6 +93,12 @@ fun SearchScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                // F2-07: the scaffold's bottom padding already contains the
+                // navigation-bar inset, and the IME inset is measured from the
+                // bottom of the screen (so it contains that same inset). Consume
+                // what was just padded, otherwise the keyboard leaves an extra
+                // nav-bar-high strip of dead space above it.
+                .consumeWindowInsets(innerPadding)
                 .imePadding()
         ) {
             OutlinedTextField(
