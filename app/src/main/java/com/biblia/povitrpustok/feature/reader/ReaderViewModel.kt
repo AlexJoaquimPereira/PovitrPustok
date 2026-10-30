@@ -41,16 +41,38 @@ import kotlinx.coroutines.sync.withLock
  *
  * Exposes immutable [ReaderUiState] via [StateFlow]; never exposes mutable
  * state.
+ *
+ * Also owns the English speech playback for this screen (F2-11): the
+ * [ReaderSpeechController] lives exactly as long as this ViewModel, takes
+ * audio focus only while speaking, and is shut down in [onCleared] so no
+ * engine or focus request outlives the Reader.
  */
 @HiltViewModel
 class ReaderViewModel @Inject constructor(
     private val repository: BibleRepository,
     private val bookmarkRepository: BookmarkRepository,
-    private val bookNames: BookNameRepository
+    private val bookNames: BookNameRepository,
+    /**
+     * Playback is injected so the ViewModel owns its lifecycle. Tests that do
+     * not exercise speech keep the default, which has no engine.
+     */
+    private val speech: ReaderSpeechController = ReaderSpeechController.withoutEngine()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ReaderUiState())
     val uiState: StateFlow<ReaderUiState> = _uiState.asStateFlow()
+
+    /** Playback state for the reader's speech bar (F2-11). */
+    val speechState: StateFlow<ReaderSpeechState> get() = speech.state
+
+    init {
+        speech.attach(viewModelScope)
+        // The speaking verse keeps the target highlight, and loses it when
+        // playback ends (stop, finish, or an unavailable notice).
+        viewModelScope.launch {
+            speech.state.collect { playback -> syncSpeechHighlight(playback) }
+        }
+    }
 
     /** One-shot confirmations (F-09); the screen shows them as snackbars. */
     private val _events = MutableSharedFlow<ReaderEvent>(
@@ -107,6 +129,9 @@ class ReaderViewModel @Inject constructor(
             passages,
             editionId
         )
+        // A new chapter or edition ends playback: the verse being read is no
+        // longer on screen, and a stale utterance must not outlive it (F2-11).
+        speech.stop()
         loadJob?.cancel()
         // F-06/audit: the previous chapter's bookmark ids must not stay live
         // while the next chapter loads (row ids can collide).
@@ -437,6 +462,9 @@ class ReaderViewModel @Inject constructor(
 
     /** Ends the temporary highlight (e.g. after the highlight duration). */
     fun clearHighlight() {
+        // The verse being read keeps its highlight: the two-second target
+        // fade must not dim the verse that is currently spoken (F2-11).
+        if (speechState.value.isActive) return
         _uiState.update { it.copy(highlightedVerseId = null) }
     }
 
@@ -458,6 +486,66 @@ class ReaderViewModel @Inject constructor(
     fun dismissTargetMissing() {
         _uiState.update { it.copy(targetMissing = false) }
     }
+
+    /**
+     * Reads [verseId] aloud (F2-11).
+     *
+     * The verse scrolls into view through the same one-shot target the reader
+     * uses for navigation, so the reader always has a verse-level position
+     * even when the engine cannot report `onRangeStart`. Whether anything is
+     * actually spoken is decided by [ReaderSpeechController] from the loaded
+     * edition's language: Romi Konkani never reaches the English voice (F2-12)
+     * and produces the honest "no Konkani voice" notice instead.
+     */
+    fun readVerse(verseId: Long) {
+        val verse = _uiState.value.findVerse(verseId) ?: return
+        val languageTag = BibleEditions.byId(lastRequest?.editionId)?.languageTag.orEmpty()
+        _uiState.update { it.copy(targetVerseId = verseId) }
+        speech.speak(verseId = verseId, text = verse.plainText, languageTag = languageTag)
+    }
+
+    /** Pause while speaking, resume while paused; no-op otherwise. */
+    fun toggleSpeechPause() {
+        speech.togglePause()
+    }
+
+    /** Stop reading and hide the speech bar. */
+    fun stopSpeech() {
+        speech.stop()
+    }
+
+    /** Dismiss an "unavailable" notice (no Konkani voice, missing voice data…). */
+    fun dismissSpeechIssue() {
+        speech.dismissIssue()
+    }
+
+    /**
+     * Keeps the reader's verse highlight in step with playback: the spoken
+     * verse stays highlighted, and the highlight is released as soon as
+     * playback ends or becomes unavailable.
+     */
+    private fun syncSpeechHighlight(playback: ReaderSpeechState) {
+        val verseId = playback.verseId
+        _uiState.update { state ->
+            when {
+                playback.isActive && verseId != null ->
+                    if (state.highlightedVerseId == verseId) {
+                        state
+                    } else {
+                        state.copy(highlightedVerseId = verseId)
+                    }
+                else -> state.copy(highlightedVerseId = null)
+            }
+        }
+    }
+
+    /** Resolves a verse id against the rendered verses, including passage chapters. */
+    private fun ReaderUiState.findVerse(verseId: Long): com.biblia.povitrpustok.domain.model.Verse? =
+        verses.firstOrNull { it.id == verseId }
+            ?: passageChapters
+                .asSequence()
+                .flatMap { it.verses.asSequence() }
+                .firstOrNull { it.id == verseId }
 
     private fun List<com.biblia.povitrpustok.domain.model.Verse>.targetFor(
         targetVerseId: Long?,
@@ -490,5 +578,11 @@ class ReaderViewModel @Inject constructor(
     /** Chapter selector: select a chapter by its source position. */
     fun selectChapter(position: Int) {
         bookId?.let { load(it, position) }
+    }
+
+    override fun onCleared() {
+        // F2-11: the engine and the audio-focus request die with the screen.
+        speech.shutdown()
+        super.onCleared()
     }
 }
