@@ -314,4 +314,31 @@ class ReaderSpeechControllerTest {
         assertEquals(ReaderSpeechPhase.Idle, playback.controller.state.value.phase)
         assertEquals(1, playback.engine.spoken.size)
     }
+
+    @Test
+    fun a_late_finished_event_after_stop_is_ignored() = runTest(UnconfinedTestDispatcher()) {
+        val playback = playback()
+        playback.start(1L, verse)
+        val staleId = playback.utteranceId(1L)
+
+        playback.controller.stop()
+        playback.engine.emit(TtsUtteranceEvent.Finished(staleId))
+
+        assertEquals(ReaderSpeechPhase.Idle, playback.controller.state.value.phase)
+        assertNull(playback.controller.state.value.verseId)
+    }
+
+    @Test
+    fun a_late_event_after_the_konkani_notice_is_ignored() =
+        runTest(UnconfinedTestDispatcher()) {
+            val playback = playback()
+            playback.start(1L, verse)
+            val staleId = playback.utteranceId(1L)
+
+            playback.controller.speak(2L, konkaniVerse, konkaniTag)
+            playback.engine.emit(TtsUtteranceEvent.Finished(staleId))
+
+            assertEquals(ReaderSpeechPhase.Unavailable, playback.controller.state.value.phase)
+            assertEquals(ReaderSpeechIssue.NoKonkaniVoice, playback.controller.state.value.issue)
+        }
 }

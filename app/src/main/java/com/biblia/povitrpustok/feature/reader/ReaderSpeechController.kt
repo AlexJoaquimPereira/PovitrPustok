@@ -308,7 +308,9 @@ class ReaderSpeechController @Inject constructor(
 
             is TtsUtteranceEvent.Finished -> {
                 // Done means the whole verse was read; the bar closes and the
-                // ViewModel clears the verse highlight.
+                // ViewModel clears the verse highlight. Clear the id so a
+                // duplicate callback cannot reopen or mutate the state.
+                utteranceId = null
                 releaseFocus()
                 _state.value = ReaderSpeechState()
             }
@@ -336,6 +338,8 @@ class ReaderSpeechController @Inject constructor(
     private fun unavailable(issue: ReaderSpeechIssue) {
         if (_state.value.verseId == null) return
         pendingSpeak = false
+        // No further event for this utterance may mutate the notice.
+        utteranceId = null
         releaseFocus()
         _state.value = _state.value.copy(
             phase = ReaderSpeechPhase.Unavailable,
@@ -345,6 +349,8 @@ class ReaderSpeechController @Inject constructor(
     }
 
     private fun silence() {
+        // A late onDone/onError must not act on a stopped or replaced verse.
+        utteranceId = null
         tts.stop()
         releaseFocus()
     }
