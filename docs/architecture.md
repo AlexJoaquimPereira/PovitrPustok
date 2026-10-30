@@ -176,14 +176,32 @@ F2-10 adds `core/tts` as a Compose-free seam. `EnglishTextToSpeech` owns one
 `isLanguageAvailable(Locale.ENGLISH)` and then selects English, reporting
 `MissingLanguageData` (`-1`) and `LanguageNotSupported` (`-2`) as distinct
 states. Initialization failure keeps the platform error code. The port exposes
-only language checks/selection, `speak`, `stop`, and `shutdown`, so tests drive
-a fake engine without a device.
+language checks/selection, `speak`, `stop`, and `shutdown`, plus an optional
+utterance listener with a no-op default, so tests drive a fake engine without a
+device and an engine that cannot report `onRangeStart` still works.
 
-`AndroidTextToSpeechEngineFactory` is the production adapter. Hilt provides the
-factory only, never a controller or engine; the owner (F2-11) controls the
-controller's lifecycle and must call `shutdown()`. There is no background
-service, audio-focus handling, SSML language switching, network use, or Konkani
-voice path: callers must not pass Romi Konkani to this English-only controller.
+F2-11 puts playback in the Reader. `ReaderSpeechController` is owned by
+`ReaderViewModel`: it holds the one `EnglishTextToSpeech`, asks
+`AudioFocusController` for `AUDIOFOCUS_GAIN_TRANSIENT` per verse, pauses on a
+focus loss instead of talking over another app or TalkBack, releases focus on
+pause/stop/finish, and calls `shutdown()` from `onCleared`. `TextToSpeech` has
+no pause, so pause is stop plus a resume offset taken from the last
+`onRangeStart`. The Reader scrolls the spoken verse through its existing
+one-shot target and keeps that verse highlighted while playback is active; the
+spoken word itself is shown in the speech bar, because highlighting inside the
+verse text needs addressable rendering (S1-02).
+
+`AndroidTextToSpeechEngineFactory` and `AndroidAudioFocusController` are the
+production adapters. Hilt provides the factory (singleton) and an unscoped
+focus handle, never a controller or engine. There is no background service,
+SSML language switching, or network use.
+
+F2-12 keeps the English voice away from Romi Konkani. `ReaderSpeechController`
+speaks only when the loaded edition's language tag is English; any other
+edition produces `ReaderSpeechIssue.NoKonkaniVoice` and never creates an
+engine, speaks, or takes focus. The shipped Konkani edition therefore shows the
+"No Konkani voice is installed" notice, and the speaking path activates when an
+English edition ships in 1.4.
 
 ## Module boundary
 
@@ -203,4 +221,5 @@ annotations force a split.
 | Edition seam | `BibleEditionTest`, `AssetBibleDatabaseProviderEditionTest`, `BibleRepositoryEditionTest` |
 | Content-pack format and licence gate | `ContentPackTest`, `ContentPackManifestParserTest`, `ContentPackLoaderTest`, `LicenceManifestTest` |
 | English TTS wrapper | `EnglishTextToSpeechTest` |
+| Reader playback, audio focus, Konkani rule | `ReaderSpeechControllerTest`, `ReaderTtsViewModelTest`, `AndroidAudioFocusControllerTest`, `ReaderTtsUiTest` |
 | Rights register | `RightsRegisterTest` |

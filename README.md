@@ -15,7 +15,7 @@ the app never re-imports, rewrites or "fixes" it.
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 575 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 80 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
+| **Tests** | 622 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 83 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
 
 ---
 
@@ -251,11 +251,24 @@ single-module decision — is [`docs/architecture.md`](docs/architecture.md).
 `core/tts` is the UI-free seam for English text-to-speech. `EnglishTextToSpeech` owns one engine
 through the `TextToSpeechEngine` port, exposes a `StateFlow<TtsStatus>`, checks and selects
 `Locale.ENGLISH`, and distinguishes missing language data (`-1`) from an unsupported language
-(`-2`). It offers only `speak`, `stop`, and `shutdown`. The production adapter is
-`AndroidTextToSpeechEngineFactory`; Hilt provides the factory, never a controller or a live engine,
-so the owner (F2-11) controls the lifecycle and calls `shutdown()`. There is no background service,
-audio-focus takeover, SSML language switching, network use, or Konkani voice path; callers must not
-feed Romi Konkani to this English-only controller.
+(`-2`). It offers `speak`, `stop`, `shutdown`, and an optional utterance-progress sink
+(`onStart`/`onRangeStart`/`onDone`/`onError`) that engines without range support simply never call.
+`AudioFocusController` owns transient focus for one playback owner. The production adapters are
+`AndroidTextToSpeechEngineFactory` and `AndroidAudioFocusController`; Hilt provides the factory and
+an unscoped focus handle, never a controller or a live engine.
+
+The Reader owns playback. `ReaderSpeechController` lives in the Reader ViewModel, asks for
+`AUDIOFOCUS_GAIN_TRANSIENT` for the length of a verse, pauses instead of talking over another app
+(or TalkBack) when focus is taken, releases focus on pause, stop, finish, or error, and calls
+`shutdown()` from `onCleared`. There is no background service and no playback outside the Reader.
+Pause is implemented as stop plus a resume offset, because the platform engine has no pause.
+
+Language rule: only an English edition reaches the voice. The shipped edition is Romi Konkani, so
+"Read this verse" answers with the honest "No Konkani voice is installed" notice and sends nothing
+to any engine — Romi text is never pronounced by the English voice, and there is no SSML language
+switching. The speaking path becomes reachable when an English edition ships (1.4); word-level
+highlighting inside the verse waits for addressable rendering (S1-02), so today the reader
+highlights the whole verse and shows the word the engine reports.
 
 ### Package responsibilities
 
@@ -266,7 +279,7 @@ feed Romi Konkani to this English-only controller.
 | `core/navigation` | Route contract and navigation graph |
 | `core/pack` | Bundled content-pack source, manifest parser, checksum-verifying loader |
 | `core/result` | `BibleDataException` and `ContentPackException` hierarchies |
-| `core/tts` | English-only `TextToSpeech` controller behind an injectable engine port (no Compose, service, audio focus, or network) |
+| `core/tts` | English-only `TextToSpeech` controller behind an injectable engine port; utterance progress and transient audio focus; no Compose, service, or network |
 | `domain/model` | Pure domain models (books, chapters, verses, headings, liturgy, bookmarks, editions, packs) |
 | `domain/reference` | Book-name matcher and Scripture reference parser (pure) |
 | `domain/repository` | Repository interfaces (the domain boundary) |
@@ -448,8 +461,8 @@ PovitrPustok/
 │       │   │   ├── feature/{about,bookmarks,books,common,dailyreading,more,reader,reference,search,settings}
 │       │   │   └── ui/{adaptive,theme,components, AppVersion, HomeScreen, HomeViewModel, PovitrPustokApp}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
-│       ├── test/                        # 575 JVM unit tests + HTML fixtures
-│       └── androidTest/                 # 80 instrumented tests
+│       ├── test/                        # 622 JVM unit tests + HTML fixtures
+│       └── androidTest/                 # 83 instrumented tests
 ├── docs/                                 # architecture, rights, content-pack, performance and release documentation
 ├── tools/{corpus,release}/               # corpus importer/audit, release packaging
 ├── gradle/libs.versions.toml            # version catalog
@@ -591,10 +604,10 @@ made private again, Obtainium needs a GitHub token with read access.
 
 | Suite | Count | Runner | Notes |
 |---|---|---|---|
-| JVM unit tests | **550** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest` |
-| Instrumented tests | **80** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 76 executed / 0 failed / 4 skips (3 FTS5-only + 1 network-dependent Daily Reading) |
+| JVM unit tests | **622** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest`; 2 skip when the host SQLite lacks FTS5 |
+| Instrumented tests | **83** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator 4 tests skip (3 FTS5-only + 1 network-dependent Daily Reading) |
 
-36 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
+39 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
 assets or Room. Room migrations are validated by `MigrationTestHelper` against the checked-in
 `app/schemas/` JSON; the debug variant carries those schemas as test assets, the release APK does
 not. The migration suite runs under `testDebugUnitTest`; `testReleaseUnitTest` is not a supported
