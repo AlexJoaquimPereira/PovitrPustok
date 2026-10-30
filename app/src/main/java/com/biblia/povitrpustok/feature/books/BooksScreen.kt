@@ -35,6 +35,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRowScope
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -316,6 +317,7 @@ private fun SingleChoiceSegmentedButtonRowScope.TestamentSegment(
         onClick = onClick,
         shape = shape,
         modifier = modifier
+            .minimumInteractiveComponentSize()
             .heightIn(min = 48.dp)
             .testTag(tag),
         icon = {},
