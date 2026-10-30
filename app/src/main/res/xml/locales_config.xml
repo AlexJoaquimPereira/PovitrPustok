@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    F2-13: locales offered by Android's per-app language settings (API 33+)
+    and by the AppCompat delegate (API 30-32).
+
+    English is first and is the fallback: it is the only complete resource
+    set. `kok-Latn` is Romi Konkani and maps to res/values-b+kok+Latn; it must
+    never be `kok` alone, which is Devanagari.
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="kok-Latn" />
+</locale-config>
