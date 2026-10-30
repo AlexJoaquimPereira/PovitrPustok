@@ -70,6 +70,14 @@ class EnglishTextToSpeech(
     /** A controller is single-use; after [shutdown] it cannot be reinitialized. */
     private var closed = false
 
+    /**
+     * Optional sink for [TtsUtteranceEvent]s (F2-11). Set by the owner before
+     * [initialize]; it is invoked on the engine's callback thread, so the
+     * implementation must be thread-safe. `null` means "nobody is listening".
+     */
+    @Volatile
+    var onUtteranceEvent: ((TtsUtteranceEvent) -> Unit)? = null
+
     /** True once the engine has been created, initialized, and is ready. */
     val isReady: Boolean
         get() = _status.value == TtsStatus.Ready
@@ -89,6 +97,9 @@ class EnglishTextToSpeech(
             _status.value = TtsStatus.InitializationFailed(TtsResult.ERROR)
             return
         }
+        // Registered before the engine is published so a very fast first
+        // utterance cannot outrun its own progress events.
+        created.setUtteranceListener { event -> onUtteranceEvent?.invoke(event) }
         engine = created
         // Handle a factory that invokes onInit synchronously from create().
         pendingInitResult?.let { result ->
@@ -142,8 +153,8 @@ class EnglishTextToSpeech(
      * Speaks [text] only when [status] is [TtsStatus.Ready] and [text] is not
      * blank. Returns true when the engine accepted the utterance.
      *
-     * [utteranceId] is forwarded for the caller's future `onDone`/`onRangeStart`
-     * handling (F2-11); this wrapper does not register an utterance listener.
+     * [utteranceId] is forwarded to the engine and echoed on every
+     * [TtsUtteranceEvent], so the caller can tell its own utterances apart.
      */
     fun speak(text: String, utteranceId: String = DEFAULT_UTTERANCE_ID): Boolean {
         if (!isReady || text.isBlank()) return false
@@ -166,6 +177,7 @@ class EnglishTextToSpeech(
         engine = null
         pendingInitResult = null
         closed = true
+        onUtteranceEvent = null
         _status.value = TtsStatus.ShutDown
         current?.shutdown()
     }

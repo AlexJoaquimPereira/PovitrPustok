@@ -10,9 +10,11 @@ import java.util.Locale
  * language availability, speaking, stopping, and shutdown with a fake.
  * [AndroidTextToSpeechEngineFactory] is the only production implementation.
  *
- * The port is deliberately tiny: no audio focus, no utterance progress, no
- * SSML, no voice enumeration, and no network. Those concerns belong to the
- * caller (F2-11) or are out of scope.
+ * The port is deliberately tiny: no audio focus, no SSML, no voice
+ * enumeration, and no network. Audio focus belongs to the caller (F2-11).
+ * Utterance progress is optional (F2-11) and has a no-op default, so an engine
+ * that cannot report it — or a test fake that predates it — still compiles and
+ * behaves.
  */
 interface TextToSpeechEngine {
 
@@ -30,6 +32,13 @@ interface TextToSpeechEngine {
 
     /** Releases the underlying engine. Safe to call once per created engine. */
     fun shutdown()
+
+    /**
+     * Registers the sink for [TtsUtteranceEvent]s (F2-11). Called at most once
+     * per engine. The default ignores the sink: the caller then has no range
+     * information and must fall back to verse-level positioning.
+     */
+    fun setUtteranceListener(listener: (TtsUtteranceEvent) -> Unit) = Unit
 }
 
 /**
