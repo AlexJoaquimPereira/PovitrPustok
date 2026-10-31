@@ -147,10 +147,11 @@ Material 3 light and dark themes with a blue reading-focused accent, custom typo
 low-noise shape set. The XML `Theme.PovitrPustok` covers only the pre-Compose window.
 
 ### 2.9 Settings
-Reading controls: Scripture size, line spacing, red-letter toggle, and light/dark/system theme.
-Each control writes through immediately to `SharedPreferences` and applies to the next
-composition; the preview uses the real Scripture text style. Settings also shows the app version
-and the entry to **About**.
+Reading controls: Scripture size, the optional Atkinson Hyperlegible Scripture typeface, line
+spacing, red-letter toggle, and light/dark/system theme. Each control writes through immediately to
+`SharedPreferences` and applies to the next composition; the preview uses the real Scripture text
+style, so it shows the chosen typeface too. Settings also shows the app version and the entry to
+**About**.
 
 ### 2.10 More
 A short hub for the secondary entries that do not need their own top-level tab: **Search**,
@@ -191,6 +192,7 @@ the suite and keep their existing top bar and back handling.
 | `about/api` | API and data disclosure | — |
 | `about/licenses` | Software licences | — |
 | `about/licenses/app` | App licence (full Apache-2.0 text) | — |
+| `about/licenses/typeface` | Typeface licence (full SIL OFL 1.1 text) | — |
 | `about/credits` | Credits | — |
 
 The About disclosures are under `about/…`. `settings` is the reader-preferences screen, not an
@@ -768,6 +770,13 @@ distributed with this repository; see [Obtaining the corpus](#obtaining-the-corp
 text — including inside a built APK — requires the Archdiocese's permission. The in-app
 **Source edition** page carries this diocesan acknowledgement and copyright notice.
 
+**Bundled typeface:** Atkinson Hyperlegible 1.006 (regular and bold) is included under the **SIL
+Open Font License, Version 1.1**, © 2020 Braille Institute of America, Inc. The files are
+unmodified upstream releases, so the licence's Reserved Font Name clause is not triggered. The
+complete licence ships in `assets/licenses/OFL-1.1.txt` and is shown on the in-app **Typeface
+licence** page under Settings > About > Software licences. The typeface is optional, applies to
+Scripture text only, and is not a dyslexia treatment.
+
 ---
 
 ## 16. About and disclosure pages
@@ -782,6 +791,7 @@ Settings > About opens a landing page; every disclosure type has its own page un
 | Source edition | Diocesan acknowledgement and copyright for the Konkani corpus |
 | API & data | Links to the source website, repository and licence for external data (Daily Reading) |
 | Software licences | Third-party licence links, plus the entry to the App licence page with the complete Apache-2.0 text |
+| Typeface licence | The bundled Atkinson Hyperlegible face and the complete SIL OFL 1.1 text, reached from the TYPEFACES section of Software licences |
 | Credits | Project page: maintainer GitHub link and API non-affiliation note. Specific source/API/licence acknowledgements live on their own pages. |
 
 **Rules**
@@ -792,4 +802,6 @@ Settings > About opens a landing page; every disclosure type has its own page un
   licence text there; the About landing is the directory.
 * The app's own licence page must **always show the complete licence text**, never a link or a
   summary.
+* A bundled typeface is shipped content, not a runtime library: list it under TYPEFACES on the
+  Software licences page and give it a page with the complete licence text.
 * UI/UX research and Figma files were removed in 1.2.3 and must not be reintroduced.

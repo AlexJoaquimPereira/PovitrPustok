@@ -155,10 +155,14 @@ testing but **not** the FTS5 verification item.
 ## Disclosure pages
 
 - Settings > About is a **landing page**; every disclosure type has its own page under
-  `feature/about` (Source edition, API & data, Software licences, App licence). Credits is a
-  project/maintainer page, not a disclosure index.
+  `feature/about` (Source edition, API & data, Software licences, App licence, Typeface licence).
+  Credits is a project/maintainer page, not a disclosure index.
 - Every new API, data source, licence or acknowledgement gets its **own page** with a source link,
   repository link and licence/attribution — do not append it to an existing page.
 - The app's own licence page must show the **complete** licence text (Apache-2.0), not a link.
+- A bundled typeface is shipped content, not a runtime library: list it in the **TYPEFACES**
+  section of Software licences and give it a page with the **complete** licence text
+  (`AboutTypefaceLicenseScreen` for Atkinson Hyperlegible / SIL OFL 1.1). Do not add it to the
+  runtime-library list.
 - When adding or changing a disclosure, update `README.md` and this file, and add tests.
 - Do not repeat source-edition, API or licence text on Credits; the About landing is the directory.
