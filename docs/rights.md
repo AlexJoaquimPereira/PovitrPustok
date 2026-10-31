@@ -1,6 +1,6 @@
 # Rights register
 
-Status: F1-02 register. Last reviewed: 2026-10-28. Register owner: Alex Pereira.
+Status: F1-02 register. Last reviewed: 2026-10-31. Register owner: Alex Pereira.
 
 This register records the owner, licence, attribution, territory, expiry, and evidence for every
 text, data set, and content pack the app ships or fetches. `RightsRegisterTest` reads the table
@@ -25,6 +25,7 @@ fails after it passes. Cell text must not contain a literal `|`; the build-time 
 | konkani-corpus | Konkani (Romi) Bible corpus, 73 books | shipped | Archdiocese of Goa and Daman | © Archdiocese of Goa and Daman; used with permission; not Apache-2.0 | Konkani Bible text © Archdiocese of Goa and Daman | konkani-romi | worldwide (permission on file; scope to confirm) | none | Permission on file; `NOTICE`; `tools/corpus/README.md`; source XML and SQLite are not in git |
 | catholic-readings-api | Catholic Readings API (Daily Reading) | network | cpbjr / Catholic Readings API | MIT | Catholic Readings API (cpbjr.github.io) | - | worldwide | none | `https://github.com/cpbjr/catholic-readings-api/blob/main/LICENSE`; `AboutApiScreen.kt` |
 | software-libraries | Third-party libraries packaged in the APK | shipped | Various component authors | Apache-2.0 (runtime components) | See About > Software licences | - | worldwide | none | `LicenceCatalog.kt` (runtime list); `AboutLicensesScreen.kt` |
+| atkinson-hyperlegible | Atkinson Hyperlegible typeface (regular and bold) | shipped | Braille Institute of America, Inc. | SIL OFL 1.1 | Copyright 2020 Braille Institute of America, Inc. | - | worldwide | none | `app/src/main/res/font/`; `assets/licenses/OFL-1.1.txt`; `https://github.com/googlefonts/atkinson-hyperlegible` |
 | goa-calendar-overrides | Goan particular-calendar corrections in code | pending | Goan particular-calendar sources (to confirm) | pending | Goan particular calendar corrections | - | IN | none | `GoaCalendarOverrides.kt`; `AboutApiScreen.kt`; roadmap C1-07 |
 | webc | World English Bible, Catholic edition (WEBC) | planned | Public domain | Public domain | World English Bible, Catholic edition | - | worldwide | none | Planned 1.4 (roadmap S1-03); not shipped |
 | douay-rheims | Douay-Rheims Bible | planned | Public domain | Public domain | Douay-Rheims Bible | - | worldwide | none | Planned 1.4 (roadmap S1-04); not shipped |
@@ -48,5 +49,9 @@ fails after it passes. Cell text must not contain a literal `|`; the build-time 
 - The register points at the evidence; it does not replace the licence texts or the permission
   letter. Test/build-only components (JUnit EPL-1.0, Robolectric MIT) appear in the in-app
   catalogue but are not packaged and are not shipped content.
+- `atkinson-hyperlegible` covers the two bundled `.ttf` files and the OFL text in
+  `assets/licenses/OFL-1.1.txt`. The files are unmodified upstream releases, so the OFL Reserved
+  Font Name clause is not triggered; if they are ever modified, they must be renamed. The in-app
+  **Typeface licence** page shows the complete licence text.
 - The app code is Apache-2.0. The Konkani corpus is **not** Apache-2.0; the `NOTICE` and the
   Source edition page state the rights holder and the permission.
