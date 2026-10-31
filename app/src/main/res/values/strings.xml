@@ -166,6 +166,8 @@
     <string name="settings_scripture_size_short_medium">M</string>
     <string name="settings_scripture_size_short_large">L</string>
     <string name="settings_scripture_size_short_extra_large">XL</string>
+    <string name="settings_scripture_font">Atkinson Hyperlegible</string>
+    <string name="settings_scripture_font_caption">An optional typeface designed for low vision by the Braille Institute. It is not a dyslexia treatment. Used for Scripture text only.</string>
     <string name="settings_preview">PREVIEW</string>
     <string name="settings_preview_body">This is how Scripture will look in the reader. Adjust the size and spacing until it reads comfortably.</string>
     <string name="settings_preview_red_letter_sample">Aa</string>

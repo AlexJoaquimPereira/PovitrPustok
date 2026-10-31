@@ -59,6 +59,7 @@ import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.AppTheme
 import com.biblia.povitrpustok.domain.model.LineSpacing
 import com.biblia.povitrpustok.domain.model.ReadingPreferences
+import com.biblia.povitrpustok.domain.model.ScriptureFont
 import com.biblia.povitrpustok.domain.model.ScriptureSize
 import com.biblia.povitrpustok.feature.about.AboutEntryRow
 import com.biblia.povitrpustok.feature.about.AboutRowGroup
@@ -78,10 +79,11 @@ import com.biblia.povitrpustok.ui.theme.scriptureTextStyle
  * [ReadingColumnMaxWidth] so it keeps the same measure as Home and the Reader
  * on tablets and in landscape. Two quiet overline sections carry it:
  *
- *  - **READING** — Scripture size (S/M/L/XL), a live preview rendered with
- *    [scriptureTextStyle], line spacing, the red-letter switch, and the theme.
- *    Every control writes through to the repository on tap, so the change
- *    applies to this screen (and the next one) without a Save button.
+ *  - **READING** — Scripture size (S/M/L/XL), the optional Atkinson Hyperlegible
+ *    typeface, a live preview rendered with [scriptureTextStyle], line spacing,
+ *    the red-letter switch, and the theme. Every control writes through to the
+ *    repository on tap, so the change applies to this screen (and the next one)
+ *    without a Save button.
  *  - **ABOUT** — one row that opens the About landing page, where the source
  *    edition, the Daily Reading data source, the software licences and the
  *    credits each have their own page. The disclosures deliberately no longer
@@ -95,6 +97,9 @@ import com.biblia.povitrpustok.ui.theme.scriptureTextStyle
  *    than a bare letter;
  *  - the red-letter row is one [toggleable] switch target of at least 48 dp,
  *    with the switch itself marked as decoration;
+ *  - the typeface row is the same shape, so its caption is part of the tap area
+ *    and its spoken label carries the low-vision purpose and the "not a
+ *    dyslexia treatment" caveat;
  *  - every control clears 48 dp and the column scrolls, so nothing is clipped
  *    at 2x font scale or in landscape.
  */
@@ -134,7 +139,8 @@ fun SettingsScreen(
                     onScriptureSizeChange = { viewModel.setScriptureSize(it) },
                     onLineSpacingChange = { viewModel.setLineSpacing(it) },
                     onRedLetterChange = { viewModel.setRedLetter(it) },
-                    onThemeChange = { viewModel.setTheme(it) }
+                    onThemeChange = { viewModel.setTheme(it) },
+                    onScriptureFontChange = { viewModel.setScriptureFont(it) }
                 )
 
                 Spacer(modifier = Modifier.height(SectionGap))
@@ -209,6 +215,7 @@ private fun ReadingSection(
     onLineSpacingChange: (LineSpacing) -> Unit,
     onRedLetterChange: (Boolean) -> Unit,
     onThemeChange: (AppTheme) -> Unit,
+    onScriptureFontChange: (ScriptureFont) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -226,6 +233,21 @@ private fun ReadingSection(
                 )
             )
         }
+
+        Spacer(modifier = Modifier.height(ControlGap))
+
+        ScriptureTypefaceControl(
+            atkinson = preferences.scriptureFont == ScriptureFont.ATKINSON_HYPERLEGIBLE,
+            onAtkinsonChange = { enabled ->
+                onScriptureFontChange(
+                    if (enabled) {
+                        ScriptureFont.ATKINSON_HYPERLEGIBLE
+                    } else {
+                        ScriptureFont.SYSTEM
+                    }
+                )
+            }
+        )
 
         Spacer(modifier = Modifier.height(ControlGap))
 
@@ -267,8 +289,8 @@ private fun ReadingSection(
 
 /**
  * The preview answers every reading control in the same breath: it is rendered
- * with the real [scriptureTextStyle], so size and leading change as the user
- * taps.
+ * with the real [scriptureTextStyle], so size, leading and the optional
+ * typeface change as the user taps.
  *
  * [LocalReadingPreferences] is provided from the collected state rather than
  * read from the theme, so the preview always matches the controls even when
@@ -327,6 +349,60 @@ private fun ScripturePreview(
                 )
             }
         }
+    }
+}
+
+/**
+ * One switch row for the optional Scripture typeface (F2-09).
+ *
+ * A two-segment control was rejected: "Atkinson Hyperlegible" is 20 characters
+ * and cannot hold one line inside a 136 dp segment at 320 dp / 200% font scale,
+ * so it would wrap into a very tall segment or clip. The switch row matches
+ * [RedLetterControl], keeps the caption inside the tap area, and lets the name
+ * wrap naturally in the weighted column.
+ *
+ * The row is the whole target (48 dp minimum); the switch itself is decoration,
+ * and because the row merges its descendants, TalkBack reads the typeface name,
+ * the low-vision purpose, the "not a dyslexia treatment" caveat and the state
+ * as one node.
+ */
+@Composable
+private fun ScriptureTypefaceControl(
+    atkinson: Boolean,
+    onAtkinsonChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colorScheme = MaterialTheme.colorScheme
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .toggleable(
+                value = atkinson,
+                role = Role.Switch,
+                onValueChange = onAtkinsonChange
+            )
+            .testTag("settings.scripture_font")
+            .heightIn(min = 48.dp)
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.settings_scripture_font),
+                style = MaterialTheme.typography.titleSmall,
+                color = colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.settings_scripture_font_caption),
+                style = MaterialTheme.typography.bodySmall,
+                color = colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        // The row owns the interaction; the switch is the visual state only.
+        Switch(checked = atkinson, onCheckedChange = null)
     }
 }
 

@@ -177,7 +177,9 @@ class ShellStateRestorationUiTest {
         recreateActivity()
 
         waitForTag("settings.back")
-        composeRule.onNodeWithTag("settings.about").assertIsDisplayed()
+        // Settings is one scrolling column and the About entry sits below the
+        // reading controls, so scroll to it instead of assuming it fits.
+        composeRule.onNodeWithTag("settings.about").performScrollTo().assertIsDisplayed()
         // A detail screen keeps its own chrome and no suite.
         composeRule.onNodeWithTag("nav.home").assertDoesNotExist()
 
@@ -193,7 +195,7 @@ class ShellStateRestorationUiTest {
 
         composeRule.onNodeWithTag("about.back").performClick()
         waitForTag("settings.back")
-        composeRule.onNodeWithTag("settings.about").assertIsDisplayed()
+        composeRule.onNodeWithTag("settings.about").performScrollTo().assertIsDisplayed()
     }
 
     private fun openGenesisOne() {

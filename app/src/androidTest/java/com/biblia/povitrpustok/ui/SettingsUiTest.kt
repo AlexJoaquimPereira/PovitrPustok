@@ -2,6 +2,7 @@ package com.biblia.povitrpustok.ui
 
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
@@ -12,6 +13,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.biblia.povitrpustok.MainActivity
 import org.junit.Rule
@@ -125,6 +128,48 @@ class SettingsUiTest {
             .performScrollTo()
             .performClick()
         composeRule.onNodeWithTag("settings.scripture_size.MEDIUM").assertIsSelected()
+    }
+
+    @Test
+    fun scripture_typeface_toggles_and_survives_navigation() {
+        // The preview's typeface is visual — Compose semantics do not expose a
+        // TextStyle — so this test pins the toggle, the 48 dp target and the
+        // persisted choice. The rendered face is checked in the F2-09 record
+        // (docs/typeface-1.3.1.md) and the screenshots.
+        openSettingsFromHome()
+
+        val typefaceRow = composeRule.onNodeWithTag("settings.scripture_font")
+            .performScrollTo()
+        // The suite expects the app defaults; normalise first in case a manual
+        // session left the typeface on. The default itself is asserted in the
+        // JVM preference test, so this test covers the interaction, not the
+        // initial value.
+        if (
+            typefaceRow.fetchSemanticsNode()
+                .config.getOrNull(SemanticsProperties.ToggleableState) == ToggleableState.On
+        ) {
+            typefaceRow.performClick()
+        }
+
+        typefaceRow.assertIsOff().assertHeightIsAtLeast(48.dp)
+        typefaceRow.performClick()
+        typefaceRow.assertIsOn()
+
+        // The control sits above the preview, so the preview must already show
+        // the chosen face and stay on screen rather than being pushed away.
+        composeRule.onNodeWithTag("settings.preview").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("This is how Scripture will look", substring = true)
+            .assertIsDisplayed()
+
+        // Leaving and returning reads the choice back from the repository.
+        composeRule.onNodeWithTag("settings.back").performClick()
+        composeRule.onNodeWithTag("home.bible").assertIsDisplayed()
+        openSettingsFromHome()
+        composeRule.onNodeWithTag("settings.scripture_font").performScrollTo().assertIsOn()
+
+        // Restore the default for the rest of the suite.
+        composeRule.onNodeWithTag("settings.scripture_font").performClick()
+        composeRule.onNodeWithTag("settings.scripture_font").assertIsOff()
     }
 
     @Test
