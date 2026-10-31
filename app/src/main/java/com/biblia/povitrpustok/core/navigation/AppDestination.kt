@@ -68,6 +68,9 @@ object AppDestination {
     /** App licence: the complete Apache-2.0 text and the NOTICE file. */
     const val ABOUT_APP_LICENSE = "about/licenses/app"
 
+    /** Typeface licence: the complete SIL OFL 1.1 text for the bundled face. */
+    const val ABOUT_TYPEFACE_LICENSE = "about/licenses/typeface"
+
     /** Credits: the people and projects behind the app. */
     const val ABOUT_CREDITS = "about/credits"
 

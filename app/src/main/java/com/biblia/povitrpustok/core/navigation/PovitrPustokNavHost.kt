@@ -19,6 +19,7 @@ import com.biblia.povitrpustok.feature.about.AboutCreditsScreen
 import com.biblia.povitrpustok.feature.about.AboutLicensesScreen
 import com.biblia.povitrpustok.feature.about.AboutScreen
 import com.biblia.povitrpustok.feature.about.AboutSourceEditionScreen
+import com.biblia.povitrpustok.feature.about.AboutTypefaceLicenseScreen
 import com.biblia.povitrpustok.feature.books.BookChaptersScreen
 import com.biblia.povitrpustok.feature.books.BookIntroductionScreen
 import com.biblia.povitrpustok.feature.books.BooksScreen
@@ -255,12 +256,19 @@ fun PovitrPustokNavHost(
                 onBack = { navController.popBackStack() },
                 onOpenAppLicense = {
                     navController.navigate(AppDestination.ABOUT_APP_LICENSE)
+                },
+                onOpenTypefaceLicense = {
+                    navController.navigate(AppDestination.ABOUT_TYPEFACE_LICENSE)
                 }
             )
         }
 
         composable(AppDestination.ABOUT_APP_LICENSE) {
             AboutAppLicenseScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(AppDestination.ABOUT_TYPEFACE_LICENSE) {
+            AboutTypefaceLicenseScreen(onBack = { navController.popBackStack() })
         }
 
         composable(AppDestination.ABOUT_CREDITS) {

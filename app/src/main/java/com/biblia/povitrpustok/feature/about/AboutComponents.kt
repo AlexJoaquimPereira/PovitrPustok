@@ -1,5 +1,6 @@
 package com.biblia.povitrpustok.feature.about
 
+import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -43,8 +45,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.ui.adaptive.AppBreakpoints
 import com.biblia.povitrpustok.ui.theme.OverlineTextStyle
@@ -395,6 +400,57 @@ fun AboutLinkRow(
 private fun UriHandler.openSafely(url: String) {
     runCatching { openUri(url) }
 }
+
+// ---------------------------------------------------------------------------
+// Licence text
+// ---------------------------------------------------------------------------
+
+/**
+ * Legal text: small monospace, generous leading, selectable.
+ *
+ * A licence is a legal document whose clause numbering and indentation carry
+ * meaning, so it is set in monospace rather than the app's editorial faces and
+ * never truncated. Both the app licence and the typeface licence use it.
+ */
+internal val LicenceTextStyle = TextStyle(
+    fontFamily = FontFamily.Monospace,
+    fontSize = 12.sp,
+    lineHeight = 18.sp,
+    letterSpacing = 0.sp
+)
+
+/** One complete licence in a hairline panel, selectable so a clause can be copied. */
+@Composable
+internal fun LicencePanel(
+    text: String,
+    tag: String,
+    modifier: Modifier = Modifier
+) {
+    val colorScheme = MaterialTheme.colorScheme
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.small,
+        color = colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, colorScheme.outlineVariant)
+    ) {
+        SelectionContainer {
+            Text(
+                text = text,
+                style = LicenceTextStyle,
+                color = colorScheme.onSurface,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
+                    .testTag(tag)
+            )
+        }
+    }
+}
+
+/** Read a packaged text asset; `null` when it is missing or unreadable. */
+internal fun Context.readAssetText(path: String): String? = runCatching {
+    assets.open(path).bufferedReader().use { it.readText() }
+}.getOrNull()
 
 /** Universalis Goa calendar reference, linked from the API & data page. */
 internal const val UNIVERSALIS_GOA_URL = "https://universalis.com/asia.india.goa/calendar.htm"

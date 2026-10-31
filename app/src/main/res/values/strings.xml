@@ -213,6 +213,9 @@
     <string name="about_licenses_app_title">App code — Apache License 2.0 — full text</string>
     <string name="about_licenses_app_subtitle">The complete licence, as distributed with the app.</string>
     <string name="about_licenses_runtime">RUNTIME LIBRARIES</string>
+    <string name="about_licenses_typefaces">TYPEFACES</string>
+    <string name="about_licenses_typeface_atkinson_title">Atkinson Hyperlegible</string>
+    <string name="about_licenses_typeface_atkinson_subtitle">%1$s — the complete licence text</string>
     <string name="about_licenses_test">TEST ONLY</string>
     <string name="about_licenses_test_note">Used by the test suites; not part of the app.</string>
     <string name="about_licenses_build">BUILD TOOLING</string>
@@ -222,11 +225,15 @@
     <string name="about_license_apache">Apache License 2.0</string>
     <string name="about_license_epl">EPL-1.0</string>
     <string name="about_license_mit">MIT</string>
+    <string name="about_license_ofl">SIL OFL 1.1</string>
     <string name="about_app_license_title">App licence</string>
     <string name="about_app_license_lead">The app\'s source code is released under the Apache License, Version 2.0. The complete text is reproduced below.</string>
     <string name="about_app_license_notice_title">NOTICE</string>
     <string name="about_app_license_notice_lead">The NOTICE file distributed with the app.</string>
     <string name="about_app_license_unavailable">The licence text could not be read from the app package.</string>
+    <string name="about_typeface_license_title">Typeface licence</string>
+    <string name="about_typeface_license_lead">Atkinson Hyperlegible is bundled with the app under the SIL Open Font License, Version 1.1. Copyright 2020 Braille Institute of America, Inc. The complete licence is reproduced below.</string>
+    <string name="about_typeface_license_note">The regular and bold faces ship inside the app. They are used only when Atkinson Hyperlegible is chosen in Settings, and only for Scripture text.</string>
     <string name="about_credits_title">Credits</string>
     <string name="about_credits_subtitle">People and projects this app relies on</string>
     <string name="about_credits_lead">Povitr Pustok is a free, independent, open-source project, built and maintained by one person.</string>

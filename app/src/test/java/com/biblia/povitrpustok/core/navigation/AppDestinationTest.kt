@@ -100,15 +100,17 @@ class AppDestinationTest {
             AppDestination.ABOUT_API,
             AppDestination.ABOUT_LICENSES,
             AppDestination.ABOUT_APP_LICENSE,
+            AppDestination.ABOUT_TYPEFACE_LICENSE,
             AppDestination.ABOUT_CREDITS
         )
-        assertEquals(17, routes.size)
+        assertEquals(18, routes.size)
         assertEquals("settings", AppDestination.SETTINGS)
         assertEquals("about", AppDestination.ABOUT)
         assertEquals("about/source-edition", AppDestination.ABOUT_SOURCE_EDITION)
         assertEquals("about/api", AppDestination.ABOUT_API)
         assertEquals("about/licenses", AppDestination.ABOUT_LICENSES)
         assertEquals("about/licenses/app", AppDestination.ABOUT_APP_LICENSE)
+        assertEquals("about/licenses/typeface", AppDestination.ABOUT_TYPEFACE_LICENSE)
         assertEquals("about/credits", AppDestination.ABOUT_CREDITS)
     }
 

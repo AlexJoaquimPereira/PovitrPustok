@@ -17,11 +17,17 @@ import com.biblia.povitrpustok.R
  * one undifferentiated list. Every row links to the project's licence page;
  * the app's own full licence text lives on [AboutAppLicenseScreen], one tap
  * away, because Apache-2.0 requires the complete text to travel with the app.
+ *
+ * F2-09 adds a TYPEFACES section: the bundled Atkinson Hyperlegible face is
+ * shipped content rather than a library, so it is listed separately and its
+ * complete SIL OFL 1.1 text lives on [AboutTypefaceLicenseScreen]. The
+ * runtime-library list itself is unchanged.
  */
 @Composable
 fun AboutLicensesScreen(
     onBack: () -> Unit,
     onOpenAppLicense: () -> Unit,
+    onOpenTypefaceLicense: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     AboutPageScaffold(
@@ -41,6 +47,26 @@ fun AboutLicensesScreen(
                 subtitle = stringResource(R.string.about_licenses_app_subtitle),
                 onClick = onOpenAppLicense,
                 tag = "about.licenses.app"
+            )
+        }
+
+        // F2-09: a bundled typeface is shipped content, not a library, so it
+        // gets its own section and its own page instead of a runtime row.
+        Spacer(modifier = Modifier.height(32.dp))
+        AboutSectionLabel(
+            text = stringResource(R.string.about_licenses_typefaces),
+            modifier = Modifier.testTag("about.licenses.typefaces")
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        AboutRowGroup {
+            AboutEntryRow(
+                title = stringResource(R.string.about_licenses_typeface_atkinson_title),
+                subtitle = stringResource(
+                    R.string.about_licenses_typeface_atkinson_subtitle,
+                    stringResource(R.string.about_license_ofl)
+                ),
+                onClick = onOpenTypefaceLicense,
+                tag = "about.licenses.typeface.atkinson"
             )
         }
 

@@ -116,12 +116,16 @@ class AboutUiTest {
     }
 
     @Test
-    fun licences_page_lists_app_runtime_test_and_build_sections() {
+    fun licences_page_lists_app_typeface_runtime_test_and_build_sections() {
         openAboutFromSettings()
         composeRule.onNodeWithTag("about.licenses").performScrollTo().performClick()
         waitForTag("about.licenses.screen")
 
         composeRule.onNodeWithTag("about.licenses.app").assertIsDisplayed()
+        composeRule.onNodeWithTag("about.licenses.typefaces").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("about.licenses.typeface.atkinson")
+            .performScrollTo()
+            .assertIsDisplayed()
         composeRule.onNodeWithTag("about.licenses.runtime").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithTag("about.licenses.component.kotlin")
             .performScrollTo().assertIsDisplayed()
@@ -134,12 +138,44 @@ class AboutUiTest {
     }
 
     @Test
+    fun typeface_licence_renders_the_complete_ofl_text() {
+        openAboutFromSettings()
+        composeRule.onNodeWithTag("about.licenses").performScrollTo().performClick()
+        waitForTag("about.licenses.screen")
+
+        // The row names the face and its licence before the tap.
+        composeRule.onNodeWithTag("about.licenses.typeface.atkinson")
+            .performScrollTo()
+            .assertTextContains("Atkinson Hyperlegible", substring = true)
+            .assertTextContains("SIL OFL 1.1", substring = true)
+            .performClick()
+        waitForTag("about.typeface_license.screen")
+
+        // The complete OFL travels with the APK: the title, the copyright line
+        // and the closing disclaimer all have to be present, not a summary.
+        composeRule.onNodeWithTag("about.typeface_license.text")
+            .assertTextContains("SIL OPEN FONT LICENSE Version 1.1", substring = true)
+        composeRule.onNodeWithTag("about.typeface_license.text")
+            .assertTextContains("Copyright 2020 Braille Institute of America, Inc.", substring = true)
+        composeRule.onNodeWithTag("about.typeface_license.text")
+            .assertTextContains("DISCLAIMER", substring = true)
+
+        composeRule.onNodeWithTag("about.typeface_license.back").performClick()
+        waitForTag("about.licenses.screen")
+    }
+
+    @Test
     fun licences_section_labels_are_talkback_headings() {
         openAboutFromSettings()
         composeRule.onNodeWithTag("about.licenses").performScrollTo().performClick()
         waitForTag("about.licenses.screen")
 
-        listOf("about.licenses.runtime", "about.licenses.test", "about.licenses.build")
+        listOf(
+            "about.licenses.typefaces",
+            "about.licenses.runtime",
+            "about.licenses.test",
+            "about.licenses.build"
+        )
             .forEach { tag ->
                 composeRule.onNodeWithTag(tag)
                     .performScrollTo()
