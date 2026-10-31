@@ -86,14 +86,43 @@ parser cache is not on the cold-start path.
 ## Parser cache
 
 `BibleHtmlDocumentCache` is a process-wide, bounded LRU of parsed
-`BibleHtmlDocument`s (128 entries), keyed by the exact source HTML.
+`BibleHtmlDocument`s (256 entries), keyed by the exact source HTML.
 `ReaderComponents.rememberDocument` and the book-introduction renderer read
 through the same shared cache instead of calling `BibleHtmlParser.parse` per
-composition. The cache keeps scroll-back and recomposition from reparsing a
-verse/heading/block that left the lazy list; it does not make the first parse
-of a chapter faster, so the first chapter-open number is intentionally
+composition. The cache keeps scroll-back — and re-creation after a LazyColumn
+item is disposed — from reparsing a verse/heading/block; ordinary
+recomposition is already covered by `remember`. It does not make the first
+parse of a chapter faster, so the first chapter-open number is intentionally
 unchanged. `BibleHtmlDocumentCacheTest` covers reuse, distinct documents, LRU
-eviction, and capacity validation.
+eviction, capacity validation, and a full second pass over the longest chapter.
+
+The bound is 256 because Psalm 119 has 176 verses: at the original 128 entries
+the working set was larger than the cache, so a full scroll-back thrashed and
+reparsed all 176 verses (0% second-pass hits). 256 holds that chapter plus its
+headings and a second ordinary chapter; the retained structure for 128 verses
+is only 467 nodes and ~16 KB of text, so the extra entries are cheap.
+
+### Controlled cache A/B (2026-10-31)
+
+The before/after tables above compare different builds and are **not** a cache
+experiment: cold start, Books and search never touch the cache. To isolate it,
+the parser was benchmarked with real corpus HTML on the JVM and on the API 35
+emulator (debug build), comparing a parse per access with a warm cache:
+
+| Workload | Parse | Warm cache | Saving |
+|---|---|---|---|
+| JVM, Genesis 1 (31 verses) | 320 µs | 6 µs | ~314 µs |
+| JVM, Psalm 119 (176 verses) | 1.68 ms | 9 µs | ~1.67 ms |
+| JVM, 1000 verses | 2.95 ms | 47 µs | ~2.9 ms |
+| Emulator, Genesis 1 | 3.25 ms | 19 µs | ~3.2 ms |
+| Emulator, Psalm 119 | 19.9 ms | 40 µs | ~19.9 ms |
+
+The cache is a scroll-back/revisit optimisation: on the emulator it saves
+roughly 0.1 ms per verse, so re-rendering a 31-verse chapter saves ~3 ms —
+spread across frames as verses re-enter, and not a first-render win. It cannot
+explain the cold-start, Books or search deltas above; those flows never call
+it, and the first chapter open (the only cache-touching baseline flow) moved
+by 1 ms.
 
 ## Findings
 
