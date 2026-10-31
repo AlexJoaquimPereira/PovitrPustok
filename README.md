@@ -15,7 +15,7 @@ the app never re-imports, rewrites or "fixes" it.
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 628 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 97 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
+| **Tests** | 633 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 99 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
 
 ---
 
@@ -463,8 +463,8 @@ PovitrPustok/
 │       │   │   ├── feature/{about,bookmarks,books,common,dailyreading,more,reader,reference,search,settings}
 │       │   │   └── ui/{adaptive,theme,components, AppVersion, HomeScreen, HomeViewModel, PovitrPustokApp}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
-│       ├── test/                        # 628 JVM unit tests + HTML fixtures
-│       └── androidTest/                 # 97 instrumented tests
+│       ├── test/                        # 633 JVM unit tests + HTML fixtures
+│       └── androidTest/                 # 99 instrumented tests
 ├── docs/                                 # architecture, rights, content-pack, performance and release documentation
 ├── tools/{corpus,release}/               # corpus importer/audit, release packaging
 ├── gradle/libs.versions.toml            # version catalog
@@ -606,8 +606,8 @@ made private again, Obtainium needs a GitHub token with read access.
 
 | Suite | Count | Runner | Notes |
 |---|---|---|---|
-| JVM unit tests | **628** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest`; 2 skip when the host SQLite lacks FTS5 |
-| Instrumented tests | **97** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 93 executed / 0 failed / 4 skips (3 FTS5-only + 1 network-dependent Daily Reading) |
+| JVM unit tests | **633** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest`; 2 skip when the host SQLite lacks FTS5 |
+| Instrumented tests | **99** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 95 executed / 0 failed / 4 skips (3 FTS5-only + 1 network-dependent Daily Reading) |
 
 39 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
 assets or Room. Room migrations are validated by `MigrationTestHelper` against the checked-in
@@ -775,7 +775,8 @@ Open Font License, Version 1.1**, © 2020 Braille Institute of America, Inc. The
 unmodified upstream releases, so the licence's Reserved Font Name clause is not triggered. The
 complete licence ships in `assets/licenses/OFL-1.1.txt` and is shown on the in-app **Typeface
 licence** page under Settings > About > Software licences. The typeface is optional, applies to
-Scripture text only, and is not a dyslexia treatment.
+Scripture text only, and is not a dyslexia treatment. `docs/typeface-1.3.1.md` records the glyph
+coverage, the one corpus character that falls back, and the verification run.
 
 ---
 
