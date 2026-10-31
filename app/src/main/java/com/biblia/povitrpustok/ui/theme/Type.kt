@@ -2,9 +2,11 @@ package com.biblia.povitrpustok.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.biblia.povitrpustok.R
 
 /**
  * App typography (implementation plan §44; F-07).
@@ -131,3 +133,23 @@ val VerseNumberStyle = TextStyle(
 
 /** Backwards-compatible alias used by the reader. */
 val BibleTextStyle = ScriptureTextStyle
+
+/**
+ * Optional Scripture typeface (F2-09): Atkinson Hyperlegible 1.006, bundled
+ * offline under the SIL Open Font License 1.1.
+ *
+ * The face is designed for low vision by the Braille Institute, not as a
+ * treatment for dyslexia, so it is an opt-in alternative to the app's serif —
+ * it never replaces the display or chrome voices. Both weights are declared
+ * from the real files because the reader's HTML can carry `<b>` spans, and a
+ * synthesised bold would undo the letterform clarity the face exists for.
+ *
+ * The family declares only the two faces the app ships, so the `<i>` spans the
+ * corpus carries render as Compose's synthesised oblique. That is accepted for
+ * now: the upright letterforms carry the clarity this face exists for, and the
+ * upstream italic file is not bundled.
+ */
+val AtkinsonHyperlegibleFamily = FontFamily(
+    Font(R.font.atkinson_hyperlegible_regular, FontWeight.Normal),
+    Font(R.font.atkinson_hyperlegible_bold, FontWeight.Bold)
+)

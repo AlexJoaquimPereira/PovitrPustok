@@ -45,6 +45,24 @@ enum class AppTheme {
 }
 
 /**
+ * Optional Scripture typeface (F2-09).
+ *
+ * [SYSTEM] keeps the app's serif; [ATKINSON_HYPERLEGIBLE] is the bundled
+ * low-vision face. It applies to Scripture body text only — never to titles,
+ * chrome or display type — so the app's voice survives the choice.
+ */
+enum class ScriptureFont {
+    SYSTEM,
+    ATKINSON_HYPERLEGIBLE;
+
+    companion object {
+        /** Tolerates a stored value from a newer/older build. */
+        fun fromNameOrSystem(name: String?): ScriptureFont =
+            entries.firstOrNull { it.name == name } ?: SYSTEM
+    }
+}
+
+/**
  * The complete, persistable reading preference set. Defaults are the
  * pre-Settings behaviour, so an existing install sees no change.
  */
@@ -52,5 +70,6 @@ data class ReadingPreferences(
     val scriptureSize: ScriptureSize = ScriptureSize.MEDIUM,
     val lineSpacing: LineSpacing = LineSpacing.NORMAL,
     val redLetter: Boolean = true,
-    val theme: AppTheme = AppTheme.SYSTEM
+    val theme: AppTheme = AppTheme.SYSTEM,
+    val scriptureFont: ScriptureFont = ScriptureFont.SYSTEM
 )

@@ -3,6 +3,7 @@ package com.biblia.povitrpustok.domain.repository
 import com.biblia.povitrpustok.domain.model.AppTheme
 import com.biblia.povitrpustok.domain.model.LineSpacing
 import com.biblia.povitrpustok.domain.model.ReadingPreferences
+import com.biblia.povitrpustok.domain.model.ScriptureFont
 import com.biblia.povitrpustok.domain.model.ScriptureSize
 import kotlinx.coroutines.flow.StateFlow
 
@@ -23,4 +24,6 @@ interface ReadingPreferencesRepository {
     fun setRedLetter(enabled: Boolean)
 
     fun setTheme(theme: AppTheme)
+
+    fun setScriptureFont(font: ScriptureFont)
 }

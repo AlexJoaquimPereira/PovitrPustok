@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
 import com.biblia.povitrpustok.domain.model.ReadingPreferences
+import com.biblia.povitrpustok.domain.model.ScriptureFont
 
 /**
  * The persisted reading preferences, available to any composable under
@@ -28,11 +29,22 @@ fun scriptureTextStyle(): TextStyle = scaledScriptureTextStyle(ScriptureTextStyl
 @Composable
 fun scripturePoetryTextStyle(): TextStyle = scaledScriptureTextStyle(ScripturePoetryStyle)
 
+/**
+ * Applies the three reading preferences to one Scripture style.
+ *
+ * F2-09: the optional typeface is swapped here and nowhere else, so every
+ * Scripture surface — reader verses, poetic verses and the Settings preview —
+ * changes together and no title or chrome text can pick it up by accident.
+ */
 @Composable
 private fun scaledScriptureTextStyle(base: TextStyle): TextStyle {
     val preferences = LocalReadingPreferences.current
     return remember(preferences, base) {
         base.copy(
+            fontFamily = when (preferences.scriptureFont) {
+                ScriptureFont.SYSTEM -> base.fontFamily
+                ScriptureFont.ATKINSON_HYPERLEGIBLE -> AtkinsonHyperlegibleFamily
+            },
             fontSize = base.fontSize * preferences.scriptureSize.scale,
             lineHeight = base.lineHeight *
                 preferences.scriptureSize.scale *

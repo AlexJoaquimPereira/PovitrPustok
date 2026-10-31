@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.biblia.povitrpustok.domain.model.AppTheme
 import com.biblia.povitrpustok.domain.model.LineSpacing
 import com.biblia.povitrpustok.domain.model.ReadingPreferences
+import com.biblia.povitrpustok.domain.model.ScriptureFont
 import com.biblia.povitrpustok.domain.model.ScriptureSize
 import com.biblia.povitrpustok.domain.repository.ReadingPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,4 +31,6 @@ class SettingsViewModel @Inject constructor(
     fun setRedLetter(enabled: Boolean) = repository.setRedLetter(enabled)
 
     fun setTheme(theme: AppTheme) = repository.setTheme(theme)
+
+    fun setScriptureFont(font: ScriptureFont) = repository.setScriptureFont(font)
 }

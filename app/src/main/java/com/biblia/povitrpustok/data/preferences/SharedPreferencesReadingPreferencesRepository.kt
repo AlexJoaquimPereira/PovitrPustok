@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import com.biblia.povitrpustok.domain.model.AppTheme
 import com.biblia.povitrpustok.domain.model.LineSpacing
 import com.biblia.povitrpustok.domain.model.ReadingPreferences
+import com.biblia.povitrpustok.domain.model.ScriptureFont
 import com.biblia.povitrpustok.domain.model.ScriptureSize
 import com.biblia.povitrpustok.domain.repository.ReadingPreferencesRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -52,6 +53,11 @@ class SharedPreferencesReadingPreferencesRepository @Inject constructor(
         _preferences.value = _preferences.value.copy(theme = theme)
     }
 
+    override fun setScriptureFont(font: ScriptureFont) {
+        prefs.edit().putString(KEY_SCRIPTURE_FONT, font.name).apply()
+        _preferences.value = _preferences.value.copy(scriptureFont = font)
+    }
+
     private fun read(): ReadingPreferences = ReadingPreferences(
         scriptureSize = ScriptureSize.fromNameOrMedium(
             prefs.getString(KEY_SCRIPTURE_SIZE, null)
@@ -60,7 +66,10 @@ class SharedPreferencesReadingPreferencesRepository @Inject constructor(
             prefs.getString(KEY_LINE_SPACING, null)
         ),
         redLetter = prefs.getBoolean(KEY_RED_LETTER, true),
-        theme = AppTheme.fromNameOrSystem(prefs.getString(KEY_THEME, null))
+        theme = AppTheme.fromNameOrSystem(prefs.getString(KEY_THEME, null)),
+        scriptureFont = ScriptureFont.fromNameOrSystem(
+            prefs.getString(KEY_SCRIPTURE_FONT, null)
+        )
     )
 
     private companion object {
@@ -69,5 +78,6 @@ class SharedPreferencesReadingPreferencesRepository @Inject constructor(
         const val KEY_LINE_SPACING = "line_spacing"
         const val KEY_RED_LETTER = "red_letter"
         const val KEY_THEME = "theme"
+        const val KEY_SCRIPTURE_FONT = "scripture_font"
     }
 }
