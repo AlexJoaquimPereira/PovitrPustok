@@ -43,8 +43,13 @@ class BibleHtmlDocumentCache(
     internal fun size(): Int = synchronized(entries) { entries.size }
 
     companion object {
-        /** Roughly two long chapters of verses plus headings. */
-        const val DEFAULT_MAX_ENTRIES = 128
+        /**
+         * Holds the longest chapter (Psalm 119, 176 verses) plus its headings
+         * and a second ordinary chapter. A smaller bound thrashes on a full
+         * scroll-back of Psalm 119: the working set exceeds the cache, so LRU
+         * evicts entries before they are reused and every revisit reparses.
+         */
+        const val DEFAULT_MAX_ENTRIES = 256
 
         /**
          * Process-wide cache shared by the reader and book-introduction

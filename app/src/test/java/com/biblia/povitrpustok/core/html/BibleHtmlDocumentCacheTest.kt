@@ -2,6 +2,7 @@ package com.biblia.povitrpustok.core.html
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 
@@ -63,6 +64,31 @@ class BibleHtmlDocumentCacheTest {
 
         cache.get("<p>b</p>") // was evicted, parse again
         assertEquals(4, parses)
+    }
+
+    @Test
+    fun the_default_bound_holds_the_longest_chapter() {
+        // Psalm 119 is the longest chapter (176 verses). The default must hold
+        // it plus headings, or a full scroll-back thrashes.
+        assertTrue(BibleHtmlDocumentCache.DEFAULT_MAX_ENTRIES >= 176)
+    }
+
+    @Test
+    fun the_longest_chapter_is_reused_on_a_second_pass() {
+        var parses = 0
+        val cache = BibleHtmlDocumentCache(
+            maxEntries = BibleHtmlDocumentCache.DEFAULT_MAX_ENTRIES
+        ) { html ->
+            parses++
+            parser.parse(html)
+        }
+        val chapter = (1..176).map { "<p>verse $it</p>" }
+
+        chapter.forEach { cache.get(it) }
+        assertEquals("the first pass parses every verse", 176, parses)
+
+        chapter.forEach { cache.get(it) }
+        assertEquals("the whole chapter must still be cached", 176, parses)
     }
 
     @Test
