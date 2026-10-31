@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Atkinson Hyperlegible 1.006 (Braille Institute of America, Inc.), SIL OFL 1.1.
+  Two weights only: the reader's Scripture body text is regular, and the HTML
+  renderer's <b> spans need a real 700 face rather than a synthesised one.
+
+  Compose resolves weight variants from the Kotlin FontFamily in
+  ui/theme/Type.kt, which points at the two .ttf files directly, so this
+  platform-side family map is deliberately not referenced from Kotlin.
+-->
+<font-family
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="UnusedResources">
+    <font
+        android:font="@font/atkinson_hyperlegible_regular"
+        android:fontStyle="normal"
+        android:fontWeight="400" />
+    <font
+        android:font="@font/atkinson_hyperlegible_bold"
+        android:fontStyle="normal"
+        android:fontWeight="700" />
+</font-family>
