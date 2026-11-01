@@ -156,7 +156,8 @@ testing but **not** the FTS5 verification item.
 
 - Settings > About is a **landing page**; every disclosure type has its own page under
   `feature/about` (Source edition, API & data, Software licences, App licence, Typeface licence).
-  Credits is a project/maintainer page, not a disclosure index.
+  Credits is a project/maintainer page, not a disclosure index. It also carries the manual Romi UI
+  translation attribution (the developer's own work); that is a project fact, not a disclosure page.
 - Every new API, data source, licence or acknowledgement gets its **own page** with a source link,
   repository link and licence/attribution — do not append it to an existing page.
 - The app's own licence page must show the **complete** licence text (Apache-2.0), not a link.

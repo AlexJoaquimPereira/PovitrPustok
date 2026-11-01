@@ -151,3 +151,9 @@ reader_tts_failed,translate,The voice could not start,Tallo suru zavunk xokona,
 reader_tts_failed_body,translate,"Nothing was read. Try again, or check the device's text-to-speech settings.","Kainch vachlem na. Porot proytn kor, va mobile-acho ""text-to-speech"" settings porot pollei.",
 reader_tts_audio_busy,translate,Another app is using the audio,Dusro app mobile-acho speaker vapurta,
 reader_tts_audio_busy_body,translate,Reading aloud stayed quiet instead of talking over the other app. Try again in a moment.,"Dusrea app-a voir ulovche svater, vhoddlean vachop vogi ravlo. Porot ekdam proytn kor.",
+settings_section_language,keep English,APP LANGUAGE,,F2-14 language control; translate in a follow-up.
+settings_language_english,keep English,English,,Language name; keep English.
+settings_language_konkani,keep English,Konkani,,Language name; keep English.
+settings_language_konkani_spoken,keep English,Konkani (Romi),,TalkBack label; keep English.
+settings_language_caption,keep English,"Konkani uses Romi script, the same as the Bible text. Home, Books, Search, Daily Reading and reference lookup stay in English.",,F2-14 scope note; translate in a follow-up.
+about_credits_translation,keep English,"The Romi UI translation was done manually, by hand, by the developer, Alex Pereira.",,Attribution; keep English.

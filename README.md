@@ -15,7 +15,7 @@ the app never re-imports, rewrites or "fixes" it.
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 635 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 99 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
+| **Tests** | 640 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 100 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
 
 ---
 
@@ -150,8 +150,9 @@ low-noise shape set. The XML `Theme.PovitrPustok` covers only the pre-Compose wi
 Reading controls: Scripture size, the optional Atkinson Hyperlegible Scripture typeface, line
 spacing, red-letter toggle, and light/dark/system theme. Each control writes through immediately to
 `SharedPreferences` and applies to the next composition; the preview uses the real Scripture text
-style, so it shows the chosen typeface too. Settings also shows the app version and the entry to
-**About**.
+style, so it shows the chosen typeface too. A separate **APP LANGUAGE** control switches the whole
+app between English and Konkani (Romi) immediately; the AppCompat delegate owns and persists that
+choice. Settings also shows the app version and the entry to **About**.
 
 ### 2.10 More
 A short hub for the secondary entries that do not need their own top-level tab: **Search**,
@@ -164,7 +165,9 @@ labels; Home, Books, Search, Daily Reading and reference content stay English. I
 **manually, by hand**, by the developer, Alex Pereira, without machine translation. The worksheet
 and scope rules live in `docs/translations/`; the generator is
 `tools/translations/generate_romi_strings.py`; the locale is `b+kok+Latn`, with English
-fallback for any key without a Romi value.
+fallback for any key without a Romi value. Settings > **APP LANGUAGE** switches between English and
+Konkani (Romi) without leaving the app; Android's per-app language screen remains a second entry
+point.
 
 ---
 
@@ -471,8 +474,8 @@ PovitrPustok/
 │       │   │   ├── feature/{about,bookmarks,books,common,dailyreading,more,reader,reference,search,settings}
 │       │   │   └── ui/{adaptive,theme,components, AppVersion, HomeScreen, HomeViewModel, PovitrPustokApp}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
-│       ├── test/                        # 635 JVM unit tests + HTML fixtures
-│       └── androidTest/                 # 99 instrumented tests
+│       ├── test/                        # 640 JVM unit tests + HTML fixtures
+│       └── androidTest/                 # 100 instrumented tests
 ├── docs/                                 # architecture, rights, content-pack, performance and release documentation
 ├── tools/{corpus,release}/               # corpus importer/audit, release packaging
 ├── gradle/libs.versions.toml            # version catalog
@@ -614,8 +617,8 @@ made private again, Obtainium needs a GitHub token with read access.
 
 | Suite | Count | Runner | Notes |
 |---|---|---|---|
-| JVM unit tests | **635** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest`; 2 skip when the host SQLite lacks FTS5 |
-| Instrumented tests | **99** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 95 executed / 0 failed / 4 skips (3 FTS5-only + 1 network-dependent Daily Reading) |
+| JVM unit tests | **640** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest`; 2 skip when the host SQLite lacks FTS5 |
+| Instrumented tests | **100** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 96 executed / 0 failed / 4 skips (3 FTS5-only + 1 network-dependent Daily Reading) |
 
 39 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,
 assets or Room. Room migrations are validated by `MigrationTestHelper` against the checked-in
@@ -801,7 +804,7 @@ Settings > About opens a landing page; every disclosure type has its own page un
 | API & data | Links to the source website, repository and licence for external data (Daily Reading) |
 | Software licences | Third-party licence links, plus the entry to the App licence page with the complete Apache-2.0 text |
 | Typeface licence | The bundled Atkinson Hyperlegible face and the complete SIL OFL 1.1 text, reached from the TYPEFACES section of Software licences |
-| Credits | Project page: maintainer GitHub link and API non-affiliation note. Specific source/API/licence acknowledgements live on their own pages. |
+| Credits | Project page: maintainer GitHub link, the manual Romi translation attribution, and the API non-affiliation note. Specific source/API/licence acknowledgements live on their own pages. |
 
 **Rules**
 

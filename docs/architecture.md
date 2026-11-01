@@ -43,6 +43,19 @@ screen thresholds.
 The suite consumes only the navigation bar/rail inset it owns; each screen
 keeps its own `safeDrawing` handling, so insets are not applied twice.
 
+## Localization (1.3.1)
+
+English is the complete resource set and the fallback; Romi Konkani is
+`b+kok+Latn` (never bare `kok`, which is Devanagari). `res/xml/locales_config.xml`
+lists `en` then `kok-Latn`, and the manifest wires the AppCompat
+`autoStoreLocales` holder so per-app language works on API 30–32 as well as
+33+. Settings > **APP LANGUAGE** writes through `core/locale/AppLocale.kt` to
+`AppCompatDelegate.setApplicationLocales`; the delegate owns and persists the
+choice, so the in-app control and Android's per-app language screen stay in
+step. The generated locale is complete — every default string is emitted, with
+the English text as the explicit fallback — and the worksheet in
+`docs/translations/` is the source of truth.
+
 ## Room schema v3
 
 `AppDatabase` (`povitr_pustok_app.db`) is version **3** with `exportSchema =

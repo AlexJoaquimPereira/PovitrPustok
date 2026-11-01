@@ -1,6 +1,19 @@
 # 1.3.1 Romi UI translation worksheet
 
-Status: translation complete 2026-11-01; integration lands in F2-14.
+Status: translation complete 2026-11-01; shipped in 1.3.1.
+
+## Choosing the language in the app
+
+Settings > **APP LANGUAGE** offers English and Konkani (Romi) and applies the choice
+immediately through the AppCompat delegate, so it works on every supported release. The
+manifest's `autoStoreLocales` holder persists it, and Android's own per-app language screen
+stays a second entry point — the two always agree because both read the same delegate.
+
+The six F2-14 language/attribution strings (`settings_section_language`,
+`settings_language_english`, `settings_language_konkani`,
+`settings_language_konkani_spoken`, `settings_language_caption`,
+`about_credits_translation`) are `keep English` rows and are not part of the
+113 translated cells.
 
 ## Provenance
 
