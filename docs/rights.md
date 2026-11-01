@@ -1,6 +1,6 @@
 # Rights register
 
-Status: F1-02 register. Last reviewed: 2026-10-31. Register owner: Alex Pereira.
+Status: F1-02 register. Last reviewed: 2026-11-01. Register owner: Alex Pereira.
 
 This register records the owner, licence, attribution, territory, expiry, and evidence for every
 text, data set, and content pack the app ships or fetches. `RightsRegisterTest` reads the table
@@ -22,6 +22,7 @@ fails after it passes. Cell text must not contain a literal `|`; the build-time 
 | id | content | status | owner | licence | attribution | covers | territory | expiry | evidence |
 |---|---|---|---|---|---|---|---|---|---|
 | app-code | Povitr Pustok application code | shipped | Alex Pereira | Apache-2.0 | Copyright 2026 Alex Pereira | - | worldwide | none | `LICENSE`; `NOTICE`; `assets/licenses/Apache-2.0.txt`; `assets/licenses/NOTICE.txt` |
+| romi-ui-translation | Romi UI translation (1.3.1) | planned | Alex Pereira | Apache-2.0 | Romi UI translation by Alex Pereira, done manually by hand | - | worldwide | none | `docs/translations/1.3.1-romi.csv`; `app/src/main/res/values-b+kok+Latn/strings.xml` (F2-14) |
 | konkani-corpus | Konkani (Romi) Bible corpus, 73 books | shipped | Archdiocese of Goa and Daman | © Archdiocese of Goa and Daman; used with permission; not Apache-2.0 | Konkani Bible text © Archdiocese of Goa and Daman | konkani-romi | worldwide (permission on file; scope to confirm) | none | Permission on file; `NOTICE`; `tools/corpus/README.md`; source XML and SQLite are not in git |
 | catholic-readings-api | Catholic Readings API (Daily Reading) | network | cpbjr / Catholic Readings API | MIT | Catholic Readings API (cpbjr.github.io) | - | worldwide | none | `https://github.com/cpbjr/catholic-readings-api/blob/main/LICENSE`; `AboutApiScreen.kt` |
 | software-libraries | Third-party libraries packaged in the APK | shipped | Various component authors | Apache-2.0 (runtime components) | See About > Software licences | - | worldwide | none | `LicenceCatalog.kt` (runtime list); `AboutLicensesScreen.kt` |
@@ -41,6 +42,7 @@ fails after it passes. Cell text must not contain a literal `|`; the build-time 
 - The corpus permission is on file. Its scope for English parallel text, AI quotation,
   calendar/lectionary use, and derivative/export use is still being confirmed; 1.3.0 uses only the
   existing Konkani reader scope.
+- `romi-ui-translation` is the developer's own work, licensed with the app code. It is `planned` until F2-14 integrates the generated locale, then becomes `shipped`.
 - `goa-calendar-overrides` is a small code table, not a content pack. It is `pending` because the
   About API page describes Universalis Goa as a manual cross-check; confirm both the disclosure
   wording and the rights position before shipping a calendar pack (C1-07).
