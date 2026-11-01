@@ -1,7 +1,7 @@
 # Content packs
 
 Status: the format and licence gate are implemented in 1.3.0 (F1-18/F1-19).
-**No packs ship in 1.3.0.** The first expected pack is the annual Goa calendar
+**No packs ship in 1.3.1.** The first expected pack is the annual Goa calendar
 (C1-05); the same format is intended for commentary and other data later.
 
 ## Lifecycle
@@ -126,11 +126,11 @@ Bible corpus, so it also runs with `-PskipCorpusTests`.
 
 ## Current packs
 
-None in 1.3.0. `app/src/main/assets/packs/.gitkeep` only keeps the directory in
+None in 1.3.1. `app/src/main/assets/packs/.gitkeep` only keeps the directory in
 git; the loader reports directories containing entries, so `.gitkeep` is not a
 pack.
 
 ## Sign-off
 
 F1-20 requires owner sign-off on this lifecycle. Owner: Alex Pereira.
-Sign-off: pending.
+Sign-off: Alex Pereira, 2026-11-01.
