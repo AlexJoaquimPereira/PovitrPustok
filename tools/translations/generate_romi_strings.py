@@ -130,6 +130,7 @@ def main() -> int:
         "     docs/translations/1.3.1-romi.csv. Every default string is emitted;",
         "     an untranslated cell uses the English text as an explicit fallback.",
         "     Plurals are English until the worksheet supports them.",
+        "     Romi translation by Alex Pereira, done manually by hand.",
         "     Do not edit by hand. -->",
         "<resources>",
     ]

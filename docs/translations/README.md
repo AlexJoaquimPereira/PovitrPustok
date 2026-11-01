@@ -1,6 +1,12 @@
 # 1.3.1 Romi UI translation worksheet
 
-Status: worksheet only; no translated resource is shipped yet.
+Status: translation complete 2026-11-01; integration lands in F2-14.
+
+## Provenance
+
+The 1.3.1 Romi UI translation was produced **manually, by hand**, by the app's
+developer, Alex Pereira. No machine translation was used. The worksheet is the
+complete record of that work.
 
 Scope for 1.3.1: **Settings, About, reader chrome, bookmarks, and the new shell labels**.
 Home, Books, Search, Daily Reading, and reference-entry content stay English for this release.
@@ -21,7 +27,7 @@ Rules for the `romi` column:
 - When a line is intentionally left English, leave the `romi` cell empty; the generator emits
   the English text as an explicit fallback.
 
-After the worksheet is filled, `values-b+kok+Latn/strings.xml` is generated from **every** default
+The worksheet is complete. `values-b+kok+Latn/strings.xml` is generated from **every** default
 `<string>`: a filled `romi` cell is used, and an empty cell emits the English text. Plurals are
 copied as English until the worksheet supports them. The generated locale is therefore complete,
 so a partially filled worksheet is shippable and lint-clean; a partial locale would otherwise fail

@@ -158,6 +158,14 @@ A short hub for the secondary entries that do not need their own top-level tab: 
 **Bookmarks**, **Daily Reading**, **Go to reference**, and **Settings & about**. It opens the
 same routes as Home and does not load or duplicate any Bible content.
 
+### 2.11 Localization
+The 1.3.1 Romi UI translation covers Settings, About, reader chrome, bookmarks and the shell
+labels; Home, Books, Search, Daily Reading and reference content stay English. It was translated
+**manually, by hand**, by the developer, Alex Pereira, without machine translation. The worksheet
+and scope rules live in `docs/translations/`; the generator is
+`tools/translations/generate_romi_strings.py`; the locale is `b+kok+Latn`, with English
+fallback for any key without a Romi value.
+
 ---
 
 ## 3. Screens and navigation
