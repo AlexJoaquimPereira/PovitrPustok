@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -170,6 +171,50 @@ class SettingsUiTest {
         // Restore the default for the rest of the suite.
         composeRule.onNodeWithTag("settings.scripture_font").performClick()
         composeRule.onNodeWithTag("settings.scripture_font").assertIsOff()
+    }
+
+    @Test
+    fun app_language_switch_shows_romi_and_restores_english() {
+        openSettingsFromHome()
+
+        val english = composeRule.onNodeWithTag("settings.language.ENGLISH").performScrollTo()
+        // The suite expects English chrome; normalise first in case a manual
+        // session or a crashed run left the app in Romi. The default itself is
+        // asserted in the JVM AppLocale test, so this test covers the switch.
+        if (
+            english.fetchSemanticsNode()
+                .config.getOrNull(SemanticsProperties.Selected) != true
+        ) {
+            english.performClick()
+            composeRule.waitUntil(timeoutMillis = 15_000) {
+                composeRule.onAllNodesWithText("READING").fetchSemanticsNodes().isNotEmpty()
+            }
+        }
+        composeRule.onNodeWithTag("settings.language.ENGLISH")
+            .performScrollTo()
+            .assertIsSelected()
+
+        // Selecting Konkani applies the locale through the AppCompat delegate,
+        // which recreates the activity with the Romi resources. The section
+        // label turning into VACHOP is the proof that the translation is live.
+        composeRule.onNodeWithTag("settings.language.KONKANI").performScrollTo().performClick()
+        composeRule.waitUntil(timeoutMillis = 15_000) {
+            composeRule.onAllNodesWithText("VACHOP").fetchSemanticsNodes().isNotEmpty()
+        }
+        waitForSettings()
+        composeRule.onNodeWithTag("settings.language.KONKANI")
+            .performScrollTo()
+            .assertIsSelected()
+
+        // English restores the default chrome, and the control follows it.
+        composeRule.onNodeWithTag("settings.language.ENGLISH").performScrollTo().performClick()
+        composeRule.waitUntil(timeoutMillis = 15_000) {
+            composeRule.onAllNodesWithText("READING").fetchSemanticsNodes().isNotEmpty()
+        }
+        waitForSettings()
+        composeRule.onNodeWithTag("settings.language.ENGLISH")
+            .performScrollTo()
+            .assertIsSelected()
     }
 
     @Test
