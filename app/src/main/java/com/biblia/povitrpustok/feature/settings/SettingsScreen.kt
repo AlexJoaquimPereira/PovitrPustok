@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
+import com.biblia.povitrpustok.core.locale.AppLocale
 import com.biblia.povitrpustok.domain.model.AppTheme
 import com.biblia.povitrpustok.domain.model.LineSpacing
 import com.biblia.povitrpustok.domain.model.ReadingPreferences
@@ -72,18 +73,22 @@ import com.biblia.povitrpustok.ui.theme.ReadingColumnMaxWidth
 import com.biblia.povitrpustok.ui.theme.scriptureTextStyle
 
 /**
- * Settings (F-15): the reading controls, plus the single entry point to the
- * About pages.
+ * Settings (F-15): the reading controls, the app language, plus the single
+ * entry point to the About pages.
  *
  * The screen is one scrolling editorial column, capped to
  * [ReadingColumnMaxWidth] so it keeps the same measure as Home and the Reader
- * on tablets and in landscape. Two quiet overline sections carry it:
+ * on tablets and in landscape. Three quiet overline sections carry it:
  *
  *  - **READING** — Scripture size (S/M/L/XL), the optional Atkinson Hyperlegible
  *    typeface, a live preview rendered with [scriptureTextStyle], line spacing,
  *    the red-letter switch, and the theme. Every control writes through to the
  *    repository on tap, so the change applies to this screen (and the next one)
  *    without a Save button.
+ *  - **APP LANGUAGE** — English or Konkani (Romi), applied immediately through
+ *    the AppCompat delegate (F2-14). This is the only control whose value does
+ *    not live in the reading preferences: the delegate owns it, and the
+ *    manifest's locale holder persists it.
  *  - **ABOUT** — one row that opens the About landing page, where the source
  *    edition, the Daily Reading data source, the software licences and the
  *    credits each have their own page. The disclosures deliberately no longer
@@ -95,6 +100,8 @@ import com.biblia.povitrpustok.ui.theme.scriptureTextStyle
  *  - the size segments show the abbreviation only (S/M/L/XL) and set a spoken
  *    [contentDescription] with the full label, so TalkBack says "Small" rather
  *    than a bare letter;
+ *  - the language segments keep short visible labels and speak "Konkani (Romi)",
+ *    so the script is never ambiguous;
  *  - the red-letter row is one [toggleable] switch target of at least 48 dp,
  *    with the switch itself marked as decoration;
  *  - the typeface row is the same shape, so its caption is part of the tap area
@@ -112,6 +119,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val preferences by viewModel.preferences.collectAsStateWithLifecycle()
+    val appLocale by viewModel.appLocale.collectAsStateWithLifecycle()
     val versionName = rememberAppVersionName()
 
     Scaffold(
@@ -141,6 +149,13 @@ fun SettingsScreen(
                     onRedLetterChange = { viewModel.setRedLetter(it) },
                     onThemeChange = { viewModel.setTheme(it) },
                     onScriptureFontChange = { viewModel.setScriptureFont(it) }
+                )
+
+                Spacer(modifier = Modifier.height(SectionGap))
+
+                LanguageSection(
+                    selectedTag = appLocale,
+                    onSelect = { viewModel.setAppLocale(it) }
                 )
 
                 Spacer(modifier = Modifier.height(SectionGap))
@@ -452,6 +467,65 @@ private fun RedLetterControl(
 }
 
 // ---------------------------------------------------------------------------
+// Language
+// ---------------------------------------------------------------------------
+
+/**
+ * F2-14: the app's own language choice, applied without leaving Settings.
+ *
+ * One segmented control under a single overline, with the scope note below it:
+ * the two visible labels are short enough to hold one line inside a ~136 dp
+ * segment at 320 dp / 200% font scale, and the Konkani segment speaks
+ * "Konkani (Romi)" so TalkBack never has to guess which script is meant.
+ *
+ * The control is the same [selectableGroup] of `Role.RadioButton` segments the
+ * reading controls use, so position, role and selected state are announced and
+ * each option stays a 48 dp target.
+ *
+ * The caption sits below the control rather than above it because there is no
+ * block title to introduce: the section label already names the setting, and
+ * the note explains what the choice does not translate yet.
+ */
+@Composable
+private fun LanguageSection(
+    selectedTag: String,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        SectionLabel(text = stringResource(R.string.settings_section_language))
+        Spacer(modifier = Modifier.height(20.dp))
+        SegmentedControl(options = languageSegments(selectedTag, onSelect))
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            text = stringResource(R.string.settings_language_caption),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun languageSegments(
+    selectedTag: String,
+    onSelect: (String) -> Unit
+): List<SegmentOption> = listOf(
+    SegmentOption(
+        label = stringResource(R.string.settings_language_english),
+        tag = "settings.language.ENGLISH",
+        selected = selectedTag == AppLocale.ENGLISH,
+        onClick = { onSelect(AppLocale.ENGLISH) }
+    ),
+    SegmentOption(
+        label = stringResource(R.string.settings_language_konkani),
+        tag = "settings.language.KONKANI",
+        selected = selectedTag == AppLocale.ROMI_KONKANI,
+        onClick = { onSelect(AppLocale.ROMI_KONKANI) },
+        spokenLabel = stringResource(R.string.settings_language_konkani_spoken)
+    )
+)
+
+// ---------------------------------------------------------------------------
 // About
 // ---------------------------------------------------------------------------
 
@@ -537,13 +611,21 @@ private fun SettingBlock(
     }
 }
 
-/** One selectable segment: what is drawn, what is spoken, and its state. */
+/**
+ * One selectable segment: what is drawn, what is spoken, and its state.
+ *
+ * [shortLabel] is a specimen drawn in place of the label (the Scripture sizes
+ * show themselves in the serif they set). [spokenLabel] is the full name when
+ * the visible label is shortened to fit a narrow segment; either one replaces
+ * the default spoken label.
+ */
 private class SegmentOption(
     val label: String,
     val tag: String,
     val selected: Boolean,
     val onClick: () -> Unit,
-    val shortLabel: String? = null
+    val shortLabel: String? = null,
+    val spokenLabel: String? = null
 )
 
 /**
@@ -592,7 +674,7 @@ private fun Segment(
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val foreground = if (option.selected) colorScheme.onPrimary else colorScheme.onSurface
-    val spokenLabel = option.label
+    val spokenLabel = option.spokenLabel ?: option.label
 
     Box(
         modifier = modifier
@@ -607,7 +689,9 @@ private fun Segment(
             )
             .semantics {
                 // Abbreviated segments still announce their full name.
-                if (option.shortLabel != null) contentDescription = spokenLabel
+                if (option.shortLabel != null || option.spokenLabel != null) {
+                    contentDescription = spokenLabel
+                }
             }
             .padding(horizontal = 4.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center

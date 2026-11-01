@@ -184,6 +184,13 @@
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
 
+    <!-- App language (F2-14): the in-app choice, applied through the delegate. -->
+    <string name="settings_section_language">APP LANGUAGE</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_konkani">Konkani</string>
+    <string name="settings_language_konkani_spoken">Konkani (Romi)</string>
+    <string name="settings_language_caption">Konkani uses Romi script, the same as the Bible text. Home, Books, Search, Daily Reading and reference lookup stay in English.</string>
+
     <!-- About: one landing page, one page per disclosure (F-15). -->
     <string name="about_title">About</string>
     <string name="about_app_title">About Povitr Pustok</string>
