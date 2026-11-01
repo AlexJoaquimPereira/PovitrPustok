@@ -26,8 +26,8 @@ android {
         // search always keeps the normalized scan fallback (see README §7).
         minSdk = 30
         targetSdk = 36
-        versionCode = 11
-        versionName = "1.3.0"
+        versionCode = 12
+        versionName = "1.3.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

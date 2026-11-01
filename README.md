@@ -10,7 +10,7 @@ the app never re-imports, rewrites or "fixes" it.
 | | |
 |---|---|
 | **Application ID / namespace** | `com.biblia.povitrpustok` |
-| **Version** | 1.3.0 (versionCode 11) |
+| **Version** | 1.3.1 (versionCode 12) |
 | **Min SDK** | 30 (Android 11) — FTS5 is used when the device SQLite provides it; a scan fallback covers builds that omit it |
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
@@ -697,10 +697,11 @@ current corpus. Build the artifact you need from source instead.
 
 ## 12. Known limitations and roadmap
 
-**Release status.** 1.3.0 is the current development line: stable anchors and Room schema v3,
-the edition seam, the bundled content-pack format, the rights register, and release hygiene. It
-adds no new visible feature. Reading history and notes, English editions, the calendar, and BYOK
-explanations remain later releases.
+**Release status.** 1.3.1 is the current release line: the adaptive shell, English read-aloud,
+the optional Atkinson Hyperlegible Scripture face, and the partial Romi Konkani UI with an in-app
+language choice. 1.3.0 supplied the data foundations (stable anchors, Room schema v3, the edition
+seam, the bundled content-pack format, the rights register, and release hygiene). Reading history
+and notes, English editions, the calendar, and BYOK explanations remain later releases.
 
 **Known limitations**
 
@@ -763,7 +764,7 @@ Bible corpus from inside the app.
 * [`docs/release-checklist.md`](docs/release-checklist.md) and
   [`docs/release-notes-template.md`](docs/release-notes-template.md) define the GitHub
   Releases/Obtainium release procedure; [`docs/releases/`](docs/releases) holds dry-run records.
-* Earlier releases are tagged in git (`v1.0.0` through `v1.3.0`); release notes are published in
+* Earlier releases are tagged in git (`v1.0.0` through `v1.3.1`); release notes are published in
   the corresponding GitHub releases.
 
 ---
