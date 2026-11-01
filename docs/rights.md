@@ -27,7 +27,7 @@ fails after it passes. Cell text must not contain a literal `|`; the build-time 
 | catholic-readings-api | Catholic Readings API (Daily Reading) | network | cpbjr / Catholic Readings API | MIT | Catholic Readings API (cpbjr.github.io) | - | worldwide | none | `https://github.com/cpbjr/catholic-readings-api/blob/main/LICENSE`; `AboutApiScreen.kt` |
 | software-libraries | Third-party libraries packaged in the APK | shipped | Various component authors | Apache-2.0 (runtime components) | See About > Software licences | - | worldwide | none | `LicenceCatalog.kt` (runtime list); `AboutLicensesScreen.kt` |
 | atkinson-hyperlegible | Atkinson Hyperlegible typeface (regular and bold) | shipped | Braille Institute of America, Inc. | SIL OFL 1.1 | Copyright 2020 Braille Institute of America, Inc. | - | worldwide | none | `app/src/main/res/font/`; `assets/licenses/OFL-1.1.txt`; `https://github.com/googlefonts/atkinson-hyperlegible` |
-| goa-calendar-overrides | Goan particular-calendar corrections in code | pending | Goan particular-calendar sources (to confirm) | pending | Goan particular calendar corrections | - | IN | none | `GoaCalendarOverrides.kt`; `AboutApiScreen.kt`; roadmap C1-07 |
+| goa-calendar-overrides | Goan particular-calendar corrections in code | shipped | Alex Pereira | Apache-2.0 | Goan particular-calendar corrections, manually cross-checked; calendar facts are not copyrightable | - | IN | none | `GoaCalendarOverrides.kt`; `AboutApiScreen.kt`; `docs/rights.md` |
 | webc | World English Bible, Catholic edition (WEBC) | planned | Public domain | Public domain | World English Bible, Catholic edition | - | worldwide | none | Planned 1.4 (roadmap S1-03); not shipped |
 | douay-rheims | Douay-Rheims Bible | planned | Public domain | Public domain | Douay-Rheims Bible | - | worldwide | none | Planned 1.4 (roadmap S1-04); not shipped |
 | openbible-cross-references | OpenBible.info cross references | planned | OpenBible.info | CC-BY-4.0 | OpenBible.info (CC BY 4.0) | - | worldwide | none | Planned 1.4 (roadmap S1-07); not shipped |
@@ -43,10 +43,11 @@ fails after it passes. Cell text must not contain a literal `|`; the build-time 
   calendar/lectionary use, and derivative/export use is still being confirmed; 1.3.0 uses only the
   existing Konkani reader scope.
 - `romi-ui-translation` is the developer's own work, licensed with the app code. It ships with the 1.3.1 generated locale.
-- `goa-calendar-overrides` is a small code table, not a content pack. It is `pending` because the
-  About API page describes Universalis Goa as a manual cross-check; confirm both the disclosure
-  wording and the rights position before shipping a calendar pack (C1-07).
-- No content packs ship in 1.3.0. A future pack must add a `shipped` row whose `covers` includes
+- `goa-calendar-overrides` is a small code table, not a content pack. The celebration names, ranks
+  and dates are factual calendar data, manually cross-checked against the Goan particular calendar
+  and Universalis Goa; nothing is copied or bundled from Universalis. It is licensed with the app
+  code and limited to India. No calendar pack ships in 1.3.1.
+- No content packs ship in 1.3.1. A future pack must add a `shipped` row whose `covers` includes
   the pack id; `RightsRegisterTest` fails otherwise.
 - The register points at the evidence; it does not replace the licence texts or the permission
   letter. Test/build-only components (JUnit EPL-1.0, Robolectric MIT) appear in the in-app
