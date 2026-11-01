@@ -1,7 +1,8 @@
 # Performance baseline
 
-Status: F1-21 baseline, 2026-10-28. Re-run this procedure after a change that
-could affect startup, the Books title scan, search, or reader parsing.
+Status: F1-21 baseline, 2026-10-28; re-run 2026-11-01 after the Romi
+integration. Re-run this procedure after a change that could affect startup,
+the Books title scan, search, or reader parsing.
 
 ## Environment
 
@@ -11,7 +12,7 @@ could affect startup, the Books title scan, search, or reader parsing.
 | GPU | `-gpu angle_indirect`, Vulkan disabled |
 | Android | API 35; the image's SQLite has no FTS5 |
 | Builds | Signed R8 release APK for cold start; debug instrumentation for first-use flows |
-| App | 1.2.4 (`versionCode` 10), pre-1.3.0 tree |
+| App | 1.3.0 (`versionCode` 11), 1.3.1 tree |
 | Runs | 5 per measurement, app data cleared before each first-use run |
 
 The emulator is a development baseline, not a user-device benchmark. Debug
@@ -82,6 +83,28 @@ Code: `636b4d7` (`perf(reader): cache parsed HTML documents`).
 frame 1095 ms). The cold-start and search medians move by roughly
 150–370 ms between runs, which is emulator noise/thermal variance; the
 parser cache is not on the cold-start path.
+
+## After Romi integration (2026-11-01)
+
+Code: `f943966` (Romi locale, app language control, Credits attribution). Same
+procedure; the signed release cold-start set excludes the first install run,
+and the six isolated debug first-use runs exclude the first install run too.
+
+| Measurement | Runs (ms) | Median | Budget |
+|---|---|---|---|
+| Cold start (release) | 980, 1480, 1105, 1544, 904 | **1105 ms** | ≤ 1800 ms |
+| Books first catalog frame | 1062, 1055, 1022, 917, 1065 | **1055 ms** | ≤ 1500 ms |
+| Books title scan complete | 1609, 1536, 1720, 1515, 1597 | **1597 ms** | ≤ 2500 ms |
+| First search (scan fallback) | 3268, 3201, 3533, 3483, 3167 | **3268 ms** | ≤ 4700 ms |
+| First chapter open | 983, 1099, 1081, 1150, 1032 | **1081 ms** | ≤ 1500 ms |
+
+**No budget was exceeded.** The Romi locale adds resources, not first-use work;
+the medians stay within the previous baseline's range (cold start 1105 vs 1374,
+titles 1597 vs 1706, search 3268 vs 3466, chapter 1081 vs 965). The Romi smoke
+run — one isolated run with the app locale set to `kok-Latn` — measured
+1119 / 1600 / 3152 / 1050 ms for frame / titles / search / chapter, inside the
+same budgets. Home, Books, Search and Daily Reading stay English, so the
+first-use sequence is unchanged.
 
 ## Parser cache
 
