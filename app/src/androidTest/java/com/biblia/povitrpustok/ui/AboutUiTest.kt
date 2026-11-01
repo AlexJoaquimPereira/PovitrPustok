@@ -204,6 +204,13 @@ class AboutUiTest {
         waitForTag("about.credits.screen")
 
         composeRule.onNodeWithTag("about.credits.github").performScrollTo().assertIsDisplayed()
+        // F2-14: the Romi translation is credited here, in the maintainer's own
+        // name, so the page legitimately mentions Alex Pereira.
+        composeRule.onNodeWithTag("about.credits.translation")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .assertTextContains("manually", substring = true)
+            .assertTextContains("Alex Pereira", substring = true)
         composeRule.onNodeWithTag("about.credits.source").assertDoesNotExist()
         composeRule.onNodeWithTag("about.credits.api").assertDoesNotExist()
         composeRule.onNodeWithTag("about.credits.licenses").assertDoesNotExist()
@@ -212,7 +219,6 @@ class AboutUiTest {
         composeRule.onNodeWithText("Diocesan Centre for Biblical Apostolate", substring = true)
             .assertDoesNotExist()
         composeRule.onNodeWithText("Universalis", substring = true).assertDoesNotExist()
-        composeRule.onNodeWithText("Alex Pereira", substring = true).assertDoesNotExist()
 
         composeRule.onNodeWithTag("about.credits.back").performClick()
         waitForTag("about.screen")

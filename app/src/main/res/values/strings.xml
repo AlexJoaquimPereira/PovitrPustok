@@ -245,6 +245,7 @@
     <string name="about_credits_subtitle">People and projects this app relies on</string>
     <string name="about_credits_lead">Povitr Pustok is a free, independent, open-source project, built and maintained by one person.</string>
     <string name="about_credits_github">GitHub</string>
+    <string name="about_credits_translation">The Romi UI translation was done manually, by hand, by the developer, Alex Pereira.</string>
     <string name="about_credits_independent">Independent project, not affiliated with the Catholic Readings API maintainer.</string>
     <plurals name="search_partial_results">
         <item quantity="one">Partial results: %1$d book could not be searched.</item>
