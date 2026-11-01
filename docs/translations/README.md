@@ -13,15 +13,19 @@ The `scope` column marks:
 
 Rules for the `romi` column:
 
-- Keep every placeholder (`%1$s`, `%1$d`, `%2$d`, `%3$d`) exactly once and in the same order.
+- Keep every placeholder (`%1$s`, `%1$d`, `%2$d`, `%3$d`) exactly once. Reorder only by moving
+  the `$n` position markers (e.g. `%2$d-acho %1$d-vo`), never by swapping bare `%s`/`%d`.
 - Keep punctuation that carries meaning (`·`, `–`, `—`, `…`) and the `%` placeholders.
 - Do not translate `Povitr Pustok`, `GitHub`, `Apache`, `MIT`, `Universalis Goa`, or URLs.
 - Romi Konkani uses Latin script; do not switch to Devanagari.
-- When a line is intentionally left English, copy the English text so the fallback is explicit.
+- When a line is intentionally left English, leave the `romi` cell empty; the generator emits
+  the English text as an explicit fallback.
 
-After the worksheet is filled, the `values-b+kok+Latn/strings.xml` scaffold is generated from
-the `translate` rows, and the app's locale config is wired. Untranslated keys fall back to
-English, so a partially filled worksheet is shippable; empty `romi` cells are not generated.
+After the worksheet is filled, `values-b+kok+Latn/strings.xml` is generated from **every** default
+`<string>`: a filled `romi` cell is used, and an empty cell emits the English text. Plurals are
+copied as English until the worksheet supports them. The generated locale is therefore complete,
+so a partially filled worksheet is shippable and lint-clean; a partial locale would otherwise fail
+`MissingTranslation`.
 
 The CSV is the editable source of truth. Do not hand-edit a generated `strings.xml` later;
 regenerate it from the CSV so keys cannot drift.
