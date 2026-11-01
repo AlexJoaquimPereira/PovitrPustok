@@ -31,9 +31,48 @@ class AppLocaleTest {
     }
 
     @Test
+    fun a_locale_list_picks_the_first_offered_tag() {
+        // LocaleListCompat.toLanguageTags() joins entries with commas. The
+        // first offered tag must win, matching Android's resolution order.
+        assertEquals(
+            AppLocale.ROMI_KONKANI,
+            AppLocale.offeredTagOrEnglish("kok-Latn,en")
+        )
+        assertEquals(
+            AppLocale.ENGLISH,
+            AppLocale.offeredTagOrEnglish("en,kok-Latn")
+        )
+        assertEquals(
+            AppLocale.ROMI_KONKANI,
+            AppLocale.offeredTagOrEnglish("fr,kok-Latn")
+        )
+        assertEquals(AppLocale.ENGLISH, AppLocale.offeredTagOrEnglish("fr,de"))
+    }
+
+    @Test
+    fun regional_tags_match_their_language() {
+        // The system list carries tags like en-US; the app offers en. It must
+        // not skip en-US and fall through to a later kok-Latn entry.
+        assertEquals(
+            AppLocale.ENGLISH,
+            AppLocale.offeredTagOrEnglish("en-US,kok-Latn")
+        )
+        assertEquals(
+            AppLocale.ROMI_KONKANI,
+            AppLocale.offeredTagOrEnglish("kok-Latn-IN,en")
+        )
+        assertEquals(AppLocale.ENGLISH, AppLocale.offeredTagOrEnglish("en-GB"))
+        assertEquals(
+            AppLocale.ROMI_KONKANI,
+            AppLocale.offeredTagOrEnglish("kok-Latn-IN")
+        )
+    }
+
+    @Test
     fun with_no_app_specific_locale_the_choice_is_english() {
-        // Nothing is stored for the app yet, so the delegate reports no
-        // locales and the control must show English as the default.
+        // Robolectric's system default is English, so the system fallback
+        // resolves to English here. A system default of kok-Latn would
+        // correctly return Romi instead.
         assertEquals(AppLocale.ENGLISH, AppLocale.currentTag())
     }
 }

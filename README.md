@@ -15,7 +15,7 @@ the app never re-imports, rewrites or "fixes" it.
 | **Compile SDK / Target SDK** | 36 / 36 |
 | **Language / UI** | Kotlin 2.2.10 · Jetpack Compose · Material 3 |
 | **Architecture** | Layered: UI → ViewModel → Repository → datasource |
-| **Tests** | 640 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 100 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
+| **Tests** | 642 JVM unit tests (Robolectric 4.16.1; 2 FTS5 Assumes) · 100 instrumented tests (3 FTS5-only + 1 network-dependent skip) |
 
 ---
 
@@ -474,7 +474,7 @@ PovitrPustok/
 │       │   │   ├── feature/{about,bookmarks,books,common,dailyreading,more,reader,reference,search,settings}
 │       │   │   └── ui/{adaptive,theme,components, AppVersion, HomeScreen, HomeViewModel, PovitrPustokApp}
 │       │   └── res/                     # strings, themes, adaptive launcher icons
-│       ├── test/                        # 640 JVM unit tests + HTML fixtures
+│       ├── test/                        # 642 JVM unit tests + HTML fixtures
 │       └── androidTest/                 # 100 instrumented tests
 ├── docs/                                 # architecture, rights, content-pack, performance and release documentation
 ├── tools/{corpus,release}/               # corpus importer/audit, release packaging
@@ -617,7 +617,7 @@ made private again, Obtainium needs a GitHub token with read access.
 
 | Suite | Count | Runner | Notes |
 |---|---|---|---|
-| JVM unit tests | **640** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest`; 2 skip when the host SQLite lacks FTS5 |
+| JVM unit tests | **642** | JUnit4 + Robolectric | Run with `:app:testDebugUnitTest`; 2 skip when the host SQLite lacks FTS5 |
 | Instrumented tests | **100** | AndroidJUnitRunner | Compile with `:app:assembleDebugAndroidTest`; require an API 30+ device. On the API 35 emulator: 96 executed / 0 failed / 4 skips (3 FTS5-only + 1 network-dependent Daily Reading) |
 
 39 unit-test classes use `RobolectricTestRunner` because they exercise real Android resources,

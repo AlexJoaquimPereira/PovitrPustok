@@ -2,6 +2,7 @@ package com.biblia.povitrpustok.core.locale
 
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
+import java.util.Locale
 
 /**
  * The app's own language choice (F2-14).
@@ -49,7 +50,25 @@ object AppLocale {
         )
     }
 
-    /** Normalises a stored or requested tag to an offered one. */
-    fun offeredTagOrEnglish(tag: String?): String =
-        if (tag == ROMI_KONKANI) ROMI_KONKANI else ENGLISH
+    /**
+     * Normalises a stored or requested locale list to the first offered tag.
+     *
+     * `toLanguageTags()` joins a multi-entry list with commas, and the system
+     * list carries regional tags such as `en-US`. Matching the whole string or
+     * an exact tag would therefore miss the app's real resolution; this walks
+     * the list and matches by language, requiring the Latn script for Kokani so
+     * bare `kok` (Devanagari) never selects Romi. Anything else is English.
+     */
+    fun offeredTagOrEnglish(tag: String?): String {
+        val tags = tag.orEmpty()
+            .split(',')
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+        for (candidate in tags) {
+            val locale = Locale.forLanguageTag(candidate)
+            if (locale.language == "en") return ENGLISH
+            if (locale.language == "kok" && locale.script == "Latn") return ROMI_KONKANI
+        }
+        return ENGLISH
+    }
 }
