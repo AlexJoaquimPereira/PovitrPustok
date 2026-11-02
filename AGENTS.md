@@ -17,14 +17,22 @@ Compact, verified guidance for working in this repository. Read `README.md` for 
   own.
 - **Do not push without the user's explicit approval.**
 
-## Review after every change
+## Review before committing
 
-- After implementing a change, run a review of the actual diff with the review specialist
-  (`oracle`) before asking to push. Keep the same review session across changes so feedback
-  stays continuous and prior findings can be re-checked.
+- After implementing a change and **before committing**, run a review of the actual diff with the
+  review specialist (`oracle`). Keep the same Oracle session across changes **within the same day**
+  so feedback stays continuous and prior findings can be re-checked; start a new Oracle session the
+  next day.
 - Verify the review against the commits/files yourself — a review summary is a claim, not
   evidence. Fix blockers and should-fix findings, or state explicitly what is deferred.
 - A review complements, never replaces, the test/build gates below.
+
+## Subagents
+
+- Use a **new session for every task** for `@explorer`, `@designer`, `@fixer`, `@Wayfinder`, and other subagents.
+  They start cold and re-load context; do not reuse their sessions across tasks.
+- Only `@oracle` is reused, and only **within the same day**; start a new Oracle session the
+  next day. This keeps review feedback continuous while avoiding stale context.
 
 ## Toolchain and commands
 
@@ -124,8 +132,17 @@ testing but **not** the FTS5 verification item.
   APKs, mapping files, or keystore material.
 - Verify the signer certificate and the 73 corpus assets before publishing. Push only after the
   owner's explicit approval.
+- Tag the commit that **records** the release (the docs commit), not the version-bump commit;
+  see the `v1.3.0`/`v1.3.1` precedent.
 - The repository is public; Obtainium can read releases anonymously. The corpus is not in git
   history, so visibility is an access-control choice, not a corpus-protection requirement.
+
+## GitHub MCP
+
+- Scoping is per-agent via the OMO `mcps` list (`~/.config/opencode/oh-my-opencode-slim.json`);
+  only `wayfinder` connects the `github` server. Do not add a global `tools` filter or a global
+  `github_*` permission deny — both hide the tools from the agents allowed to use them.
+- The repository is public; releases go out through GitHub Releases + Obtainium.
 
 ## Rights and licensing
 
