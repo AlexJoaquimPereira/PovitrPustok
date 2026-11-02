@@ -1,0 +1,671 @@
+{
+  "format": 1,
+  "edition": "webc",
+  "source_url": "https://bible.helloao.org/api/eng_webc/complete.json",
+  "source_sha256": "3eea854d339cd3809a9efd03621ff88c7dc0f3e82a44ace0b2b54b2b824a922b",
+  "generator": "tools/editions/import_edition.py",
+  "book_count": 73,
+  "total_chapters": 1328,
+  "total_verses": 35408,
+  "aggregate_sha256": "6540033e45110ea41be68a2829524099de146d73e7e951218869b42908417db4",
+  "schema_fingerprint": "13eee65f8facf108b23570f8825eb912452181ef706026964ebff831a2f49166",
+  "books": [
+    {
+      "file": "Amos.sqlite",
+      "id": "Amos",
+      "sha256": "0d9b1a184628570729a730c63d268db5fcfc2892ef6af48a597aaf34267d2b3e",
+      "bytes": 176128,
+      "chapters": 9,
+      "verses": 146,
+      "user_version": 0
+    },
+    {
+      "file": "Barukachem_Pustak.sqlite",
+      "id": "Barukachem_Pustak",
+      "sha256": "ff577117196f0bb412941e463637817fefe433c1eefbaae102449aa2e9597fcd",
+      "bytes": 208896,
+      "chapters": 6,
+      "verses": 213,
+      "user_version": 0
+    },
+    {
+      "file": "Daniel.sqlite",
+      "id": "Daniel",
+      "sha256": "666223cf9f62eb335b95408904e799933014335393e15f90488b3d0d503225a8",
+      "bytes": 425984,
+      "chapters": 14,
+      "verses": 530,
+      "user_version": 0
+    },
+    {
+      "file": "Dusri_Somurt.sqlite",
+      "id": "Dusri_Somurt",
+      "sha256": "db7631337ea9599400d0cbd7301969b403c3987d83dbfd6ea06588741400e0c1",
+      "bytes": 598016,
+      "chapters": 34,
+      "verses": 959,
+      "user_version": 0
+    },
+    {
+      "file": "Esther.sqlite",
+      "id": "Esther",
+      "sha256": "709eb7201b1e040779d2f111684d5b326767bf9062f9d9f2610d7f7a3befeffd",
+      "bytes": 221184,
+      "chapters": 10,
+      "verses": 205,
+      "user_version": 0
+    },
+    {
+      "file": "Ezekiel.sqlite",
+      "id": "Ezekiel",
+      "sha256": "19ce195aea2a12292cf9abe4216930467cd7fc263d4968bcf6ea7b3ecf4d9c3e",
+      "bytes": 770048,
+      "chapters": 48,
+      "verses": 1273,
+      "user_version": 0
+    },
+    {
+      "file": "Ezrachem_Pustok.sqlite",
+      "id": "Ezrachem_Pustok",
+      "sha256": "efdd48007a1f7a050a8464a1da930b2ffcb03350512068de52af7170603df8b9",
+      "bytes": 233472,
+      "chapters": 10,
+      "verses": 280,
+      "user_version": 0
+    },
+    {
+      "file": "Fuddareanchem_Pustok.sqlite",
+      "id": "Fuddareanchem_Pustok",
+      "sha256": "fb111b93205572f7bae9368735e86758dfb50d0710847b00df3a381ccafa60b1",
+      "bytes": 479232,
+      "chapters": 21,
+      "verses": 618,
+      "user_version": 0
+    },
+    {
+      "file": "Gitantlem_Git.sqlite",
+      "id": "Gitantlem_Git",
+      "sha256": "507ac7700c9279ece2167d03c32511c79c4352ebb460e1f0b83803c6335723b6",
+      "bytes": 143360,
+      "chapters": 8,
+      "verses": 117,
+      "user_version": 0
+    },
+    {
+      "file": "Habakuk.sqlite",
+      "id": "Habakuk",
+      "sha256": "9b8376b003e1df1a0388eafe92d813daef9f9cb40a6c07f8a82ec6258f34fe1d",
+      "bytes": 118784,
+      "chapters": 3,
+      "verses": 56,
+      "user_version": 0
+    },
+    {
+      "file": "Haggai.sqlite",
+      "id": "Haggai",
+      "sha256": "7859572dc1eccad3a73d5a027a7162ba117e10703051e1faa9b5a87fde8769f2",
+      "bytes": 110592,
+      "chapters": 2,
+      "verses": 38,
+      "user_version": 0
+    },
+    {
+      "file": "Hosea.sqlite",
+      "id": "Hosea",
+      "sha256": "4aa3310bb1f7d1f21f6f7e5c9d097dd27589bcc3ecfadc97f0e9a88ceb7deae8",
+      "bytes": 192512,
+      "chapters": 14,
+      "verses": 197,
+      "user_version": 0
+    },
+    {
+      "file": "Itihasachem_Dusrem_Pustok.sqlite",
+      "id": "Itihasachem_Dusrem_Pustok",
+      "sha256": "c66e1fe0b5c8fe01b20dc2866894a8d3db75ca8a11edb00029e46d2aaafb4309",
+      "bytes": 577536,
+      "chapters": 36,
+      "verses": 822,
+      "user_version": 0
+    },
+    {
+      "file": "Itihasachem_Poilem_Pustok.sqlite",
+      "id": "Itihasachem_Poilem_Pustok",
+      "sha256": "050a2bfbbded6b57bf1db2af6520b08666a1dc32f05020a466bfc46cfbb38210",
+      "bytes": 520192,
+      "chapters": 29,
+      "verses": 942,
+      "user_version": 0
+    },
+    {
+      "file": "Izaias.sqlite",
+      "id": "Izaias",
+      "sha256": "ed8642ab423e1f127d75a12d1008a3032114e5cc064bc3f6db016223a469d1df",
+      "bytes": 774144,
+      "chapters": 66,
+      "verses": 1292,
+      "user_version": 0
+    },
+    {
+      "file": "Jeremias.sqlite",
+      "id": "Jeremias",
+      "sha256": "92ac1e26446c85a6d3a47a973346a651eb3844b2a64beccae1f7348a5295e45b",
+      "bytes": 851968,
+      "chapters": 52,
+      "verses": 1364,
+      "user_version": 0
+    },
+    {
+      "file": "Jobachem_Pustok.sqlite",
+      "id": "Jobachem_Pustok",
+      "sha256": "d10e4d8ac8d25a793ffcb89b7845f5d97eaa31461f886e61f8a8c6528d6a6941",
+      "bytes": 491520,
+      "chapters": 42,
+      "verses": 1070,
+      "user_version": 0
+    },
+    {
+      "file": "Joel.sqlite",
+      "id": "Joel",
+      "sha256": "8c9982346fdc958d74d168a9cc6cdd494ef6c20429d0879f63e56febd920cb00",
+      "bytes": 126976,
+      "chapters": 3,
+      "verses": 73,
+      "user_version": 0
+    },
+    {
+      "file": "Jonas.sqlite",
+      "id": "Jonas",
+      "sha256": "87aa81075d337445b76b78e6858c5f062179d94ae8ffafd0671bfa87a3accf2a",
+      "bytes": 118784,
+      "chapters": 4,
+      "verses": 48,
+      "user_version": 0
+    },
+    {
+      "file": "Joshuachem_Pustok.sqlite",
+      "id": "Joshuachem_Pustok",
+      "sha256": "be0673716ce3cf1e0c292b515cbe19fb2b3fccad045fa95aec2a7a14f5a48691",
+      "bytes": 442368,
+      "chapters": 24,
+      "verses": 658,
+      "user_version": 0
+    },
+    {
+      "file": "Judit.sqlite",
+      "id": "Judit",
+      "sha256": "203b7cdd9d3ee7e619584931ea8efb11fa9fd813d379dd63b6a920fca133a3ac",
+      "bytes": 290816,
+      "chapters": 16,
+      "verses": 339,
+      "user_version": 0
+    },
+    {
+      "file": "Levi_Xastr.sqlite",
+      "id": "Levi_Xastr",
+      "sha256": "219e17235eb9468edd1f6d5f8974b2fd0985f8ff25baba13ae6aab8bc8561b53",
+      "bytes": 516096,
+      "chapters": 27,
+      "verses": 859,
+      "user_version": 0
+    },
+    {
+      "file": "Lokgonnti.sqlite",
+      "id": "Lokgonnti",
+      "sha256": "3bdde21fc468eeb165690d8cea68441f7a8e3e9f2fef46b3895d06246cee561a",
+      "bytes": 708608,
+      "chapters": 36,
+      "verses": 1288,
+      "user_version": 0
+    },
+    {
+      "file": "Makabeusachem_Dusrem_Pustok.sqlite",
+      "id": "Makabeusachem_Dusrem_Pustok",
+      "sha256": "9eded04c9609cc69c826d37e373d130b24ba2c9689495a6650d7a1832d5196ae",
+      "bytes": 483328,
+      "chapters": 15,
+      "verses": 555,
+      "user_version": 0
+    },
+    {
+      "file": "Makabeusachem_Poilem_Pustok.sqlite",
+      "id": "Makabeusachem_Poilem_Pustok",
+      "sha256": "b44dc76bd10afc58ee7b4e300ea8acae562b76b20329aafac8272713dfc49d7f",
+      "bytes": 573440,
+      "chapters": 16,
+      "verses": 924,
+      "user_version": 0
+    },
+    {
+      "file": "Malaki.sqlite",
+      "id": "Malaki",
+      "sha256": "0addecede09a3993471ca689299fe8f68c15726ec475120ad53d6bfcd1d672b0",
+      "bytes": 118784,
+      "chapters": 4,
+      "verses": 55,
+      "user_version": 0
+    },
+    {
+      "file": "Mhonnneo.sqlite",
+      "id": "Mhonnneo",
+      "sha256": "797f593f6e89b02e7f4f78928b274aef39fbdf4d6c90ac054ace990f202ced5f",
+      "bytes": 417792,
+      "chapters": 31,
+      "verses": 915,
+      "user_version": 0
+    },
+    {
+      "file": "Mika.sqlite",
+      "id": "Mika",
+      "sha256": "ec77a652a2d051ba76fe0a7ec1b6bbcf9ad599614e053ee608d4a7cb2a3b2f36",
+      "bytes": 151552,
+      "chapters": 7,
+      "verses": 105,
+      "user_version": 0
+    },
+    {
+      "file": "Nahum.sqlite",
+      "id": "Nahum",
+      "sha256": "74736f2ad4b88ad95d869a0b8e8b7ff619dd708ef5e00876694290a308731d41",
+      "bytes": 114688,
+      "chapters": 3,
+      "verses": 47,
+      "user_version": 0
+    },
+    {
+      "file": "Nehemiasachem_Pustok.sqlite",
+      "id": "Nehemiasachem_Pustok",
+      "sha256": "8a5113094a88fa01762d710f67fa4d01b18daeb1935f110e25a28c4636f6bc59",
+      "bytes": 307200,
+      "chapters": 13,
+      "verses": 406,
+      "user_version": 0
+    },
+    {
+      "file": "Obadia.sqlite",
+      "id": "Obadia",
+      "sha256": "7b59d043d26a026c4c822c870fc6982049f7eabb99b2c0cbbd7248d52be1bda4",
+      "bytes": 102400,
+      "chapters": 1,
+      "verses": 21,
+      "user_version": 0
+    },
+    {
+      "file": "Razanchem_Dusrem_Pustok.sqlite",
+      "id": "Razanchem_Dusrem_Pustok",
+      "sha256": "0e4aee8e8056cb77a0f54fb4b818760670a923051017ec20df78c419a7ac87cf",
+      "bytes": 524288,
+      "chapters": 25,
+      "verses": 719,
+      "user_version": 0
+    },
+    {
+      "file": "Razanchem_Poilem_Pustok.sqlite",
+      "id": "Razanchem_Poilem_Pustok",
+      "sha256": "706b9780e79328dba4e00ca754f1c6bdcdaa8fabf35f0512dab1964a2a08e841",
+      "bytes": 540672,
+      "chapters": 22,
+      "verses": 816,
+      "user_version": 0
+    },
+    {
+      "file": "Ruthachem_Pustok.sqlite",
+      "id": "Ruthachem_Pustok",
+      "sha256": "b0d629583bbdb1c3e7af34e778912104ad59781021e3ded6a152663b711e8562",
+      "bytes": 139264,
+      "chapters": 4,
+      "verses": 85,
+      "user_version": 0
+    },
+    {
+      "file": "Samuelachem_Dusrem_Pustok.sqlite",
+      "id": "Samuelachem_Dusrem_Pustok",
+      "sha256": "9a3425f79358a38d03aa4f97644717b44838e6be90e00ab6aa234e0f086a1d50",
+      "bytes": 475136,
+      "chapters": 24,
+      "verses": 695,
+      "user_version": 0
+    },
+    {
+      "file": "Samuelachem_Poilem_Pustok.sqlite",
+      "id": "Samuelachem_Poilem_Pustok",
+      "sha256": "f1cf73bea4c5e92d7397b56f19512aa16e8334aba54e958de7c0b1ff80463d97",
+      "bytes": 565248,
+      "chapters": 31,
+      "verses": 810,
+      "user_version": 0
+    },
+    {
+      "file": "Sirakachem_Pustok.sqlite",
+      "id": "Sirakachem_Pustok",
+      "sha256": "d982aa74b1f4da7fafec57b2f4b84281bdaf222368688fcf26186638dce5c829",
+      "bytes": 675840,
+      "chapters": 51,
+      "verses": 1383,
+      "user_version": 0
+    },
+    {
+      "file": "Stotranchem_Pustok.sqlite",
+      "id": "Stotranchem_Pustok",
+      "sha256": "31ea641ee68bb6ca7e50789a01cea1b4f749e623ac863a41ee18239c78bfe816",
+      "bytes": 1056768,
+      "chapters": 150,
+      "verses": 2461,
+      "user_version": 0
+    },
+    {
+      "file": "Suttka.sqlite",
+      "id": "Suttka",
+      "sha256": "b538566dcbb1260066209e1c24bb33b312b10564211e37d2fdf87274d22f75ec",
+      "bytes": 663552,
+      "chapters": 40,
+      "verses": 1213,
+      "user_version": 0
+    },
+    {
+      "file": "Tobit.sqlite",
+      "id": "Tobit",
+      "sha256": "557069ae4d01db792c0558403d311115bcd685b67697423a9952dce8bcd90892",
+      "bytes": 208896,
+      "chapters": 14,
+      "verses": 244,
+      "user_version": 0
+    },
+    {
+      "file": "Upodexok.sqlite",
+      "id": "Upodexok",
+      "sha256": "08d8d80f1eb2fd8ed261a939dbd6ed2ddf5d202c3d9e5aec563cc658276c9c56",
+      "bytes": 196608,
+      "chapters": 12,
+      "verses": 222,
+      "user_version": 0
+    },
+    {
+      "file": "Utpoti.sqlite",
+      "id": "Utpoti",
+      "sha256": "6a2081b4b66dd4e3d140fe017f4be2c14a5bfde861a66d967235d2107737fbe4",
+      "bytes": 782336,
+      "chapters": 50,
+      "verses": 1533,
+      "user_version": 0
+    },
+    {
+      "file": "Vilap.sqlite",
+      "id": "Vilap",
+      "sha256": "9d63b78c93bebf8eb3ba6aee1726a1827159e4fbd4f00688c4c499ec2c7908a9",
+      "bytes": 167936,
+      "chapters": 5,
+      "verses": 154,
+      "user_version": 0
+    },
+    {
+      "file": "Zannvaiechem_Pustok.sqlite",
+      "id": "Zannvaiechem_Pustok",
+      "sha256": "000328b8a1817d9853b95083df8530589750faf596bc0197e2e66d1f2a30908c",
+      "bytes": 335872,
+      "chapters": 19,
+      "verses": 436,
+      "user_version": 0
+    },
+    {
+      "file": "Zefania.sqlite",
+      "id": "Zefania",
+      "sha256": "a9491d899753e6200c0f456e19c651fab6f95762e25bd6a88bd390370f4df4a2",
+      "bytes": 122880,
+      "chapters": 3,
+      "verses": 53,
+      "user_version": 0
+    },
+    {
+      "file": "Zekaria.sqlite",
+      "id": "Zekaria",
+      "sha256": "6d09d5cf82fdfccf2032faf01219d5194d16d52b699e1d5af6467f433e31c6eb",
+      "bytes": 221184,
+      "chapters": 14,
+      "verses": 211,
+      "user_version": 0
+    },
+    {
+      "file": "dhormdutancho_itihas.sqlite",
+      "id": "dhormdutancho_itihas",
+      "sha256": "2545194cee604fe2236f0fa99c0796d36a4cc7072142722318f512458a14a7c7",
+      "bytes": 585728,
+      "chapters": 28,
+      "verses": 1007,
+      "user_version": 0
+    },
+    {
+      "file": "efezkarank.sqlite",
+      "id": "efezkarank",
+      "sha256": "22c3cc584b6b0ea9209b04f09baa60c29a201584afdc546abab5cb541f0ef5c7",
+      "bytes": 159744,
+      "chapters": 6,
+      "verses": 155,
+      "user_version": 0
+    },
+    {
+      "file": "filemonak.sqlite",
+      "id": "filemonak",
+      "sha256": "ed74f200b07af6b99942126bc6aca0a5e07636c210bc26d55597b22499155255",
+      "bytes": 94208,
+      "chapters": 1,
+      "verses": 25,
+      "user_version": 0
+    },
+    {
+      "file": "filipkarank.sqlite",
+      "id": "filipkarank",
+      "sha256": "fcdd5706a65e2badd03209462d8c6f67436cf485a187445efd62628d83427470",
+      "bytes": 135168,
+      "chapters": 4,
+      "verses": 104,
+      "user_version": 0
+    },
+    {
+      "file": "galasiekarank.sqlite",
+      "id": "galasiekarank",
+      "sha256": "32d0884233d0102ac4645aadca3e45b905f1e4b8c24198d884e80cc190928023",
+      "bytes": 163840,
+      "chapters": 6,
+      "verses": 149,
+      "user_version": 0
+    },
+    {
+      "file": "hebrevank.sqlite",
+      "id": "hebrevank",
+      "sha256": "ae675f97d61fcd80fe29ca5e33c2cb100f35b61538e7f6cdce6322cd909b3b6f",
+      "bytes": 233472,
+      "chapters": 13,
+      "verses": 303,
+      "user_version": 0
+    },
+    {
+      "file": "jakob.sqlite",
+      "id": "jakob",
+      "sha256": "e6132eb3589d65eac6b9f93a33fd48d774f6641b9311ea06c8191e4bf0c16db2",
+      "bytes": 135168,
+      "chapters": 5,
+      "verses": 108,
+      "user_version": 0
+    },
+    {
+      "file": "juanv.sqlite",
+      "id": "juanv",
+      "sha256": "02244f8f3abf00d972e4a83b736a2b1bf524674b97d9b502d746abbb65f4456d",
+      "bytes": 471040,
+      "chapters": 21,
+      "verses": 879,
+      "user_version": 0
+    },
+    {
+      "file": "juanv1.sqlite",
+      "id": "juanv1",
+      "sha256": "92631e2528e0d82870eae49774f81aa4c07008e30d6bb193b933210a98058bec",
+      "bytes": 135168,
+      "chapters": 5,
+      "verses": 105,
+      "user_version": 0
+    },
+    {
+      "file": "juanv2.sqlite",
+      "id": "juanv2",
+      "sha256": "4a8cb844b0d8ae615bcf40418c3795c337f3aedaecae22f91b0252112acb2886",
+      "bytes": 86016,
+      "chapters": 1,
+      "verses": 13,
+      "user_version": 0
+    },
+    {
+      "file": "juanv3.sqlite",
+      "id": "juanv3",
+      "sha256": "905d4c8a7aab9fd493245b23126007e5b67ea3d1eb4c0b1eb4dbd6a45827f74a",
+      "bytes": 86016,
+      "chapters": 1,
+      "verses": 14,
+      "user_version": 0
+    },
+    {
+      "file": "juanvak_prokasovnni.sqlite",
+      "id": "juanvak_prokasovnni",
+      "sha256": "1c4a307683f3b8bed9b09b5c61ddf7aa9dac9ef55d0f1c7bc127fe1b4c20de40",
+      "bytes": 335872,
+      "chapters": 22,
+      "verses": 404,
+      "user_version": 0
+    },
+    {
+      "file": "judas.sqlite",
+      "id": "judas",
+      "sha256": "d2a9440bbff338066e121f6694eb3321cda3f366e4d3a997383437a5de8de490",
+      "bytes": 102400,
+      "chapters": 1,
+      "verses": 25,
+      "user_version": 0
+    },
+    {
+      "file": "koloskarank.sqlite",
+      "id": "koloskarank",
+      "sha256": "8285abece0d1f3208e5a17b6a3ea017f5cdc6cff50b4a93ca4002501564ce61e",
+      "bytes": 139264,
+      "chapters": 4,
+      "verses": 95,
+      "user_version": 0
+    },
+    {
+      "file": "korintkarant1.sqlite",
+      "id": "korintkarant1",
+      "sha256": "1d7384875257b89f0a776a27a78a2fce5b572aea999442016f5a27cac78941cd",
+      "bytes": 290816,
+      "chapters": 16,
+      "verses": 437,
+      "user_version": 0
+    },
+    {
+      "file": "korintkarant2.sqlite",
+      "id": "korintkarant2",
+      "sha256": "18521cf65504d605946dcf00bb1506a1971ec5be08dce7634e97cfd170476872",
+      "bytes": 212992,
+      "chapters": 13,
+      "verses": 257,
+      "user_version": 0
+    },
+    {
+      "file": "lukas.sqlite",
+      "id": "lukas",
+      "sha256": "b53aa387cfece2395a76257ffdc360d4728b1086977c35e24afac5f34acb322d",
+      "bytes": 598016,
+      "chapters": 24,
+      "verses": 1151,
+      "user_version": 0
+    },
+    {
+      "file": "mark.sqlite",
+      "id": "mark",
+      "sha256": "79718a479c23dafb2ae31c255a1e47bddf67ae68c3d171e2339b0484daafeccd",
+      "bytes": 393216,
+      "chapters": 16,
+      "verses": 678,
+      "user_version": 0
+    },
+    {
+      "file": "matev.sqlite",
+      "id": "matev",
+      "sha256": "3fa1f40e4ca3b1efc031d980b25a2a8432e5230ad8dd51c7dd1c9edebc8d072e",
+      "bytes": 561152,
+      "chapters": 28,
+      "verses": 1071,
+      "user_version": 0
+    },
+    {
+      "file": "pedru1.sqlite",
+      "id": "pedru1",
+      "sha256": "ea7373f54217ae8f95bf2a77f21c2e73583d2158278e534f7e6b5f2d7416f7c0",
+      "bytes": 139264,
+      "chapters": 5,
+      "verses": 105,
+      "user_version": 0
+    },
+    {
+      "file": "pedru2.sqlite",
+      "id": "pedru2",
+      "sha256": "27941b29aab326270a7631310e6894c652b41eb8330dc630c624e4de59c0fb6b",
+      "bytes": 118784,
+      "chapters": 3,
+      "verses": 61,
+      "user_version": 0
+    },
+    {
+      "file": "romkarank.sqlite",
+      "id": "romkarank",
+      "sha256": "9b0f24ba38ee72bfe58e2e8b5f86cd525aa03ed04e46b869a6a321266ae6dc69",
+      "bytes": 286720,
+      "chapters": 16,
+      "verses": 434,
+      "user_version": 0
+    },
+    {
+      "file": "tesalonikarank1.sqlite",
+      "id": "tesalonikarank1",
+      "sha256": "7002be61dac100dfbe1e883ced26918564671672cce3f0dffb12f410776910d7",
+      "bytes": 126976,
+      "chapters": 5,
+      "verses": 89,
+      "user_version": 0
+    },
+    {
+      "file": "tesalonikarank2.sqlite",
+      "id": "tesalonikarank2",
+      "sha256": "9ae4170e2a50e0dcaa48e3f7fa027e368a62703209d6c63166a2546929bd2c0c",
+      "bytes": 118784,
+      "chapters": 3,
+      "verses": 47,
+      "user_version": 0
+    },
+    {
+      "file": "tilak.sqlite",
+      "id": "tilak",
+      "sha256": "e0156736bcb7de68664c284554b0459f741d0d0ac3e5948a4e6dc6e41cb16bf9",
+      "bytes": 114688,
+      "chapters": 3,
+      "verses": 46,
+      "user_version": 0
+    },
+    {
+      "file": "timotak1.sqlite",
+      "id": "timotak1",
+      "sha256": "374f1494b4b623107a50affc8279624e1f7de4d2ed87d6d7c7839e81dfdd1b0e",
+      "bytes": 139264,
+      "chapters": 6,
+      "verses": 113,
+      "user_version": 0
+    },
+    {
+      "file": "timotak2.sqlite",
+      "id": "timotak2",
+      "sha256": "9dc0719ccbdde2b306bc0871c93d684554effeb07f596c4d67215616074abc66",
+      "bytes": 126976,
+      "chapters": 4,
+      "verses": 83,
+      "user_version": 0
+    }
+  ]
+}

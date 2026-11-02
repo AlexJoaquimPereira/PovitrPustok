@@ -103,3 +103,10 @@ test-output/
 
 # Legacy prebuilt artifacts (build outputs live under app/build/outputs)
 /dist/
+
+# Reproducible public-domain edition source JSON (downloaded by
+# tools/editions/fetch_sources.py; never commit the downloaded copies).
+/tools/editions/sources/
+
+# Python bytecode from the edition tooling
+/tools/editions/__pycache__/
