@@ -80,7 +80,7 @@ composition (the shared cache holds parses, not renders).
 The map is the anchor for word-level TTS highlighting, inline cross-references
 and text-range notes. The current reader still renders whole verses, and the
 speech path still reports the spoken word in the bar; wiring the spoken range
-into the overlay belongs to the English-edition work.
+into the overlay remains a follow-up.
 
 ## Room schema v3
 
@@ -155,22 +155,36 @@ target coexistence, and reading-state persistence against the anchor.
 `Edition` (`domain/model/Edition.kt`) declares `id`, `languageTag`, `label`,
 `assetPattern` (`bible/{bookId}.sqlite`), `canon`, and `licence`.
 
-`BibleEditions` ships exactly one edition, **Konkani (Romi)** (`konkani-romi`,
-`kok-Latn`, 73-book canon). `BibleEditions.DEFAULT` is Konkani. `byId` returns
-`null` for an unknown id; the provider throws `BibleEditionNotFoundException`
-rather than silently falling back to another edition.
+`BibleEditions` ships three editions, all with the 73-book canon:
+**Konkani (Romi)** (`konkani-romi`, `kok-Latn`, `bible/{bookId}.sqlite`),
+**World English Bible (Catholic)** (`webc`, `en`, `bible/webc/{bookId}.sqlite`)
+and **Douay-Rheims American Edition 1899** (`dra`, `en`,
+`bible/dra/{bookId}.sqlite`). `BibleEditions.DEFAULT` stays Konkani. `byId`
+returns `null` for an unknown id; the provider throws
+`BibleEditionNotFoundException` rather than silently falling back to another
+edition.
 
 `BibleCatalog` is edition-scoped: `byId(bookId, editionId)` returns a book only
-when the id is in that edition's canon. `AssetBibleDatabaseProvider` keys open
-handles by `(editionId, bookId)` and includes the edition in the copy path
-(`filesDir/bible/<editionId>/` for non-default editions), while keeping the
+when the id is in that edition's canon, and `displayNameFor(bookId, editionId)`
+returns the English name for English editions. `AssetBibleDatabaseProvider`
+keys open handles by `(editionId, bookId)` and includes the edition in the copy
+path (`filesDir/bible/<editionId>/` for non-default editions), while keeping the
 pre-seam `filesDir/bible/` path for Konkani so existing users do not recopy the
-corpus.
+corpus. Only opened books are copied. The English assets are generated from public-domain
+JSON by `tools/editions/` (WEBC `eng_webc`, DRA 1899 `engDRA`); source JSON is
+gitignored and metadata-only manifests are committed. The two editions add about
+13 MiB to the APK and up to 46 MiB of internal storage when every book is opened.
 
-The Reader and Search routes declare an optional `editionId` query parameter
-defaulting to `konkani-romi`; existing callers that omit it are unchanged.
-Edition tests: `BibleEditionTest`, `AssetBibleDatabaseProviderEditionTest`,
-`BibleRepositoryEditionTest`.
+`ReadingPreferences.readingEditionId` is the persisted reading choice; the
+Reader resolves a blank route argument from that preference (an explicit
+edition still wins), and the Books/Book Chapters screens list and name the
+selected edition. English editions make the English TTS path reachable. Room is
+unchanged: bookmarks remain edition-agnostic `VerseAnchor`s and opening one in
+another edition is best-effort because verse numbering differs (for example the
+DRA follows Vulgate numbering). Search still uses the Konkani default until its
+edition wiring is extended. Edition tests: `BibleEditionTest`,
+`AssetBibleDatabaseProviderEditionTest`, `BibleRepositoryEditionTest`,
+`EditionManifestTest`.
 
 ## Content packs
 

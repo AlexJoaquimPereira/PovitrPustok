@@ -130,7 +130,7 @@ testing but **not** the FTS5 verification item.
   APK/AAB and must not produce a release artifact without the private corpus.
 - Attach the versioned APK, AAB, and `SHA256SUMS`; never attach corpus files, source XML, debug/test
   APKs, mapping files, or keystore material.
-- Verify the signer certificate and the 73 corpus assets before publishing. Push only after the
+- Verify the signer certificate and the 73 Konkani + 73 WEBC + 73 DRA edition assets before publishing (219 in total). Push only after the
   owner's explicit approval.
 - Tag the commit that **records** the release (the docs commit), not the version-bump commit;
   see the `v1.3.0`/`v1.3.1` precedent.
@@ -172,9 +172,14 @@ testing but **not** the FTS5 verification item.
 ## Disclosure pages
 
 - Settings > About is a **landing page**; every disclosure type has its own page under
-  `feature/about` (Source edition, API & data, Software licences, App licence, Typeface licence).
+  `feature/about` (Source edition, World English Bible, Douay-Rheims, API & data, Software
+  licences, App licence, Typeface licence).
   Credits is a project/maintainer page, not a disclosure index. It also carries the manual Romi UI
   translation attribution (the developer's own work); that is a project fact, not a disclosure page.
+- The two bundled English editions are separate disclosures, not variants of the Konkani Source
+  edition page: `AboutWebcScreen` (`about/webc`) and `AboutDraScreen` (`about/dra`) each carry their
+  own source link, build source, public-domain licence and attribution. Settings names the editions
+  and points to About; it never repeats licence text.
 - Every new API, data source, licence or acknowledgement gets its **own page** with a source link,
   repository link and licence/attribution — do not append it to an existing page.
 - The app's own licence page must show the **complete** licence text (Apache-2.0), not a link.

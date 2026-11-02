@@ -92,16 +92,24 @@ if ! grep -q 'jar verified\.' <<<"$aab_verify_output"; then
     exit 1
 fi
 
-corpus_count=$(unzip -l "$apk" | grep -cE 'assets/bible/[^/]+\.sqlite$' || true)
-if [[ "$corpus_count" -ne 73 ]]; then
-    echo "release APK has $corpus_count corpus assets; expected 73" >&2
-    exit 1
-fi
-aab_corpus_count=$(unzip -l "$aab" | grep -cE 'assets/bible/[^/]+\.sqlite$' || true)
-if [[ "$aab_corpus_count" -ne 73 ]]; then
-    echo "release AAB has $aab_corpus_count corpus assets; expected 73" >&2
-    exit 1
-fi
+count_bible_assets() {
+    unzip -l "$1" | grep -cE "$2" || true
+}
+konkani_count=$(count_bible_assets "$apk" 'assets/bible/[^/]+\.sqlite$')
+webc_count=$(count_bible_assets "$apk" 'assets/bible/webc/[^/]+\.sqlite$')
+dra_count=$(count_bible_assets "$apk" 'assets/bible/dra/[^/]+\.sqlite$')
+corpus_count=$((konkani_count + webc_count + dra_count))
+aab_konkani_count=$(count_bible_assets "$aab" 'assets/bible/[^/]+\.sqlite$')
+aab_webc_count=$(count_bible_assets "$aab" 'assets/bible/webc/[^/]+\.sqlite$')
+aab_dra_count=$(count_bible_assets "$aab" 'assets/bible/dra/[^/]+\.sqlite$')
+aab_corpus_count=$((aab_konkani_count + aab_webc_count + aab_dra_count))
+for artifact in "APK:$konkani_count:$webc_count:$dra_count" "AAB:$aab_konkani_count:$aab_webc_count:$aab_dra_count"; do
+    IFS=: read -r name konkani webc dra <<<"$artifact"
+    if [[ "$konkani" -ne 73 || "$webc" -ne 73 || "$dra" -ne 73 ]]; then
+        echo "release $name has Konkani=$konkani WEBC=$webc DRA=$dra assets; expected 73 each" >&2
+        exit 1
+    fi
+done
 if unzip -l "$apk" | grep -qE '(^| )assets/schemas/|(^| )schemas/'; then
     echo "debug Room schemas found in the release APK" >&2
     exit 1
@@ -129,6 +137,9 @@ versionCode=$version_code
 commit=$(git rev-parse HEAD)
 builtAt=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 signerSHA256=$signer_sha256
+konkaniAssets=$konkani_count
+webcAssets=$webc_count
+draAssets=$dra_count
 corpusAssets=$corpus_count
 dryRun=$dry_run
 EOF

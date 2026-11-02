@@ -18,7 +18,8 @@ F-Droid, or CI-published APK.
 - [ ] The signing certificate SHA-256 is recorded and matches every release:
       `AD:D0:11:B3:87:7E:31:63:BE:D1:4E:0A:A8:A4:FB:AD:B6:F8:3E:A1:23:5B:38:42:AC:ED:C7:99:35:26:A2:61`.
 - [ ] `ANDROID_HOME` points at an SDK with build-tools 36.0.0; the Gradle daemon uses JDK 25.
-- [ ] The private corpus is present and `python3 tools/corpus/generate_manifest.py --check` passes.
+- [ ] The private corpus is present, `python3 tools/corpus/generate_manifest.py --check` passes, and the
+      WEBC/DRA edition manifests match their assets.
 - [ ] The working tree is clean, on `master`, and up to date with `origin`.
 
 ## 2. Prepare
@@ -39,7 +40,7 @@ F-Droid, or CI-published APK.
 - [ ] `python3 tools/corpus/generate_manifest.py --check` (the JVM suite also
       fails on manifest drift, but check before packaging a new corpus).
 - [ ] `tools/release/package_release.sh` (add `--dry-run` for a rehearsal).
-      This builds the signed APK/AAB, checks 73 corpus assets, rejects debug schemas,
+      This builds the signed APK/AAB, checks 73 Konkani + 73 WEBC + 73 DRA edition assets, rejects debug schemas,
       and writes `SHA256SUMS` plus `BUILD-INFO.txt` under `app/build/outputs/release/`.
 - [ ] `apksigner verify --print-certs` shows APK Signature Scheme v3 and the expected
       certificate.
