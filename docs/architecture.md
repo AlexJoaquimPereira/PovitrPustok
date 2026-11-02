@@ -1,8 +1,9 @@
 # Architecture and 1.3.0 data foundations
 
-Status: 1.3.0 design record (F1-22), 2026-10-29. [`README.md`](../README.md) is
-the product and architecture reference; this page records the cross-cutting
-contracts that landed in 1.3.0 so later releases can build on them without
+Status: 1.3.0 design record (F1-22), 2026-10-29; 1.3.1 shell/localization
+sections added 2026-11-01. [`README.md`](../README.md) is the product and
+architecture reference; this page records the cross-cutting contracts that
+landed in 1.3.0 and 1.3.1 so later releases can build on them without
 re-deriving the rules.
 
 ## Layering

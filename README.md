@@ -431,7 +431,7 @@ expired term, or a checksum mismatch; `RightsRegisterTest` requires a shipped ri
 `covers` includes every bundled pack id.
 
 Packs ship inside the APK and are replaced only by an app update — no remote store, download
-manager, or runtime replacement. **No packs ship in 1.3.0.** See
+manager, or runtime replacement. **No packs ship in 1.3.1.** See
 [`docs/content-packs.md`](docs/content-packs.md).
 
 ---
@@ -701,7 +701,9 @@ current corpus. Build the artifact you need from source instead.
 the optional Atkinson Hyperlegible Scripture face, and the partial Romi Konkani UI with an in-app
 language choice. 1.3.0 supplied the data foundations (stable anchors, Room schema v3, the edition
 seam, the bundled content-pack format, the rights register, and release hygiene). Reading history
-and notes, English editions, the calendar, and BYOK explanations remain later releases.
+and notes, English editions, the calendar, and BYOK explanations remain later releases:
+**1.4 Study-lite** (addressable rendering, WEBC/Douay, cross-references, notes/export, search;
+target Dec 2026–Feb 2027), **1.5 Calendar-lite** (conditional), and **1.6 BYOK study lab**.
 
 **Known limitations**
 
@@ -723,7 +725,7 @@ and notes, English editions, the calendar, and BYOK explanations remain later re
 * Reading history and notes (planned 1.4). There is no use-case layer and there are no separate
   feature modules; 1.3.0 deliberately keeps the single `:app` module (see
   [`docs/architecture.md`](docs/architecture.md)).
-* No content packs ship in 1.3.0; the annual calendar pack is planned for 1.5.
+* No content packs ship in 1.3.1; the annual calendar pack is planned for 1.5.
 
 **Not implemented by design:** polling / background synchronisation for liturgical data
 (no WorkManager scheduling), a general-purpose HTML engine, and any mutation or re-import of the
@@ -756,7 +758,7 @@ Bible corpus from inside the app.
   schema v3 and migrations, stable verse anchors, the edition seam, the content-pack contract,
   and the single-module decision.
 * [`docs/content-packs.md`](docs/content-packs.md) defines the bundled content-pack format, the
-  licence/expiry gate, and the ship-in-APK lifecycle. No packs ship in 1.3.0.
+  licence/expiry gate, and the ship-in-APK lifecycle. No packs ship in 1.3.1.
 * [`docs/rights.md`](docs/rights.md) is the rights register for every shipped or planned text,
   data set, and content pack; `RightsRegisterTest` enforces coverage and expiry.
 * [`docs/performance.md`](docs/performance.md) records the F1-21 first-use baseline, budgets, and
