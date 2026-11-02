@@ -1,8 +1,9 @@
 # 1.3.1 Romi UI translation worksheet
 
-Status: 1.3.1 translation complete 2026-11-01 and shipped. On 2026-11-02, 14 new
-1.4 English-edition UI strings were added as pending `translate` cells; the
-generator uses the English text as the explicit fallback until they are filled.
+Status: translation complete 2026-11-02 (1.3.1 base plus the 1.4 English-edition
+strings). 187 rows: 128 `translate` cells, all filled; 59 `keep English`.
+The generated locale is 264 strings (128 translated) plus 2 plurals; the
+remaining 136 strings are explicit English fallbacks.
 
 ## Choosing the language in the app
 
@@ -11,24 +12,22 @@ immediately through the AppCompat delegate, so it works on every supported relea
 manifest's `autoStoreLocales` holder persists it, and Android's own per-app language screen
 stays a second entry point — the two always agree because both read the same delegate.
 
-The six F2-14 language/attribution strings (`settings_section_language`,
-`settings_language_english`, `settings_language_konkani`,
-`settings_language_konkani_spoken`, `settings_language_caption`,
-`about_credits_translation`) are `keep English` rows and are not part of the
-translated cells.
+The F2-14 language names (`settings_language_english`,
+`settings_language_konkani`, `settings_language_konkani_spoken`) remain `keep
+English`; the section label, the scope caption and the translation attribution
+were translated in the 1.4 pass.
 
 The 14 new English-edition UI strings (`settings_section_edition`,
-`settings_edition_caption`, the two About leads and notes, and the About
-LICENCE/SOURCE TEXTS/link labels) are `translate` with an empty `romi` cell.
-The edition names, subtitles, legal/attribution text and `complete.json`
-file names remain `keep English`. Fill the 14 cells to finish the Romi pass;
-`python3 tools/translations/generate_romi_strings.py` then emits them into
-`values-b+kok+Latn`.
+`settings_edition_caption`, the two About leads and notes, the About
+LICENCE/SOURCE TEXTS/link labels) are translated. The edition names, subtitles,
+legal/attribution text, the two "Build source" link labels and `complete.json`
+file names remain `keep English`. `python3 tools/translations/generate_romi_strings.py`
+emits the translated cells into `values-b+kok+Latn`.
 
 ## Provenance
 
-The 1.3.1 Romi UI translation was produced **manually, by hand**, by the app's
-developer, Alex Pereira. No machine translation was used. The worksheet is the
+The Romi UI translation (1.3.1 base and the 1.4 English-edition additions) was
+produced **manually, by hand**, by the app's developer, Alex Pereira. No machine translation was used. The worksheet is the
 complete record of that work.
 
 Scope for 1.3.1: **Settings, About, reader chrome, bookmarks, and the new shell labels**.
