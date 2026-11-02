@@ -48,3 +48,11 @@ so a partially filled worksheet is shippable and lint-clean; a partial locale wo
 
 The CSV is the editable source of truth. Do not hand-edit a generated `strings.xml` later;
 regenerate it from the CSV so keys cannot drift.
+
+## Keys added after 1.3.1
+
+The Bible translation control (`settings_section_edition`, `settings_edition_konkani`,
+`settings_edition_webc`, `settings_edition_dra`, `settings_edition_caption`) and the two
+English-edition About pages (`about_webc_*`, `about_dra_*`) were added after 1.3.1 and are
+`keep English` rows. Edition names, licence wording and attribution are deliberate English; the
+generated locale emits the English text as its fallback until a reviewer fills a Romi cell.
