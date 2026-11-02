@@ -1,6 +1,7 @@
 package com.biblia.povitrpustok.feature.books
 
 import com.biblia.povitrpustok.testutil.FakeBookNameRepository
+import com.biblia.povitrpustok.testutil.FakeReadingPreferencesRepository
 
 import com.biblia.povitrpustok.testutil.CorpusAvailabilityRule
 
@@ -59,7 +60,7 @@ class BookChaptersViewModelTest {
         names: BookNameRepository = FakeBookNameRepository(),
         load: (BookChaptersViewModel) -> Unit
     ): BookChaptersUiState {
-        val viewModel = BookChaptersViewModel(repository, names)
+        val viewModel = BookChaptersViewModel(repository, names, FakeReadingPreferencesRepository())
         load(viewModel)
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
@@ -123,7 +124,8 @@ class BookChaptersViewModelTest {
     fun a_data_failure_maps_to_unknown() {
         val viewModel = BookChaptersViewModel(
             FailingChaptersRepository(CorruptBibleDatabaseException("jakob")),
-            FakeBookNameRepository()
+            FakeBookNameRepository(),
+            FakeReadingPreferencesRepository()
         )
         viewModel.load("jakob")
         waitForChapters { !viewModel.uiState.value.isLoading }

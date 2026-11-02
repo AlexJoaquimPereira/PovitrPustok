@@ -1,7 +1,11 @@
 package com.biblia.povitrpustok.feature.books
 
 import com.biblia.povitrpustok.core.result.BibleDatabaseAccessException
+import com.biblia.povitrpustok.domain.model.BibleCatalog
+import com.biblia.povitrpustok.domain.model.BibleEditions
+import com.biblia.povitrpustok.domain.model.ReadingPreferences
 import com.biblia.povitrpustok.feature.reader.FakeBookmarkRepository
+import com.biblia.povitrpustok.testutil.FakeReadingPreferencesRepository
 import com.biblia.povitrpustok.domain.repository.BookTitleRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -61,7 +65,11 @@ class BooksViewModelTest {
     fun the_last_read_book_is_exposed_and_stale_ids_are_ignored() =
         runTest(dispatcher.scheduler) {
             val bookmarks = FakeBookmarkRepository()
-            val viewModel = BooksViewModel(FakeBookTitleRepository(), bookmarks)
+            val viewModel = BooksViewModel(
+                FakeBookTitleRepository(),
+                bookmarks,
+                FakeReadingPreferencesRepository()
+            )
             advanceUntilIdle()
             assertNull(viewModel.uiState.value.lastReadBookId)
 
@@ -78,7 +86,7 @@ class BooksViewModelTest {
     @Test
     fun successful_load_publishes_names_without_error() = runTest(dispatcher.scheduler) {
         val repository = FakeBookTitleRepository(names = mapOf("jakob" to "JAKOBACHEM POTR"))
-        val viewModel = BooksViewModel(repository, FakeBookmarkRepository())
+        val viewModel = BooksViewModel(repository, FakeBookmarkRepository(), FakeReadingPreferencesRepository())
 
         advanceUntilIdle()
 
@@ -94,7 +102,7 @@ class BooksViewModelTest {
         val repository = FakeBookTitleRepository(
             failure = BibleDatabaseAccessException("corpus unavailable")
         )
-        val viewModel = BooksViewModel(repository, FakeBookmarkRepository())
+        val viewModel = BooksViewModel(repository, FakeBookmarkRepository(), FakeReadingPreferencesRepository())
 
         advanceUntilIdle()
 
@@ -109,7 +117,7 @@ class BooksViewModelTest {
         val repository = FakeBookTitleRepository(
             failure = BibleDatabaseAccessException("corpus unavailable")
         )
-        val viewModel = BooksViewModel(repository, FakeBookmarkRepository())
+        val viewModel = BooksViewModel(repository, FakeBookmarkRepository(), FakeReadingPreferencesRepository())
         advanceUntilIdle()
         assertTrue(viewModel.uiState.value.titlesFailed)
 
@@ -129,7 +137,7 @@ class BooksViewModelTest {
     fun retry_while_a_scan_is_in_flight_does_not_start_another_scan() = runTest(dispatcher.scheduler) {
         val gate = CompletableDeferred<Unit>()
         val repository = FakeBookTitleRepository(gate = gate)
-        val viewModel = BooksViewModel(repository, FakeBookmarkRepository())
+        val viewModel = BooksViewModel(repository, FakeBookmarkRepository(), FakeReadingPreferencesRepository())
         runCurrent() // the initial scan starts and suspends on the gate
 
         viewModel.retry()
@@ -142,5 +150,43 @@ class BooksViewModelTest {
 
         assertEquals(1, repository.callCount)
         assertFalse(viewModel.uiState.value.isLoading)
+    }
+
+    @Test
+    fun an_english_edition_skips_the_konkani_title_scan() = runTest(dispatcher.scheduler) {
+        val repository = FakeBookTitleRepository(names = mapOf("jakob" to "JAKOBACHEM POTR"))
+        val preferences = FakeReadingPreferencesRepository(
+            ReadingPreferences(readingEditionId = BibleEditions.WEBC_ID)
+        )
+        val viewModel = BooksViewModel(repository, FakeBookmarkRepository(), preferences)
+
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(BibleEditions.WEBC_ID, state.editionId)
+        assertFalse(state.isLoading)
+        assertFalse(state.titlesFailed)
+        assertTrue("English names come from the catalog", state.displayNames.isEmpty())
+        assertEquals("the Konkani corpus is never scanned", 0, repository.callCount)
+        assertEquals("James", BibleCatalog.displayNameFor("jakob", state.editionId))
+    }
+
+    @Test
+    fun switching_back_to_konkani_restores_the_title_scan() = runTest(dispatcher.scheduler) {
+        val repository = FakeBookTitleRepository(names = mapOf("jakob" to "JAKOBACHEM POTR"))
+        val preferences = FakeReadingPreferencesRepository(
+            ReadingPreferences(readingEditionId = BibleEditions.WEBC_ID)
+        )
+        val viewModel = BooksViewModel(repository, FakeBookmarkRepository(), preferences)
+        advanceUntilIdle()
+        assertEquals(0, repository.callCount)
+
+        preferences.setReadingEdition(BibleEditions.KONKANI_ID)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(BibleEditions.KONKANI_ID, state.editionId)
+        assertEquals("JAKOBACHEM POTR", state.displayNames["jakob"])
+        assertEquals(1, repository.callCount)
     }
 }

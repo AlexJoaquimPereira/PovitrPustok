@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
+import com.biblia.povitrpustok.domain.model.BibleEditions
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
 import com.biblia.povitrpustok.ui.adaptive.AppBreakpoints
@@ -85,7 +86,10 @@ fun BookChaptersScreen(
                             localName = state.displayName.ifBlank {
                                 state.book?.displayName.orEmpty()
                             },
-                            englishName = state.book?.englishName,
+                            // English editions render the English name as the
+                            // primary label, so the subtitle would repeat it.
+                            englishName = state.book?.englishName
+                                ?.takeIf { it != state.displayName },
                             // One line in the app bar: the English label yields
                             // space (and ellipsizes) before the local name.
                             layout = BookNameLayout.INLINE,
@@ -134,11 +138,15 @@ fun BookChaptersScreen(
                     testTag = "chapters.empty"
                 )
                 else -> Column(modifier = Modifier.fillMaxSize()) {
-                    TextButton(
-                        onClick = onIntroductionSelected,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    ) {
-                        Text(text = stringResource(R.string.book_introduction))
+                    // English editions ship no introduction blocks; the entry
+                    // point would open an empty screen, so it is Konkani-only.
+                    if (!BibleEditions.isEnglish(state.editionId)) {
+                        TextButton(
+                            onClick = onIntroductionSelected,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        ) {
+                            Text(text = stringResource(R.string.book_introduction))
+                        }
                     }
                     val columns = chapterGridColumns(LocalDensity.current.fontScale)
                     LazyVerticalGrid(

@@ -2,6 +2,7 @@ package com.biblia.povitrpustok.ui
 
 import com.biblia.povitrpustok.feature.reader.FakeBookmarkRepository
 import com.biblia.povitrpustok.testutil.FakeBookNameRepository
+import com.biblia.povitrpustok.testutil.FakeReadingPreferencesRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -40,7 +41,8 @@ class HomeViewModelTest {
     fun no_stored_reading_state_hides_the_card() = runTest(dispatcher.scheduler) {
         val viewModel = HomeViewModel(
             bookmarkRepository = FakeBookmarkRepository(),
-            bookNameRepository = FakeBookNameRepository()
+            bookNameRepository = FakeBookNameRepository(),
+            readingPreferences = FakeReadingPreferencesRepository()
         )
 
         advanceUntilIdle()
@@ -54,7 +56,8 @@ class HomeViewModelTest {
         bookmarks.updateReadingState(bookId = "Utpoti", chapterPosition = 3)
         val viewModel = HomeViewModel(
             bookmarkRepository = bookmarks,
-            bookNameRepository = FakeBookNameRepository(mapOf("Utpoti" to "Utpoti Custom"))
+            bookNameRepository = FakeBookNameRepository(mapOf("Utpoti" to "Utpoti Custom")),
+            readingPreferences = FakeReadingPreferencesRepository()
         )
 
         advanceUntilIdle()
@@ -72,7 +75,8 @@ class HomeViewModelTest {
         bookmarks.updateReadingState(bookId = "not-a-book", chapterPosition = 1)
         val viewModel = HomeViewModel(
             bookmarkRepository = bookmarks,
-            bookNameRepository = FakeBookNameRepository()
+            bookNameRepository = FakeBookNameRepository(),
+            readingPreferences = FakeReadingPreferencesRepository()
         )
 
         advanceUntilIdle()

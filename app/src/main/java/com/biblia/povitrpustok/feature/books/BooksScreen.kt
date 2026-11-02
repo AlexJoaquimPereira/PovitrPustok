@@ -106,8 +106,10 @@ fun BooksScreen(
 
     // One grouping feeds both the list and the jump control, so the indices
     // cannot drift from what is rendered. Canonical order and `book.id` keys
-    // are untouched.
-    val sections = remember { BooksGrouping.groupByTestament(BibleCatalog.books) }
+    // are untouched. The list is scoped to the selected reading edition.
+    val sections = remember(state.editionId) {
+        BooksGrouping.groupByTestament(BibleCatalog.forEdition(state.editionId))
+    }
     val sectionStarts = remember(sections) { firstRowIndexes(sections) }
     val oldTestamentStart = sectionStarts[Testament.OLD_TESTAMENT] ?: 0
     val newTestamentStart = sectionStarts[Testament.NEW_TESTAMENT]
@@ -178,11 +180,16 @@ fun BooksScreen(
                         TestamentHeader(testament)
                     }
                     itemsIndexed(books, key = { _, book -> book.id }) { index, book ->
+                        // Konkani: corpus title when scanned, catalog name
+                        // otherwise. English: the catalog's English name, so
+                        // the subtitle would only repeat the primary label.
+                        val displayName = state.displayNames[book.id]
+                            ?: BibleCatalog.displayNameFor(book.id, state.editionId)
                         BookListItem(
-                            localName = BookDisplayName.capitalizeDisplayName(
-                                state.displayNames[book.id] ?: book.displayName
-                            ),
-                            englishName = book.englishName,
+                            localName = BookDisplayName.capitalizeDisplayName(displayName),
+                            englishName = book.englishName
+                                .takeIf { it != displayName }
+                                .orEmpty(),
                             onClick = { onBookSelected(book.id) },
                             modifier = Modifier.testTag("books.row.${book.id}"),
                             isLastRead = book.id == state.lastReadBookId,
@@ -451,7 +458,7 @@ fun BookListItem(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (englishBookNameVisible()) {
+                if (englishName.isNotEmpty() && englishBookNameVisible()) {
                     Text(
                         text = englishName,
                         style = MaterialTheme.typography.bodySmall,
