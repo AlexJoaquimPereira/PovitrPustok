@@ -43,6 +43,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.domain.model.BibleCatalog
+import com.biblia.povitrpustok.domain.model.BibleEditions
 import com.biblia.povitrpustok.domain.model.Bookmark
 import com.biblia.povitrpustok.domain.model.ReaderDestination
 import com.biblia.povitrpustok.ui.components.BookName
@@ -115,9 +116,13 @@ fun BookmarksScreen(
                             BookmarkRow(
                                 bookmark = bookmark,
                                 localName = state.bookNames[bookmark.bookId]
-                                    ?: BibleCatalog.byId(bookmark.bookId)?.displayName
-                                    ?: bookmark.bookId,
-                                englishName = BibleCatalog.byId(bookmark.bookId)?.englishName,
+                                    ?: BibleCatalog.displayNameFor(bookmark.bookId, state.editionId)
+                                        .ifBlank { bookmark.bookId },
+                                englishName = if (BibleEditions.isEnglish(state.editionId)) {
+                                    null
+                                } else {
+                                    BibleCatalog.byId(bookmark.bookId)?.englishName
+                                },
                                 onClick = { onOpenBookmark(bookmark.toReaderDestination()) },
                                 onDelete = {
                                     viewModel.removeBookmark(bookmark.id)

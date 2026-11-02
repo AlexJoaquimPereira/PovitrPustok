@@ -5,12 +5,15 @@ import androidx.lifecycle.viewModelScope
 import com.biblia.povitrpustok.domain.repository.BookNameRepository
 import com.biblia.povitrpustok.domain.model.Bookmark
 import com.biblia.povitrpustok.domain.repository.BookmarkRepository
+import com.biblia.povitrpustok.domain.repository.ReadingPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -24,7 +27,8 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class BookmarksViewModel @Inject constructor(
     private val bookmarkRepository: BookmarkRepository,
-    private val bookNames: BookNameRepository
+    private val bookNames: BookNameRepository,
+    private val readingPreferences: ReadingPreferencesRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BookmarksUiState())
@@ -32,16 +36,31 @@ class BookmarksViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            // Emit the list immediately with catalog-fallback names, then
-            // refine with corpus names. A slow lookup never delays the list
-            // and a newer emission wins (F-12, S5).
-            bookmarkRepository.observeBookmarks().collectLatest { bookmarks ->
-                _uiState.value = BookmarksUiState(bookmarks = bookmarks, isLoading = false)
-                val names = bookNames.displayNames(bookmarks.map { it.bookId }.distinct())
-                _uiState.update { state ->
-                    if (state.bookmarks == bookmarks) state.copy(bookNames = names) else state
+            // The reading edition decides the display language; names are
+            // resolved again when Settings changes it (F-12, F-13).
+            readingPreferences.preferences
+                .map { it.readingEditionId }
+                .distinctUntilChanged()
+                .collectLatest { editionId ->
+                    _uiState.update { it.copy(editionId = editionId) }
+                    // Emit the list immediately with catalog-fallback names,
+                    // then refine with corpus names. A slow lookup never
+                    // delays the list and a newer emission wins (F-12, S5).
+                    bookmarkRepository.observeBookmarks().collectLatest { bookmarks ->
+                        _uiState.value = BookmarksUiState(
+                            bookmarks = bookmarks,
+                            editionId = editionId,
+                            isLoading = false
+                        )
+                        val names = bookNames.displayNames(
+                            bookmarks.map { it.bookId }.distinct(),
+                            editionId
+                        )
+                        _uiState.update { state ->
+                            if (state.bookmarks == bookmarks) state.copy(bookNames = names) else state
+                        }
+                    }
                 }
-            }
         }
     }
 
