@@ -157,32 +157,32 @@ settings_language_konkani,keep English,Konkani,,Language name; keep English.
 settings_language_konkani_spoken,keep English,Konkani (Romi),,TalkBack label; keep English.
 settings_language_caption,keep English,"Konkani uses Romi script, the same as the Bible text. Home, Books, Search, Daily Reading and reference lookup stay in English.",,F2-14 scope note; translate in a follow-up.
 about_credits_translation,keep English,"The Romi UI translation was done manually, by hand, by the developer, Alex Pereira.",,Attribution; keep English.
-settings_section_edition,keep English,BIBLE TRANSLATION,,1.4 edition control; translate in a follow-up.
+settings_section_edition,translate,BIBLE TRANSLATION,,1.4 English-edition UI; translate.
 settings_edition_konkani,keep English,Konkani (Romi),,Edition name; keep English.
 settings_edition_webc,keep English,World English Bible (Catholic),,Edition name; keep English.
 settings_edition_dra,keep English,Douay-Rheims 1899,,Edition name; keep English.
-settings_edition_caption,keep English,"Choose which Bible text the reader opens. The two English editions are separate public-domain translations, not official liturgical texts: chapter and verse numbering can differ from the Konkani edition, and bookmarks are best effort across editions. Sources and licences are in About.",,1.4 edition control; translate in a follow-up.
+settings_edition_caption,translate,"Choose which Bible text the reader opens. The two English editions are separate public-domain translations, not official liturgical texts: chapter and verse numbering can differ from the Konkani edition, and bookmarks are best effort across editions. Sources and licences are in About.",,1.4 English-edition UI; translate.
 about_webc_title,keep English,World English Bible,,Edition name; keep English.
 about_webc_subtitle,keep English,Catholic edition · public domain,,Licence wording; keep English.
-about_webc_lead,keep English,"The World English Bible, Catholic edition, is a complete Bible in English — 73 books — in the Catholic book order.",,1.4 disclosure; translate in a follow-up.
+about_webc_lead,translate,"The World English Bible, Catholic edition, is a complete Bible in English — 73 books — in the Catholic book order.",,1.4 English-edition UI; translate.
 about_webc_body,keep English,"The app redistributes the text unmodified, with HTML formatting only. The name World English Bible is a trademark of eBible.org, used here because the text itself is unchanged. This app is not produced or endorsed by eBible.org.",,Attribution and trademark wording; keep English.
-about_webc_licence_label,keep English,LICENCE,,Section label; keep English.
+about_webc_licence_label,translate,LICENCE,,1.4 English-edition UI; translate.
 about_webc_licence,keep English,Public domain. No permission is needed to copy or redistribute this text.,,Licence wording; keep English.
 about_webc_attribution,keep English,"World English Bible, Catholic edition (eng-web-c). Source: eBible.org.",,Attribution; keep English.
-about_webc_links_label,keep English,SOURCE TEXTS,,Section label; keep English.
-about_webc_source_label,keep English,Source text,,Link label; keep English.
-about_webc_build_label,keep English,Build source,,Link label; keep English.
+about_webc_links_label,translate,SOURCE TEXTS,,1.4 English-edition UI; translate.
+about_webc_source_label,translate,Source text,,1.4 English-edition UI; translate.
+about_webc_build_label,translate,Build source,,1.4 English-edition UI; translate.
 about_webc_build_meta,keep English,complete.json,,File name; keep English.
-about_webc_note,keep English,"Choose it in Settings, under Bible translation. Chapter and verse numbering follows this source and can differ from the Konkani edition; bookmarks are best effort across editions.",,1.4 disclosure; translate in a follow-up.
+about_webc_note,translate,"Choose it in Settings, under Bible translation. Chapter and verse numbering follows this source and can differ from the Konkani edition; bookmarks are best effort across editions.",,1.4 English-edition UI; translate.
 about_dra_title,keep English,Douay-Rheims 1899,,Edition name; keep English.
 about_dra_subtitle,keep English,American Edition 1899 · public domain,,Licence wording; keep English.
-about_dra_lead,keep English,"The Douay-Rheims Bible, American Edition of 1899, is a complete Bible in English — 73 books — translated from the Latin Vulgate, and is in the public domain.",,1.4 disclosure; translate in a follow-up.
+about_dra_lead,translate,"The Douay-Rheims Bible, American Edition of 1899, is a complete Bible in English — 73 books — translated from the Latin Vulgate, and is in the public domain.",,1.4 English-edition UI; translate.
 about_dra_body,keep English,"The app redistributes the text unmodified, with HTML formatting only. The translation follows the Latin Vulgate rather than the Hebrew text, so psalm and verse numbers can differ from the Konkani edition: Psalm 22 here is Psalm 23 in Hebrew-numbered Bibles.",,1.4 disclosure; translate in a follow-up.
-about_dra_licence_label,keep English,LICENCE,,Section label; keep English.
+about_dra_licence_label,translate,LICENCE,,1.4 English-edition UI; translate.
 about_dra_licence,keep English,Public domain. No permission is needed to copy or redistribute this text.,,Licence wording; keep English.
 about_dra_attribution,keep English,"Douay-Rheims Bible, American Edition 1899 (engDRA). Source: eBible.org.",,Attribution; keep English.
-about_dra_links_label,keep English,SOURCE TEXTS,,Section label; keep English.
-about_dra_source_label,keep English,Source text,,Link label; keep English.
-about_dra_build_label,keep English,Build source,,Link label; keep English.
+about_dra_links_label,translate,SOURCE TEXTS,,1.4 English-edition UI; translate.
+about_dra_source_label,translate,Source text,,1.4 English-edition UI; translate.
+about_dra_build_label,translate,Build source,,1.4 English-edition UI; translate.
 about_dra_build_meta,keep English,complete.json,,File name; keep English.
-about_dra_note,keep English,"Choose it in Settings, under Bible translation. Bookmarks are best effort across editions, because the numbering can differ.",,1.4 disclosure; translate in a follow-up.
+about_dra_note,translate,"Choose it in Settings, under Bible translation. Bookmarks are best effort across editions, because the numbering can differ.",,1.4 English-edition UI; translate.

@@ -1,6 +1,8 @@
 # 1.3.1 Romi UI translation worksheet
 
-Status: translation complete 2026-11-01; shipped in 1.3.1.
+Status: 1.3.1 translation complete 2026-11-01 and shipped. On 2026-11-02, 14 new
+1.4 English-edition UI strings were added as pending `translate` cells; the
+generator uses the English text as the explicit fallback until they are filled.
 
 ## Choosing the language in the app
 
@@ -13,7 +15,15 @@ The six F2-14 language/attribution strings (`settings_section_language`,
 `settings_language_english`, `settings_language_konkani`,
 `settings_language_konkani_spoken`, `settings_language_caption`,
 `about_credits_translation`) are `keep English` rows and are not part of the
-113 translated cells.
+translated cells.
+
+The 14 new English-edition UI strings (`settings_section_edition`,
+`settings_edition_caption`, the two About leads and notes, and the About
+LICENCE/SOURCE TEXTS/link labels) are `translate` with an empty `romi` cell.
+The edition names, subtitles, legal/attribution text and `complete.json`
+file names remain `keep English`. Fill the 14 cells to finish the Romi pass;
+`python3 tools/translations/generate_romi_strings.py` then emits them into
+`values-b+kok+Latn`.
 
 ## Provenance
 
