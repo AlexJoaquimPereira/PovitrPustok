@@ -59,6 +59,12 @@ object AppDestination {
     /** Source edition: who owns the Konkani Bible text. */
     const val ABOUT_SOURCE_EDITION = "about/source-edition"
 
+    /** World English Bible (Catholic): source, build source and public domain. */
+    const val ABOUT_WEBC = "about/webc"
+
+    /** Douay-Rheims, American Edition 1899: source, build source and public domain. */
+    const val ABOUT_DRA = "about/dra"
+
     /** API & data: the Daily Reading source, privacy and reference. */
     const val ABOUT_API = "about/api"
 

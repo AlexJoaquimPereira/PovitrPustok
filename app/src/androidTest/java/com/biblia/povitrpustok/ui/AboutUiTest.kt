@@ -198,6 +198,80 @@ class AboutUiTest {
     }
 
     @Test
+    fun about_landing_lists_the_two_english_editions_beside_the_source_edition() {
+        openAboutFromSettings()
+
+        // The landing is the directory, so both editions are named there and
+        // neither is folded into the Konkani Source edition row.
+        composeRule.onNodeWithTag("about.webc").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("about.dra")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .assertTextContains("American Edition 1899", substring = true)
+        composeRule.onNodeWithTag("about.source").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun webc_page_states_source_build_source_and_public_domain() {
+        openAboutFromSettings()
+        composeRule.onNodeWithTag("about.webc").performScrollTo().performClick()
+        waitForTag("about.webc.screen")
+
+        // Redistributed unmodified, trademark used for the unchanged text, and
+        // the app is not eBible's product.
+        composeRule.onNodeWithTag("about.webc.body")
+            .assertTextContains("unmodified", substring = true)
+            .assertTextContains("trademark of eBible.org", substring = true)
+            .assertTextContains("not produced or endorsed by eBible.org", substring = true)
+        composeRule.onNodeWithTag("about.webc.licence")
+            .assertTextContains("Public domain", substring = true)
+        composeRule.onNodeWithTag("about.webc.attribution")
+            .assertTextContains("eng-web-c", substring = true)
+        composeRule.onNodeWithTag("about.webc.licence_label")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Heading, Unit))
+        composeRule.onNodeWithTag("about.webc.source").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("about.webc.build").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("about.webc.note")
+            .performScrollTo()
+            .assertTextContains("best effort", substring = true)
+
+        composeRule.onNodeWithTag("about.webc.back").performClick()
+        waitForTag("about.screen")
+    }
+
+    @Test
+    fun dra_page_states_source_build_source_and_vulgate_numbering() {
+        openAboutFromSettings()
+        composeRule.onNodeWithTag("about.dra").performScrollTo().performClick()
+        waitForTag("about.dra.screen")
+
+        // The American Edition 1899: Vulgate numbering, stated with the case a
+        // reader is most likely to hit (Vulgate Psalm 22 = Hebrew Psalm 23).
+        composeRule.onNodeWithTag("about.dra.body")
+            .assertTextContains("Latin Vulgate", substring = true)
+            .assertTextContains("Psalm 22", substring = true)
+            .assertTextContains("Psalm 23", substring = true)
+        composeRule.onNodeWithTag("about.dra.licence")
+            .assertTextContains("Public domain", substring = true)
+        composeRule.onNodeWithTag("about.dra.attribution")
+            .assertTextContains("American Edition 1899", substring = true)
+            .assertTextContains("engDRA", substring = true)
+            .assertTextContains("eBible.org", substring = true)
+        composeRule.onNodeWithTag("about.dra.source").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("about.dra.build")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .assertTextContains("eng_dra/complete.json", substring = true)
+
+        // The old attribution must not survive anywhere on the page.
+        composeRule.onNodeWithText("SacredBible", substring = true).assertDoesNotExist()
+        composeRule.onNodeWithText("Challoner", substring = true).assertDoesNotExist()
+
+        composeRule.onNodeWithTag("about.dra.back").performClick()
+        waitForTag("about.screen")
+    }
+
+    @Test
     fun credits_links_to_the_project_repository_without_duplicating_disclosures() {
         openAboutFromSettings()
         composeRule.onNodeWithTag("about.credits").performScrollTo().performClick()

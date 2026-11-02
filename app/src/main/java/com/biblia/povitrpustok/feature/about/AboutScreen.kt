@@ -18,9 +18,11 @@ import com.biblia.povitrpustok.ui.rememberAppVersionName
  * The single place Settings, Home and the Reader open. It states what the app
  * is (an independent publication, not a diocesan product), which version is
  * running, and then hands off to one page per disclosure type:
- * [AboutSourceEditionScreen], [AboutApiScreen], [AboutLicensesScreen] and
- * [AboutCreditsScreen]. Keeping the disclosures apart keeps every page short
- * and gives each claim its own address.
+ * [AboutSourceEditionScreen], [AboutWebcScreen], [AboutDraScreen],
+ * [AboutApiScreen], [AboutLicensesScreen] and [AboutCreditsScreen]. Keeping the
+ * disclosures apart keeps every page short and gives each claim its own
+ * address — the two English editions included, because each has its own source,
+ * build source, licence and attribution.
  *
  * A short privacy statement closes the page, because it is the question a
  * reader is most likely to have after learning the app talks to a readings
@@ -30,6 +32,8 @@ import com.biblia.povitrpustok.ui.rememberAppVersionName
 fun AboutScreen(
     onBack: () -> Unit,
     onOpenSourceEdition: () -> Unit,
+    onOpenWebc: () -> Unit,
+    onOpenDra: () -> Unit,
     onOpenApi: () -> Unit,
     onOpenLicenses: () -> Unit,
     onOpenCredits: () -> Unit,
@@ -74,6 +78,20 @@ fun AboutScreen(
                 subtitle = stringResource(R.string.about_source_subtitle),
                 onClick = onOpenSourceEdition,
                 tag = "about.source"
+            )
+            AboutRowDivider()
+            AboutEntryRow(
+                title = stringResource(R.string.about_webc_title),
+                subtitle = stringResource(R.string.about_webc_subtitle),
+                onClick = onOpenWebc,
+                tag = "about.webc"
+            )
+            AboutRowDivider()
+            AboutEntryRow(
+                title = stringResource(R.string.about_dra_title),
+                subtitle = stringResource(R.string.about_dra_subtitle),
+                onClick = onOpenDra,
+                tag = "about.dra"
             )
             AboutRowDivider()
             AboutEntryRow(

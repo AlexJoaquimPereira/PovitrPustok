@@ -19,6 +19,8 @@ import com.biblia.povitrpustok.feature.about.AboutCreditsScreen
 import com.biblia.povitrpustok.feature.about.AboutLicensesScreen
 import com.biblia.povitrpustok.feature.about.AboutScreen
 import com.biblia.povitrpustok.feature.about.AboutSourceEditionScreen
+import com.biblia.povitrpustok.feature.about.AboutWebcScreen
+import com.biblia.povitrpustok.feature.about.AboutDraScreen
 import com.biblia.povitrpustok.feature.about.AboutTypefaceLicenseScreen
 import com.biblia.povitrpustok.feature.books.BookChaptersScreen
 import com.biblia.povitrpustok.feature.books.BookIntroductionScreen
@@ -237,6 +239,8 @@ fun PovitrPustokNavHost(
                 onOpenSourceEdition = {
                     navController.navigate(AppDestination.ABOUT_SOURCE_EDITION)
                 },
+                onOpenWebc = { navController.navigate(AppDestination.ABOUT_WEBC) },
+                onOpenDra = { navController.navigate(AppDestination.ABOUT_DRA) },
                 onOpenApi = { navController.navigate(AppDestination.ABOUT_API) },
                 onOpenLicenses = { navController.navigate(AppDestination.ABOUT_LICENSES) },
                 onOpenCredits = { navController.navigate(AppDestination.ABOUT_CREDITS) }
@@ -245,6 +249,14 @@ fun PovitrPustokNavHost(
 
         composable(AppDestination.ABOUT_SOURCE_EDITION) {
             AboutSourceEditionScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(AppDestination.ABOUT_WEBC) {
+            AboutWebcScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(AppDestination.ABOUT_DRA) {
+            AboutDraScreen(onBack = { navController.popBackStack() })
         }
 
         composable(AppDestination.ABOUT_API) {
