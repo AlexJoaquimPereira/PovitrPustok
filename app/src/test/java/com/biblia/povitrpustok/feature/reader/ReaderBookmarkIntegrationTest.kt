@@ -1,6 +1,7 @@
 package com.biblia.povitrpustok.feature.reader
 
 import com.biblia.povitrpustok.testutil.FakeBookNameRepository
+import com.biblia.povitrpustok.testutil.FakeReadingPreferencesRepository
 
 import com.biblia.povitrpustok.testutil.CorpusAvailabilityRule
 
@@ -81,7 +82,7 @@ class ReaderBookmarkIntegrationTest {
     @Test
     fun bookmark_add_and_remove_reflect_in_reader_state() {
         val firstVerse = runBlocking { bibleRepository.getChapter("jakob", 1).verses.first() }
-        val viewModel = ReaderViewModel(bibleRepository, bookmarkRepository, FakeBookNameRepository())
+        val viewModel = ReaderViewModel(bibleRepository, bookmarkRepository, FakeBookNameRepository(), FakeReadingPreferencesRepository())
 
         viewModel.load("jakob", 1, targetVerseId = firstVerse.id)
         awaitLoaded(viewModel)
@@ -127,7 +128,7 @@ class ReaderBookmarkIntegrationTest {
     @Test
     fun target_highlight_and_bookmark_coexist_independently() {
         val firstVerse = runBlocking { bibleRepository.getChapter("jakob", 1).verses.first() }
-        val viewModel = ReaderViewModel(bibleRepository, bookmarkRepository, FakeBookNameRepository())
+        val viewModel = ReaderViewModel(bibleRepository, bookmarkRepository, FakeBookNameRepository(), FakeReadingPreferencesRepository())
 
         viewModel.load("jakob", 1, targetVerseId = firstVerse.id)
         awaitLoaded(viewModel)
@@ -149,7 +150,7 @@ class ReaderBookmarkIntegrationTest {
         assertEquals("both Job records carry number 26", 26, jobChapter26Verse.chapterNumber)
         assertEquals(26, jobChapter27Verse.chapterNumber)
 
-        val viewModel = ReaderViewModel(bibleRepository, bookmarkRepository, FakeBookNameRepository())
+        val viewModel = ReaderViewModel(bibleRepository, bookmarkRepository, FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load("Jobachem_Pustok", 26, targetVerseId = jobChapter26Verse.id)
         awaitLoaded(viewModel)
         viewModel.onTargetApplied()
@@ -176,7 +177,7 @@ class ReaderBookmarkIntegrationTest {
         val rangeVerse = runBlocking {
             bibleRepository.getChapter("Utpoti", chapter16.position).verses.first { it.verseStart != it.verseEnd }
         }
-        val viewModel = ReaderViewModel(bibleRepository, bookmarkRepository, FakeBookNameRepository())
+        val viewModel = ReaderViewModel(bibleRepository, bookmarkRepository, FakeBookNameRepository(), FakeReadingPreferencesRepository())
 
         viewModel.load("Utpoti", chapter16.position, targetVerseId = rangeVerse.id)
         awaitLoaded(viewModel)
@@ -201,7 +202,7 @@ class ReaderBookmarkIntegrationTest {
 
     @Test
     fun reading_state_is_persisted_on_chapter_open() {
-        val viewModel = ReaderViewModel(bibleRepository, bookmarkRepository, FakeBookNameRepository())
+        val viewModel = ReaderViewModel(bibleRepository, bookmarkRepository, FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load("jakob", 3)
         awaitLoaded(viewModel)
 
@@ -225,7 +226,7 @@ class ReaderBookmarkIntegrationTest {
         }
 
         val firstVerse = runBlocking { bibleRepository.getChapter("jakob", 1).verses.first() }
-        val viewModel = ReaderViewModel(bibleRepository, bookmarkRepository, FakeBookNameRepository())
+        val viewModel = ReaderViewModel(bibleRepository, bookmarkRepository, FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load("jakob", 1, targetVerseId = firstVerse.id)
         awaitLoaded(viewModel)
         viewModel.onTargetApplied()

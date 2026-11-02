@@ -1,6 +1,6 @@
 # Rights register
 
-Status: F1-02 register. Last reviewed: 2026-11-01. Register owner: Alex Pereira.
+Status: F1-02 register. Last reviewed: 2026-11-02. Register owner: Alex Pereira.
 
 This register records the owner, licence, attribution, territory, expiry, and evidence for every
 text, data set, and content pack the app ships or fetches. `RightsRegisterTest` reads the table
@@ -28,8 +28,8 @@ fails after it passes. Cell text must not contain a literal `|`; the build-time 
 | software-libraries | Third-party libraries packaged in the APK | shipped | Various component authors | Apache-2.0 (runtime components) | See About > Software licences | - | worldwide | none | `LicenceCatalog.kt` (runtime list); `AboutLicensesScreen.kt` |
 | atkinson-hyperlegible | Atkinson Hyperlegible typeface (regular and bold) | shipped | Braille Institute of America, Inc. | SIL OFL 1.1 | Copyright 2020 Braille Institute of America, Inc. | - | worldwide | none | `app/src/main/res/font/`; `assets/licenses/OFL-1.1.txt`; `https://github.com/googlefonts/atkinson-hyperlegible` |
 | goa-calendar-overrides | Goan particular-calendar corrections in code | shipped | Alex Pereira | Apache-2.0 | Goan particular-calendar corrections, manually cross-checked; calendar facts are not copyrightable | - | IN | none | `GoaCalendarOverrides.kt`; `AboutApiScreen.kt`; `docs/rights.md` |
-| webc | World English Bible, Catholic edition (WEBC) | planned | Public domain | Public domain | World English Bible, Catholic edition | - | worldwide | none | Planned 1.4 (roadmap S1-03); not shipped |
-| douay-rheims | Douay-Rheims Bible | planned | Public domain | Public domain | Douay-Rheims Bible | - | worldwide | none | Planned 1.4 (roadmap S1-04); not shipped |
+| webc | World English Bible, Catholic edition (WEBC), 73 books | shipped | Public domain (eBible.org) | Public domain | World English Bible, Catholic edition; eBible.org; the name is a trademark and unmodified redistribution is used | webc | worldwide | none | `https://ebible.org/Scriptures/details.php?id=eng-web-c`; `tools/editions/README.md`; `tools/editions/webc-manifest.json`; `AboutWebcScreen.kt` |
+| douay-rheims | Douay-Rheims American Edition 1899, 73 books | shipped | Public domain (eBible.org) | Public domain | Douay-Rheims 1899; eBible.org; unmodified redistribution | dra | worldwide | none | `https://ebible.org/Scriptures/details.php?id=engDRA`; `https://bible.helloao.org/api/eng_dra/complete.json`; `tools/editions/README.md`; `tools/editions/dra-manifest.json`; `AboutDraScreen.kt` |
 | openbible-cross-references | OpenBible.info cross references | planned | OpenBible.info | CC-BY-4.0 | OpenBible.info (CC BY 4.0) | - | worldwide | none | Planned 1.4 (roadmap S1-07); not shipped |
 | douay-annotations | Douay-Rheims annotations | planned | Public domain | CC0-1.0 | Douay-Rheims annotations | - | worldwide | none | Planned 1.4; not shipped |
 | commentary | Haydock and Catena Aurea commentary | planned | Public domain | Public domain | Haydock / Catena Aurea | - | worldwide | none | Planned 1.6 (roadmap A1-06); not shipped |
@@ -40,8 +40,13 @@ fails after it passes. Cell text must not contain a literal `|`; the build-time 
 ## Notes
 
 - The corpus permission is on file. Its scope for English parallel text, AI quotation,
-  calendar/lectionary use, and derivative/export use is still being confirmed; 1.3.0 uses only the
+  calendar/lectionary use, and derivative/export use is still being confirmed; 1.3.1 uses only the
   existing Konkani reader scope.
+- `webc` and `dra` are independent public-domain English translations bundled as separate 73-book
+  editions. They are not parallel text of the Konkani corpus and no Konkani and English text is
+  combined in one verse; the Archdiocese permission scope is therefore unchanged by adding them.
+  The WEBC text is redistributed unmodified (HTML wrapping only) and keeps the edition name; the
+  DRA is the American Edition 1899 from eBible.org `engDRA` via helloao.
 - `romi-ui-translation` is the developer's own work, licensed with the app code. It ships with the 1.3.1 generated locale.
 - `goa-calendar-overrides` is a small code table, not a content pack. The celebration names, ranks
   and dates are factual calendar data, manually cross-checked against the Goan particular calendar

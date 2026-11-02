@@ -14,6 +14,7 @@ import com.biblia.povitrpustok.domain.model.VerseAnchor
 import com.biblia.povitrpustok.domain.repository.BibleRepository
 import com.biblia.povitrpustok.domain.repository.BookNameRepository
 import com.biblia.povitrpustok.domain.repository.BookmarkRepository
+import com.biblia.povitrpustok.domain.repository.ReadingPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
@@ -25,6 +26,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -52,6 +55,8 @@ class ReaderViewModel @Inject constructor(
     private val repository: BibleRepository,
     private val bookmarkRepository: BookmarkRepository,
     private val bookNames: BookNameRepository,
+    /** Resolves the edition when the caller does not name one explicitly. */
+    private val readingPreferences: ReadingPreferencesRepository,
     /**
      * Playback is injected so the ViewModel owns its lifecycle. Tests that do
      * not exercise speech keep the default, which has no engine.
@@ -71,6 +76,22 @@ class ReaderViewModel @Inject constructor(
         // playback ends (stop, finish, or an unavailable notice).
         viewModelScope.launch {
             speech.state.collect { playback -> syncSpeechHighlight(playback) }
+        }
+        // Settings can change the reading edition while the Reader is on the
+        // back stack: reload the same request so returning shows the new
+        // edition. An explicit edition (bookmarks, passages) always wins.
+        viewModelScope.launch {
+            readingPreferences.preferences
+                .map { it.readingEditionId }
+                .distinctUntilChanged()
+                .collect {
+                    val request = lastRequest ?: return@collect
+                    if (request.requestedEditionId.isBlank() &&
+                        effectiveEdition(request.requestedEditionId) != request.editionId
+                    ) {
+                        reload(request)
+                    }
+                }
         }
     }
 
@@ -95,6 +116,9 @@ class ReaderViewModel @Inject constructor(
         val passageStart: Int?,
         val passageEnd: Int?,
         val passages: List<ReaderPassageSpec>,
+        /** Caller-supplied edition; blank means "follow the preference". */
+        val requestedEditionId: String,
+        /** Edition that was actually loaded. */
         val editionId: String
     )
 
@@ -116,9 +140,10 @@ class ReaderViewModel @Inject constructor(
         passageEnd: Int? = null,
         passages: List<ReaderPassageSpec> = emptyList(),
         targetVerseNumber: Int? = null,
-        editionId: String = BibleEditions.KONKANI_ID
+        editionId: String = ""
     ) {
         this.bookId = bookId
+        val resolvedEditionId = effectiveEdition(editionId)
         lastRequest = LoadRequest(
             bookId,
             chapterPosition,
@@ -127,7 +152,8 @@ class ReaderViewModel @Inject constructor(
             passageStart,
             passageEnd,
             passages,
-            editionId
+            requestedEditionId = editionId,
+            editionId = resolvedEditionId
         )
         // A new chapter or edition ends playback: the verse being read is no
         // longer on screen, and a stale utterance must not outlive it (F2-11).
@@ -140,7 +166,7 @@ class ReaderViewModel @Inject constructor(
             // F-12: never a blank top-bar title, even when a first load
             // fails. Keep the resolved corpus name when the book is the
             // same one already displayed.
-            val catalogName = BibleCatalog.byId(bookId)?.displayName.orEmpty()
+            val catalogName = BibleCatalog.displayNameFor(bookId, resolvedEditionId)
             _uiState.update { state ->
                 if (state.book?.id == bookId) {
                     state.copy(isLoading = true, loadError = null)
@@ -157,15 +183,15 @@ class ReaderViewModel @Inject constructor(
                 }
             }
             try {
-                val book = repository.getBook(bookId, editionId)
-                val displayName = bookNames.displayName(bookId)
-                val chapters = repository.getChapters(bookId, editionId)
+                val book = repository.getBook(bookId, resolvedEditionId)
+                val displayName = bookNames.displayName(bookId, resolvedEditionId)
+                val chapters = repository.getChapters(bookId, resolvedEditionId)
 
                 if (passages.isNotEmpty()) {
                     val chapterContents = passages
                         .map { it.chapterPosition }
                         .distinct()
-                        .associateWith { repository.getChapter(bookId, it, editionId) }
+                        .associateWith { repository.getChapter(bookId, it, resolvedEditionId) }
                     val firstContent = chapterContents.getValue(passages.first().chapterPosition)
                     val passageChapters = passages
                         .groupBy { it.chapterPosition }
@@ -214,7 +240,7 @@ class ReaderViewModel @Inject constructor(
                     return@launch
                 }
 
-                val content = repository.getChapter(bookId, chapterPosition, editionId)
+                val content = repository.getChapter(bookId, chapterPosition, resolvedEditionId)
                 val target = content.verses.targetFor(targetVerseId, targetVerseNumber)
                 val passage = if (passageStart != null && passageEnd != null && passageEnd >= passageStart) {
                     ReaderPassage(passageStart, passageEnd)
@@ -274,18 +300,32 @@ class ReaderViewModel @Inject constructor(
 
     /** READER-01: replay the last request (including target/passage) after an error. */
     fun retry() {
-        lastRequest?.let { request ->
-            load(
-                bookId = request.bookId,
-                chapterPosition = request.chapterPosition,
-                targetVerseId = request.targetVerseId,
-                targetVerseNumber = request.targetVerseNumber,
-                passageStart = request.passageStart,
-                passageEnd = request.passageEnd,
-                passages = request.passages,
-                editionId = request.editionId
-            )
-        }
+        lastRequest?.let(::reload)
+    }
+
+    /** Replays [request], preserving whether its edition was explicit. */
+    private fun reload(request: LoadRequest) {
+        load(
+            bookId = request.bookId,
+            chapterPosition = request.chapterPosition,
+            targetVerseId = request.targetVerseId,
+            targetVerseNumber = request.targetVerseNumber,
+            passageStart = request.passageStart,
+            passageEnd = request.passageEnd,
+            passages = request.passages,
+            editionId = request.requestedEditionId
+        )
+    }
+
+    /**
+     * Explicit caller editions are used verbatim (bookmarks/passages may pass
+     * one); a blank request follows the persisted reading edition, defaulting
+     * to Konkani for a missing or unknown stored value.
+     */
+    private fun effectiveEdition(requestedEditionId: String): String {
+        if (requestedEditionId.isNotBlank()) return requestedEditionId
+        return BibleEditions.byId(readingPreferences.preferences.value.readingEditionId)?.id
+            ?: BibleEditions.KONKANI_ID
     }
 
     /**

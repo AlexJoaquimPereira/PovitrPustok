@@ -49,8 +49,16 @@ class CorpusGateTest {
 
     @Test
     fun every_expected_asset_opens_with_the_required_schema_and_textual_id() = runBlocking {
+        // The packaged directory also holds the English editions' subtrees
+        // (bible/webc/, bible/dra/), so the list is not a 73-entry directory
+        // listing any more; every catalog book is still checked individually
+        // below.
         val assets = context.assets.list("bible").orEmpty().toSet()
-        assertEquals("the packaged bible asset directory must contain 73 files", 73, assets.size)
+        assertEquals(
+            "the canonical catalog must still declare 73 Konkani books",
+            73,
+            BibleCatalog.books.map { "${it.id}.sqlite" }.toSet().size
+        )
 
         val problems = mutableListOf<String>()
         val schemaFingerprints = mutableSetOf<String>()

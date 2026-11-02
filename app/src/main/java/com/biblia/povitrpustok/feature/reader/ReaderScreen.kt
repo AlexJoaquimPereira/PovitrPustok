@@ -84,7 +84,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import com.biblia.povitrpustok.R
-import com.biblia.povitrpustok.domain.model.BibleEditions
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.ReaderPassageCodec
 import com.biblia.povitrpustok.feature.common.chapterDisplayLabel
@@ -116,7 +115,7 @@ fun ReaderScreen(
     passageEnd: Int? = null,
     passagesSpec: String = "",
     targetVerseNumber: Int? = null,
-    editionId: String = BibleEditions.KONKANI_ID,
+    editionId: String = "",
     onOpenAbout: () -> Unit = {},
     viewModel: ReaderViewModel = hiltViewModel()
 ) {

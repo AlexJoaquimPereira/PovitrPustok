@@ -1,5 +1,6 @@
 package com.biblia.povitrpustok.data.bible
 
+import com.biblia.povitrpustok.domain.model.BibleEditions
 import com.biblia.povitrpustok.domain.repository.BookTitleRepository
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -101,5 +102,18 @@ class BookNameRepositoryImplTest {
         assertEquals(1, titles.calls["Utpoti"])
         assertEquals(1, titles.calls["Levi_Xastr"])
         assertEquals(1, titles.calls["nope"])
+    }
+
+    @Test
+    fun anEnglishEditionUsesTheCatalogEnglishNameWithoutOpeningTheCorpus() = runBlocking {
+        val titles = FakeBookTitleRepository(mutableMapOf("jakob" to "JAKOBACHEM POTR"))
+        val repository = BookNameRepositoryImpl(titles)
+
+        assertEquals("James", repository.displayName("jakob", BibleEditions.WEBC_ID))
+        assertEquals(
+            mapOf("jakob" to "James", "Utpoti" to "Genesis", "nope" to "nope"),
+            repository.displayNames(listOf("jakob", "Utpoti", "nope"), BibleEditions.DRA_ID)
+        )
+        assertEquals("the Konkani corpus is never scanned", emptyMap<String, Int>(), titles.calls)
     }
 }

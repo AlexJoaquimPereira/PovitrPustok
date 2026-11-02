@@ -71,5 +71,10 @@ data class ReadingPreferences(
     val lineSpacing: LineSpacing = LineSpacing.NORMAL,
     val redLetter: Boolean = true,
     val theme: AppTheme = AppTheme.SYSTEM,
-    val scriptureFont: ScriptureFont = ScriptureFont.SYSTEM
+    val scriptureFont: ScriptureFont = ScriptureFont.SYSTEM,
+    /**
+     * Reading edition ([BibleEditions.all]). Defaults to the shipped Konkani
+     * edition so an existing install sees no change.
+     */
+    val readingEditionId: String = BibleEditions.KONKANI_ID
 )

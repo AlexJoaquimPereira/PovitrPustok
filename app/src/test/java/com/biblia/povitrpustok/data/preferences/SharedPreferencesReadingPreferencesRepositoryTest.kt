@@ -3,6 +3,7 @@ package com.biblia.povitrpustok.data.preferences
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.biblia.povitrpustok.domain.model.AppTheme
+import com.biblia.povitrpustok.domain.model.BibleEditions
 import com.biblia.povitrpustok.domain.model.LineSpacing
 import com.biblia.povitrpustok.domain.model.ReadingPreferences
 import com.biblia.povitrpustok.domain.model.ScriptureFont
@@ -126,5 +127,35 @@ class SharedPreferencesReadingPreferencesRepositoryTest {
 
         repository.setRedLetter(true)
         assertTrue(repository.preferences.value.redLetter)
+    }
+
+    @Test
+    fun the_reading_edition_defaults_to_konkani_and_round_trips() {
+        val repository = SharedPreferencesReadingPreferencesRepository(context)
+        assertEquals(BibleEditions.KONKANI_ID, repository.preferences.value.readingEditionId)
+
+        repository.setReadingEdition(BibleEditions.WEBC_ID)
+        assertEquals(BibleEditions.WEBC_ID, repository.preferences.value.readingEditionId)
+
+        val reopened = SharedPreferencesReadingPreferencesRepository(context)
+        assertEquals(BibleEditions.WEBC_ID, reopened.preferences.value.readingEditionId)
+
+        reopened.setReadingEdition(BibleEditions.DRA_ID)
+        assertEquals(BibleEditions.DRA_ID, reopened.preferences.value.readingEditionId)
+    }
+
+    @Test
+    fun an_unknown_reading_edition_normalizes_to_konkani() {
+        val repository = SharedPreferencesReadingPreferencesRepository(context)
+
+        repository.setReadingEdition("not-an-edition")
+        assertEquals(BibleEditions.KONKANI_ID, repository.preferences.value.readingEditionId)
+
+        context.getSharedPreferences("reading_preferences", Context.MODE_PRIVATE)
+            .edit()
+            .putString("reading_edition", "not-an-edition")
+            .commit()
+        val reopened = SharedPreferencesReadingPreferencesRepository(context)
+        assertEquals(BibleEditions.KONKANI_ID, reopened.preferences.value.readingEditionId)
     }
 }

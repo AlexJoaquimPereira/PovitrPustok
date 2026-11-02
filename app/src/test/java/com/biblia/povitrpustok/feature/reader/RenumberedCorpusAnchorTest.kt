@@ -14,6 +14,7 @@ import com.biblia.povitrpustok.domain.model.ReaderPassageSpec
 import com.biblia.povitrpustok.domain.model.VerseAnchor
 import com.biblia.povitrpustok.domain.repository.BookmarkRepository
 import com.biblia.povitrpustok.testutil.FakeBookNameRepository
+import com.biblia.povitrpustok.testutil.FakeReadingPreferencesRepository
 import java.io.File
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -248,7 +249,7 @@ class RenumberedCorpusAnchorTest {
         AssetBibleDatabaseProvider(context, BibleAssetSource { corpus.inputStream() })
 
     private fun readerFor(provider: AssetBibleDatabaseProvider): ReaderViewModel =
-        ReaderViewModel(BibleRepositoryImpl(provider), bookmarkRepository, FakeBookNameRepository())
+        ReaderViewModel(BibleRepositoryImpl(provider), bookmarkRepository, FakeBookNameRepository(), FakeReadingPreferencesRepository())
 
     private fun singleBookmark(): Bookmark =
         runBlocking { bookmarkRepository.observeBookmarks().first() }.single()

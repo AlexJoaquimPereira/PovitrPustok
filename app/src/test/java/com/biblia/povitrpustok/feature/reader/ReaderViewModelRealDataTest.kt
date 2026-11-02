@@ -1,6 +1,7 @@
 package com.biblia.povitrpustok.feature.reader
 
 import com.biblia.povitrpustok.testutil.FakeBookNameRepository
+import com.biblia.povitrpustok.testutil.FakeReadingPreferencesRepository
 
 import com.biblia.povitrpustok.testutil.CorpusAvailabilityRule
 
@@ -66,7 +67,7 @@ class ReaderViewModelRealDataTest {
 
     @Test
     fun james_chapter_loads_book_chapter_headings_and_verses() {
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load("jakob", 1)
         await(viewModel)
 
@@ -82,7 +83,7 @@ class ReaderViewModelRealDataTest {
 
     @Test
     fun job_duplicate_26_records_open_independently_and_navigate_by_position() {
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load("Jobachem_Pustok", 26)
         await(viewModel)
 
@@ -105,7 +106,7 @@ class ReaderViewModelRealDataTest {
 
     @Test
     fun esther_chapter_loads() {
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load("Esther", 1)
         await(viewModel)
 
@@ -121,7 +122,7 @@ class ReaderViewModelRealDataTest {
         val chapters = runBlocking { repository.getChapters("Utpoti") }
         val chapter16 = chapters.first { it.number == 16 }
 
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load("Utpoti", chapter16.position)
         await(viewModel)
 
@@ -136,7 +137,7 @@ class ReaderViewModelRealDataTest {
 
     @Test
     fun poetic_formatting_survives_the_reader_pipeline() {
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load("Jobachem_Pustok", 4)
         await(viewModel)
 

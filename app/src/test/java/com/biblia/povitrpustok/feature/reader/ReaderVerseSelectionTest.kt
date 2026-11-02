@@ -1,6 +1,7 @@
 package com.biblia.povitrpustok.feature.reader
 
 import com.biblia.povitrpustok.testutil.FakeBookNameRepository
+import com.biblia.povitrpustok.testutil.FakeReadingPreferencesRepository
 
 import com.biblia.povitrpustok.domain.model.BibleBook
 import com.biblia.povitrpustok.domain.model.BibleCatalog
@@ -147,7 +148,7 @@ class ReaderVerseSelectionTest {
             )
         )
         val bookmarks = RecordingBookmarkRepository()
-        return ReaderViewModel(repository, bookmarks, FakeBookNameRepository()) to bookmarks
+        return ReaderViewModel(repository, bookmarks, FakeBookNameRepository(), FakeReadingPreferencesRepository()) to bookmarks
     }
 
     @Test

@@ -16,12 +16,12 @@ import androidx.navigation.navArgument
 import com.biblia.povitrpustok.feature.about.AboutApiScreen
 import com.biblia.povitrpustok.feature.about.AboutAppLicenseScreen
 import com.biblia.povitrpustok.feature.about.AboutCreditsScreen
+import com.biblia.povitrpustok.feature.about.AboutDraScreen
 import com.biblia.povitrpustok.feature.about.AboutLicensesScreen
 import com.biblia.povitrpustok.feature.about.AboutScreen
 import com.biblia.povitrpustok.feature.about.AboutSourceEditionScreen
-import com.biblia.povitrpustok.feature.about.AboutWebcScreen
-import com.biblia.povitrpustok.feature.about.AboutDraScreen
 import com.biblia.povitrpustok.feature.about.AboutTypefaceLicenseScreen
+import com.biblia.povitrpustok.feature.about.AboutWebcScreen
 import com.biblia.povitrpustok.feature.books.BookChaptersScreen
 import com.biblia.povitrpustok.feature.books.BookIntroductionScreen
 import com.biblia.povitrpustok.feature.books.BooksScreen
@@ -219,9 +219,7 @@ fun PovitrPustokNavHost(
                 passageEnd = verseEnd,
                 passagesSpec = arguments?.getString("passages").orEmpty(),
                 targetVerseNumber = targetVerse,
-                editionId = arguments?.getString("editionId")
-                    ?.takeIf { it.isNotBlank() }
-                    ?: BibleEditions.KONKANI_ID,
+                editionId = arguments?.getString("editionId").orEmpty(),
                 onOpenAbout = { navController.navigate(AppDestination.ABOUT) }
             )
         }

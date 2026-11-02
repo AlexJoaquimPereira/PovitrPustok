@@ -85,7 +85,7 @@ object BibleCatalog {
         BibleBook(id = "timotak2", displayName = "Timotak Pauluchem Dusrem Potr", englishName = "2 Timothy", testament = Testament.NEW_TESTAMENT, position = 73, databaseAsset = "bible/timotak2.sqlite"),
     )
 
-    /** Books available in [editionId]; only the shipped Konkani edition exists today. */
+    /** Books available in [editionId]. */
     fun forEdition(editionId: String = BibleEditions.KONKANI_ID): List<BibleBook> {
         val edition = BibleEditions.byId(editionId) ?: return emptyList()
         return books.filter { it.id in edition.canon }
@@ -96,6 +96,19 @@ object BibleCatalog {
         if (bookId !in edition.canon) return null
         return books.firstOrNull { it.id == bookId }
     }
+
+    /**
+     * Display name of [bookId] in [editionId]'s language: the English name for
+     * an English edition, the Konkani display name otherwise. Ids are never
+     * renamed by an edition, so this only chooses which label to show.
+     *
+     * Falls back to the raw id for an unknown book, so callers never render a
+     * blank title.
+     */
+    fun displayNameFor(bookId: String, editionId: String = BibleEditions.KONKANI_ID): String =
+        byId(bookId)?.let { book ->
+            if (BibleEditions.isEnglish(editionId)) book.englishName else book.displayName
+        } ?: bookId
 
     fun byPosition(position: Int): BibleBook? =
         books.firstOrNull { it.position == position }

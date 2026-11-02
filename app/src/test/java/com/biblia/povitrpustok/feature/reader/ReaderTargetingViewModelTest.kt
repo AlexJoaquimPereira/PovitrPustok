@@ -1,6 +1,7 @@
 package com.biblia.povitrpustok.feature.reader
 
 import com.biblia.povitrpustok.testutil.FakeBookNameRepository
+import com.biblia.povitrpustok.testutil.FakeReadingPreferencesRepository
 
 import com.biblia.povitrpustok.core.result.BibleBookNotFoundException
 import com.biblia.povitrpustok.core.result.BibleChapterNotFoundException
@@ -117,7 +118,7 @@ class ReaderTargetingViewModelTest {
 
     @Test
     fun no_target_means_no_target_state() = runTest(dispatcher.scheduler) {
-        val viewModel = ReaderViewModel(FakeRepository(contents = mapOf("jakob" to mapOf(1 to chapter1))), FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(FakeRepository(contents = mapOf("jakob" to mapOf(1 to chapter1))), FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load("jakob", 1)
         advanceUntilIdle()
 
@@ -129,7 +130,7 @@ class ReaderTargetingViewModelTest {
 
     @Test
     fun valid_target_is_located_by_verse_id() = runTest(dispatcher.scheduler) {
-        val viewModel = ReaderViewModel(FakeRepository(contents = mapOf("jakob" to mapOf(1 to chapter1))), FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(FakeRepository(contents = mapOf("jakob" to mapOf(1 to chapter1))), FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load("jakob", 1, targetVerseId = 101L)
         advanceUntilIdle()
 
@@ -140,7 +141,7 @@ class ReaderTargetingViewModelTest {
 
     @Test
     fun invalid_target_sets_missing_without_crash() = runTest(dispatcher.scheduler) {
-        val viewModel = ReaderViewModel(FakeRepository(contents = mapOf("jakob" to mapOf(1 to chapter1))), FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(FakeRepository(contents = mapOf("jakob" to mapOf(1 to chapter1))), FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load("jakob", 1, targetVerseId = 9999L)
         advanceUntilIdle()
 
@@ -153,7 +154,7 @@ class ReaderTargetingViewModelTest {
 
     @Test
     fun target_is_consumed_once_and_becomes_highlight() = runTest(dispatcher.scheduler) {
-        val viewModel = ReaderViewModel(FakeRepository(contents = mapOf("jakob" to mapOf(1 to chapter1))), FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(FakeRepository(contents = mapOf("jakob" to mapOf(1 to chapter1))), FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load("jakob", 1, targetVerseId = 102L)
         advanceUntilIdle()
         assertEquals(102L, viewModel.uiState.value.targetVerseId)
@@ -172,7 +173,7 @@ class ReaderTargetingViewModelTest {
         val withRange = content(
             listOf(verse(1, 1, 1), verse(777, 11, 12), verse(778, 13, 13))
         )
-        val viewModel = ReaderViewModel(FakeRepository(contents = mapOf("jakob" to mapOf(1 to withRange))), FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(FakeRepository(contents = mapOf("jakob" to mapOf(1 to withRange))), FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load("jakob", 1, targetVerseId = 777L)
         advanceUntilIdle()
 
@@ -193,7 +194,7 @@ class ReaderTargetingViewModelTest {
             gates = mapOf(1 to gate1)
         )
         val bookmarks = FakeBookmarkRepository()
-        val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository())
+        val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository(), FakeReadingPreferencesRepository())
 
         // first request stays in flight (gated)
         viewModel.load("jakob", 1)

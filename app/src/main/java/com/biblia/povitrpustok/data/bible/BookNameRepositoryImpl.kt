@@ -1,6 +1,7 @@
 package com.biblia.povitrpustok.data.bible
 
 import com.biblia.povitrpustok.domain.model.BibleCatalog
+import com.biblia.povitrpustok.domain.model.BibleEditions
 import com.biblia.povitrpustok.domain.model.BookDisplayName
 import com.biblia.povitrpustok.domain.repository.BookNameRepository
 import com.biblia.povitrpustok.domain.repository.BookTitleRepository
@@ -27,9 +28,11 @@ import kotlinx.coroutines.withContext
  * catalog/id fallback *without* caching it, so a later call can retry the
  * corpus after a transient failure.
  *
- * Edition seam: this cache is book-id keyed and therefore currently scoped
- * to the default Konkani edition. A second edition must extend this boundary
- * with `editionId` and the cache key.
+ * Edition seam: the corpus title scan is a Konkani-corpus feature, so only
+ * that edition resolves a database title. An English edition uses the
+ * catalog's English name directly and never opens the Konkani corpus (whose
+ * titles would otherwise overwrite the English names). The cache stays
+ * keyed by book id because only the Konkani edition populates it.
  */
 @Singleton
 class BookNameRepositoryImpl @Inject constructor(
@@ -38,7 +41,15 @@ class BookNameRepositoryImpl @Inject constructor(
 
     private val cache = ConcurrentHashMap<String, String>()
 
-    override suspend fun displayName(bookId: String): String {
+    override suspend fun displayName(bookId: String): String =
+        displayName(bookId, BibleEditions.KONKANI_ID)
+
+    override suspend fun displayName(bookId: String, editionId: String): String {
+        if (BibleEditions.isEnglish(editionId)) {
+            // No corpus title exists in the English editions; the catalog
+            // English name is the correct, complete name.
+            return englishName(bookId)
+        }
         cache[bookId]?.let { return it }
         return try {
             val corpusTitle = withContext(Dispatchers.IO) { titles.getDisplayName(bookId) }
@@ -58,7 +69,20 @@ class BookNameRepositoryImpl @Inject constructor(
     }
 
     override suspend fun displayNames(bookIds: Collection<String>): Map<String, String> =
-        bookIds.distinct().associateWith { displayName(it) }
+        displayNames(bookIds, BibleEditions.KONKANI_ID)
+
+    override suspend fun displayNames(
+        bookIds: Collection<String>,
+        editionId: String
+    ): Map<String, String> {
+        if (BibleEditions.isEnglish(editionId)) {
+            return bookIds.distinct().associateWith { englishName(it) }
+        }
+        return bookIds.distinct().associateWith { displayName(it) }
+    }
+
+    private fun englishName(bookId: String): String =
+        BibleCatalog.byId(bookId)?.englishName ?: bookId
 
     private fun fallbackName(bookId: String): String =
         BibleCatalog.byId(bookId)

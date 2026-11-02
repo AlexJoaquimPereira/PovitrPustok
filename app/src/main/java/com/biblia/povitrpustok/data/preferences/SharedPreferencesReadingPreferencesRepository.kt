@@ -3,6 +3,7 @@ package com.biblia.povitrpustok.data.preferences
 import android.content.Context
 import android.content.SharedPreferences
 import com.biblia.povitrpustok.domain.model.AppTheme
+import com.biblia.povitrpustok.domain.model.BibleEditions
 import com.biblia.povitrpustok.domain.model.LineSpacing
 import com.biblia.povitrpustok.domain.model.ReadingPreferences
 import com.biblia.povitrpustok.domain.model.ScriptureFont
@@ -58,6 +59,12 @@ class SharedPreferencesReadingPreferencesRepository @Inject constructor(
         _preferences.value = _preferences.value.copy(scriptureFont = font)
     }
 
+    override fun setReadingEdition(editionId: String) {
+        val normalized = BibleEditions.byId(editionId)?.id ?: BibleEditions.KONKANI_ID
+        prefs.edit().putString(KEY_READING_EDITION, normalized).apply()
+        _preferences.value = _preferences.value.copy(readingEditionId = normalized)
+    }
+
     private fun read(): ReadingPreferences = ReadingPreferences(
         scriptureSize = ScriptureSize.fromNameOrMedium(
             prefs.getString(KEY_SCRIPTURE_SIZE, null)
@@ -69,7 +76,11 @@ class SharedPreferencesReadingPreferencesRepository @Inject constructor(
         theme = AppTheme.fromNameOrSystem(prefs.getString(KEY_THEME, null)),
         scriptureFont = ScriptureFont.fromNameOrSystem(
             prefs.getString(KEY_SCRIPTURE_FONT, null)
-        )
+        ),
+        // Unknown/missing ids fall back to the shipped Konkani edition.
+        readingEditionId = BibleEditions.byId(
+            prefs.getString(KEY_READING_EDITION, null)
+        )?.id ?: BibleEditions.KONKANI_ID
     )
 
     private companion object {
@@ -79,5 +90,6 @@ class SharedPreferencesReadingPreferencesRepository @Inject constructor(
         const val KEY_RED_LETTER = "red_letter"
         const val KEY_THEME = "theme"
         const val KEY_SCRIPTURE_FONT = "scripture_font"
+        const val KEY_READING_EDITION = "reading_edition"
     }
 }

@@ -6,6 +6,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.biblia.povitrpustok.core.result.BibleBookNotFoundException
 import com.biblia.povitrpustok.domain.model.BibleCatalog
+import com.biblia.povitrpustok.domain.model.BibleEditions
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.ChapterContent
 import kotlinx.coroutines.runBlocking
@@ -51,11 +52,30 @@ class BibleDatabaseProviderTest {
     // Test 1 — book catalog resolves to existing database assets
     @Test
     fun catalog_entries_resolve_to_existing_database_assets() {
-        val assets = context.assets.list("bible")!!.toSet()
+        // Konkani assets live at the root; the English editions use their own
+        // subtrees. Robolectric may list descendants from the root, so keep
+        // only root-level database names here.
+        val assets = context.assets.list("bible")!!
+            .filter { it.endsWith(".sqlite") && !it.contains('/') }
+            .toSet()
         assertEquals(73, assets.size)
         BibleCatalog.books.forEach { book ->
             val assetName = book.databaseAsset.removePrefix("bible/")
             assertTrue("missing asset ${book.databaseAsset}", assets.contains(assetName))
+        }
+        // The English editions are optional in a checkout that has only the
+        // Konkani corpus; when present, each must resolve all 73 books.
+        for (edition in listOf(BibleEditions.WEBC, BibleEditions.DRA)) {
+            val directory = edition.assetFor("Utpoti").substringBeforeLast('/')
+            val files = context.assets.list(directory)?.toSet().orEmpty()
+            if (files.isEmpty()) continue
+            assertEquals("$directory asset count", 73, files.count { it.endsWith(".sqlite") })
+            BibleCatalog.books.forEach { book ->
+                assertTrue(
+                    "missing asset ${edition.assetFor(book.id)}",
+                    files.contains(book.id + ".sqlite")
+                )
+            }
         }
     }
 

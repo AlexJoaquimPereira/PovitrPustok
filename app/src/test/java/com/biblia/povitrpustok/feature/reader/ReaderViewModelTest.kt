@@ -1,16 +1,19 @@
 package com.biblia.povitrpustok.feature.reader
 
 import com.biblia.povitrpustok.testutil.FakeBookNameRepository
+import com.biblia.povitrpustok.testutil.FakeReadingPreferencesRepository
 
 import com.biblia.povitrpustok.core.result.BibleBookNotFoundException
 import com.biblia.povitrpustok.core.result.BibleChapterNotFoundException
 import com.biblia.povitrpustok.domain.model.BibleBook
 import com.biblia.povitrpustok.domain.model.BibleCatalog
+import com.biblia.povitrpustok.domain.model.BibleEditions
 import com.biblia.povitrpustok.domain.model.Chapter
 import com.biblia.povitrpustok.domain.model.ChapterContent
 import com.biblia.povitrpustok.domain.model.Heading
 import com.biblia.povitrpustok.domain.model.IntroductionBlock
 import com.biblia.povitrpustok.domain.model.ReaderPassageSpec
+import com.biblia.povitrpustok.domain.model.ReadingPreferences
 import com.biblia.povitrpustok.domain.model.VerseAnchor
 import com.biblia.povitrpustok.domain.model.Verse
 import com.biblia.povitrpustok.domain.repository.BibleRepository
@@ -113,7 +116,7 @@ class ReaderViewModelTest {
             contents = mapOf(bookId to mapOf(1 to content(bookId, ch1))),
             gate = gate
         )
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
 
         viewModel.load(bookId, 1)
         runCurrent()
@@ -140,7 +143,7 @@ class ReaderViewModelTest {
             chapterLists = mapOf(bookId to listOf(ch1)),
             contents = mapOf(bookId to mapOf(1 to content(bookId, ch1)))
         )
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load(bookId, 1)
         advanceUntilIdle()
 
@@ -175,7 +178,7 @@ class ReaderViewModelTest {
                 ),
                 chapterNumber = ch2.number
             )
-            val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository())
+            val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository(), FakeReadingPreferencesRepository())
 
             viewModel.load(
                 bookId = bookId,
@@ -209,7 +212,7 @@ class ReaderViewModelTest {
                 )
             )
             val bookmarks = FakeBookmarkRepository()
-            val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository())
+            val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository(), FakeReadingPreferencesRepository())
 
             viewModel.load(
                 bookId = bookId,
@@ -247,7 +250,7 @@ class ReaderViewModelTest {
                     bookId to mapOf(1 to content(bookId, ch1), 2 to content(bookId, ch2))
                 )
             )
-            val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+            val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
 
             viewModel.load(
                 bookId = bookId,
@@ -278,7 +281,7 @@ class ReaderViewModelTest {
                     bookId to mapOf(1 to content(bookId, ch1), 2 to content(bookId, ch2))
                 )
             )
-            val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+            val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
 
             viewModel.load(
                 bookId = bookId,
@@ -308,7 +311,7 @@ class ReaderViewModelTest {
                 contents = mapOf(bookId to mapOf(1 to content(bookId, ch1)))
             )
             val bookmarks = FakeBookmarkRepository()
-            val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository())
+            val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository(), FakeReadingPreferencesRepository())
             viewModel.load(bookId, 1)
             advanceUntilIdle()
 
@@ -351,7 +354,7 @@ class ReaderViewModelTest {
                 )
             )
             val bookmarks = FakeBookmarkRepository()
-            val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository())
+            val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository(), FakeReadingPreferencesRepository())
             viewModel.load(bookId, 1)
             advanceUntilIdle()
 
@@ -383,7 +386,7 @@ class ReaderViewModelTest {
                 chapterLists = mapOf(bookId to listOf(ch1)),
                 contents = mapOf(bookId to mapOf(1 to content(bookId, ch1)))
             )
-            val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+            val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
 
             viewModel.load(bookId, 1, targetVerseNumber = 1)
             advanceUntilIdle()
@@ -403,7 +406,7 @@ class ReaderViewModelTest {
                 chapterLists = mapOf(bookId to listOf(ch1)),
                 contents = mapOf(bookId to mapOf(1 to content(bookId, ch1)))
             )
-            val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+            val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
 
             viewModel.load(bookId, 1, passageStart = 1, passageEnd = 1)
             advanceUntilIdle()
@@ -429,11 +432,7 @@ class ReaderViewModelTest {
                 chapterLists = mapOf(bookId to listOf(ch1)),
                 contents = mapOf(bookId to mapOf(1 to content(bookId, ch1)))
             )
-            val viewModel = ReaderViewModel(
-                repository,
-                FakeBookmarkRepository(),
-                FakeBookNameRepository(mapOf("jakob" to "Jakobachem Potr"))
-            )
+            val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(mapOf("jakob" to "Jakobachem Potr")), FakeReadingPreferencesRepository())
 
             viewModel.load(bookId, 1)
             advanceUntilIdle()
@@ -448,7 +447,7 @@ class ReaderViewModelTest {
 
     @Test
     fun error_state_reports_missing_chapter() = runTest(dispatcher.scheduler) {
-        val viewModel = ReaderViewModel(FakeRepository(), FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(FakeRepository(), FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load("jakob", 999)
         advanceUntilIdle()
 
@@ -460,7 +459,7 @@ class ReaderViewModelTest {
 
     @Test
     fun error_state_reports_unknown_book() = runTest(dispatcher.scheduler) {
-        val viewModel = ReaderViewModel(FakeRepository(), FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(FakeRepository(), FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load("not-a-book", 1)
         advanceUntilIdle()
 
@@ -479,7 +478,7 @@ class ReaderViewModelTest {
             chapterLists = mapOf(bookId to listOf(ch1, ch2)),
             contents = mapOf(bookId to mapOf(1 to content1))
         )
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
 
         viewModel.load(bookId, 1, passageStart = 1, passageEnd = 1)
         advanceUntilIdle()
@@ -510,7 +509,7 @@ class ReaderViewModelTest {
             chapterLists = mapOf(bookId to listOf(ch1)),
             contents = mapOf(bookId to mapOf(1 to chapterContent))
         ).apply { failure = IllegalStateException("boom") }
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
         val verseId = chapterContent.verses.first().id
 
         viewModel.load(bookId, 1, targetVerseId = verseId, passageStart = 1, passageEnd = 1)
@@ -537,7 +536,7 @@ class ReaderViewModelTest {
             contents = mapOf(bookId to mapOf(1 to chapterContent))
         )
         val bookmarks = FakeBookmarkRepository()
-        val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository())
+        val viewModel = ReaderViewModel(repository, bookmarks, FakeBookNameRepository(), FakeReadingPreferencesRepository())
 
         viewModel.load(bookId, 1)
         advanceUntilIdle()
@@ -567,7 +566,7 @@ class ReaderViewModelTest {
             contents = mapOf(bookId to mapOf(1 to content(bookId, ch1), 2 to content(bookId, ch2))),
             gate = gate
         )
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
 
         viewModel.load(bookId, 1)
         runCurrent() // first load is suspended on the gate
@@ -588,7 +587,7 @@ class ReaderViewModelTest {
     @Test
     fun unexpected_runtime_failure_is_a_controlled_error() = runTest(dispatcher.scheduler) {
         val repository = FakeRepository().apply { failure = IllegalStateException("boom") }
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
 
         viewModel.load("jakob", 1)
         advanceUntilIdle()
@@ -615,7 +614,7 @@ class ReaderViewModelTest {
                 )
             )
         )
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load(bookId, 2)
         advanceUntilIdle()
         assertEquals(2, viewModel.uiState.value.chapter!!.position)
@@ -650,7 +649,7 @@ class ReaderViewModelTest {
             chapterLists = mapOf(bookId to listOf(ch1, ch2)),
             contents = mapOf(bookId to mapOf(1 to content(bookId, ch1), 2 to content(bookId, ch2)))
         )
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
         viewModel.load(bookId, 1)
         advanceUntilIdle()
         viewModel.selectChapter(2)
@@ -673,7 +672,7 @@ class ReaderViewModelTest {
                 )
             )
         )
-        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository())
+        val viewModel = ReaderViewModel(repository, FakeBookmarkRepository(), FakeBookNameRepository(), FakeReadingPreferencesRepository())
 
         viewModel.load(bookId, 26)
         advanceUntilIdle()
@@ -691,4 +690,108 @@ class ReaderViewModelTest {
         assertEquals(26, viewModel.uiState.value.chapter!!.position)
         assertEquals(26, viewModel.uiState.value.chapter!!.number)
     }
+
+    /** Records the edition each read used, so resolution is observable. */
+    private class EditionRecordingRepository(
+        private val contents: Map<String, Map<Int, ChapterContent>>
+    ) : BibleRepository {
+        val editions = mutableListOf<String>()
+
+        override suspend fun getBook(bookId: String): BibleBook =
+            BibleCatalog.byId(bookId) ?: throw BibleBookNotFoundException(bookId)
+
+        override suspend fun getBook(bookId: String, editionId: String): BibleBook {
+            editions += editionId
+            return BibleCatalog.byId(bookId, editionId)
+                ?: throw BibleBookNotFoundException(bookId)
+        }
+
+        override suspend fun getChapters(bookId: String): List<Chapter> = emptyList()
+
+        override suspend fun getChapters(bookId: String, editionId: String): List<Chapter> {
+            editions += editionId
+            return emptyList()
+        }
+
+        override suspend fun getChapter(bookId: String, chapterPosition: Int): ChapterContent =
+            contents.getValue(bookId).getValue(chapterPosition)
+
+        override suspend fun getChapter(
+            bookId: String,
+            chapterPosition: Int,
+            editionId: String
+        ): ChapterContent {
+            editions += editionId
+            return getChapter(bookId, chapterPosition)
+        }
+
+        override suspend fun getIntroduction(bookId: String): List<IntroductionBlock> = emptyList()
+
+        override suspend fun getVerse(bookId: String, chapterId: Long, verseStart: Int): Verse? = null
+
+        override suspend fun getVersesCovering(
+            bookId: String,
+            chapterId: Long,
+            verse: Int
+        ): List<Verse> = emptyList()
+    }
+
+    @Test
+    fun blank_edition_follows_the_preference_and_reloads_when_it_changes() =
+        runTest(dispatcher.scheduler) {
+            val bookId = "jakob"
+            val ch1 = chapter(bookId, number = 1, position = 1)
+            val repository = EditionRecordingRepository(
+                mapOf(bookId to mapOf(1 to content(bookId, ch1)))
+            )
+            val preferences = FakeReadingPreferencesRepository(
+                ReadingPreferences(readingEditionId = BibleEditions.WEBC_ID)
+            )
+            val viewModel = ReaderViewModel(
+                repository,
+                FakeBookmarkRepository(),
+                FakeBookNameRepository(),
+                preferences
+            )
+
+            viewModel.load(bookId, 1)
+            advanceUntilIdle()
+            assertEquals(BibleEditions.WEBC_ID, repository.editions.last())
+
+            // Returning from Settings: the same request reloads in the new
+            // edition without the caller passing one.
+            preferences.setReadingEdition(BibleEditions.DRA_ID)
+            advanceUntilIdle()
+            assertEquals(BibleEditions.DRA_ID, repository.editions.last())
+            assertTrue(repository.editions.size > 3)
+        }
+
+    @Test
+    fun an_explicit_edition_is_not_overridden_by_the_preference() =
+        runTest(dispatcher.scheduler) {
+            val bookId = "jakob"
+            val ch1 = chapter(bookId, number = 1, position = 1)
+            val repository = EditionRecordingRepository(
+                mapOf(bookId to mapOf(1 to content(bookId, ch1)))
+            )
+            val preferences = FakeReadingPreferencesRepository()
+            val viewModel = ReaderViewModel(
+                repository,
+                FakeBookmarkRepository(),
+                FakeBookNameRepository(),
+                preferences
+            )
+
+            viewModel.load(bookId, 1, editionId = BibleEditions.KONKANI_ID)
+            advanceUntilIdle()
+            val reads = repository.editions.size
+            assertTrue(reads > 0)
+
+            // A bookmark/passage caller passed its own edition: the reading
+            // preference must not silently switch it.
+            preferences.setReadingEdition(BibleEditions.WEBC_ID)
+            advanceUntilIdle()
+            assertEquals(reads, repository.editions.size)
+            assertTrue(repository.editions.all { it == BibleEditions.KONKANI_ID })
+        }
 }

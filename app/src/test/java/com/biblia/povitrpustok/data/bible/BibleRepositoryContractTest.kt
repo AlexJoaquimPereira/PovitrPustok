@@ -177,10 +177,17 @@ class BibleRepositoryContractTest {
     // 12. all 73 book assets remain resolvable
     @Test
     fun all_73_book_assets_remain_resolvable() {
-        val assets = context.assets.list("bible")!!.toSet()
-        assertEquals(73, assets.size)
+        // The packaged directory now also holds the English editions' subtrees
+        // (bible/webc/, bible/dra/), so the assertion opens each Konkani
+        // database rather than counting directory entries.
+        assertEquals(73, BibleCatalog.books.size)
         BibleCatalog.books.forEach { book ->
-            assertTrue(assets.contains(book.databaseAsset.removePrefix("bible/")))
+            context.assets.open(book.databaseAsset).use { stream ->
+                assertTrue(
+                    "${book.id} must ship a packaged database",
+                    stream.read() >= 0
+                )
+            }
         }
     }
 

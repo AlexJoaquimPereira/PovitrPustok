@@ -26,4 +26,10 @@ interface ReadingPreferencesRepository {
     fun setTheme(theme: AppTheme)
 
     fun setScriptureFont(font: ScriptureFont)
+
+    /**
+     * Selects the reading edition. Unknown ids are normalized to the shipped
+     * Konkani edition, so a stale value can never break the reader.
+     */
+    fun setReadingEdition(editionId: String)
 }

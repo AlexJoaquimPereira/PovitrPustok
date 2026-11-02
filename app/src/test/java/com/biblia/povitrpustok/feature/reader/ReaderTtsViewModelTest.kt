@@ -11,6 +11,7 @@ import com.biblia.povitrpustok.domain.model.Verse
 import com.biblia.povitrpustok.domain.repository.BibleRepository
 import com.biblia.povitrpustok.testutil.FakeAudioFocusController
 import com.biblia.povitrpustok.testutil.FakeBookNameRepository
+import com.biblia.povitrpustok.testutil.FakeReadingPreferencesRepository
 import com.biblia.povitrpustok.testutil.RecordingTtsEngine
 import com.biblia.povitrpustok.testutil.RecordingTtsFactory
 import kotlinx.coroutines.Dispatchers
@@ -109,6 +110,7 @@ class ReaderTtsViewModelTest {
             repository = repository(),
             bookmarkRepository = FakeBookmarkRepository(),
             bookNames = FakeBookNameRepository(),
+            readingPreferences = FakeReadingPreferencesRepository(),
             speech = controller
         )
         return model to controller
