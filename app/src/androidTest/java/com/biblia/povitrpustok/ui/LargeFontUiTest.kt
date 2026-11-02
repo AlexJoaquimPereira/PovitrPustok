@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.biblia.povitrpustok.core.navigation.AppDestination
+import com.biblia.povitrpustok.domain.model.BibleEditions
 import com.biblia.povitrpustok.domain.model.SearchResult
 import com.biblia.povitrpustok.domain.model.Verse
 import com.biblia.povitrpustok.feature.books.BookListItem
@@ -26,6 +27,7 @@ import com.biblia.povitrpustok.feature.reader.PassageBanner
 import com.biblia.povitrpustok.feature.reader.ReaderPassage
 import com.biblia.povitrpustok.feature.reader.ReaderUiState
 import com.biblia.povitrpustok.feature.search.SearchResultItem
+import com.biblia.povitrpustok.feature.settings.BibleTranslationSection
 import com.biblia.povitrpustok.ui.components.BookName
 import com.biblia.povitrpustok.ui.components.BookNameLayout
 import com.biblia.povitrpustok.ui.theme.BibleTheme
@@ -197,6 +199,58 @@ class LargeFontUiTest {
             .getUnclippedBoundsInRoot()
         assertTrue("Label should keep the full verse range", (label.right - label.left) > 250.dp)
         assertTrue("Action should sit below the label", action.top >= label.bottom)
+    }
+
+    @Test
+    fun bible_translation_list_keeps_full_names_at_320dp_and_two_x() {
+        // The translation picker was the one control that could not stay a
+        // segmented row: "Douay-Rheims 1899" cannot hold a legible line
+        // inside ~90 dp at 2x. It is a radio list, so every edition keeps its
+        // full name; this pins that the rows grow instead of clipping.
+        setLargeFontContent {
+            BibleTranslationSection(
+                selectedEditionId = BibleEditions.KONKANI_ID,
+                onSelect = {}
+            )
+        }
+
+        listOf(
+            "settings.edition.KONKANI" to "Konkani (Romi)",
+            "settings.edition.WEBC" to "World English Bible (Catholic)",
+            "settings.edition.DRA" to "Douay-Rheims 1899"
+        ).forEach { (tag, name) ->
+            val row = composeRule.onNodeWithTag(tag).getUnclippedBoundsInRoot()
+            assertTrue(
+                "$name row should stay inside the 320 dp column",
+                (row.right - row.left) <= 320.dp
+            )
+            assertTrue(
+                "$name row should keep a 48 dp target, was ${row.bottom - row.top}",
+                (row.bottom - row.top) >= 56.dp
+            )
+
+            val label = composeRule
+                .onNodeWithText(name, useUnmergedTree = true)
+                .getUnclippedBoundsInRoot()
+            assertTrue(
+                "$name label should stay inside the row gutters",
+                (label.right - label.left) <= 320.dp - 36.dp
+            )
+            assertTrue(
+                "$name label should occupy at least one 2x line",
+                (label.bottom - label.top) >= 30.dp
+            )
+        }
+
+        // titleSmall is ~34 dp per line at 200%; the long English name has to
+        // wrap rather than lose its tail to an ellipsis.
+        val webc = composeRule
+            .onNodeWithText("World English Bible (Catholic)", useUnmergedTree = true)
+            .getUnclippedBoundsInRoot()
+        assertTrue(
+            "World English Bible (Catholic) should wrap onto a second line, was ${webc.bottom - webc.top}",
+            (webc.bottom - webc.top) >= 60.dp
+        )
     }
 
     @Test

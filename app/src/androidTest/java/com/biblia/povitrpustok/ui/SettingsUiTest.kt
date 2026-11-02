@@ -1,12 +1,17 @@
 package com.biblia.povitrpustok.ui
 
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -44,9 +49,27 @@ class SettingsUiTest {
         }
     }
 
-    private fun openSettingsFromHome() {
+    private fun openSettings() {
         composeRule.onNodeWithTag("home.notice").performScrollTo().performClick()
         waitForSettings()
+    }
+
+    private fun openSettingsFromHome() {
+        openSettings()
+        // The suite expects the shipped Konkani edition. Normalise first, in
+        // case a manual session or an earlier failure left an English edition
+        // selected; several later assertions read Konkani book titles. Tests
+        // that check the edition survives navigation use [openSettings], which
+        // deliberately leaves the choice alone.
+        val konkani = composeRule.onNodeWithTag("settings.edition.KONKANI")
+        if (konkani.fetchSemanticsNode().config.getOrNull(SemanticsProperties.Selected) != true) {
+            konkani.performScrollTo().performClick()
+            composeRule.waitUntil(timeoutMillis = 5_000) {
+                composeRule.onNodeWithTag("settings.edition.KONKANI")
+                    .fetchSemanticsNode()
+                    .config.getOrNull(SemanticsProperties.Selected) == true
+            }
+        }
     }
 
     private fun waitForAbout() {
@@ -242,5 +265,60 @@ class SettingsUiTest {
 
         composeRule.onNodeWithTag("settings.theme.SYSTEM").performScrollTo().performClick()
         composeRule.onNodeWithTag("settings.theme.SYSTEM").assertIsSelected()
+    }
+
+    @Test
+    fun bible_translation_writes_through_and_survives_navigation() {
+        // openSettingsFromHome normalises the edition to Konkani first.
+        openSettingsFromHome()
+
+        composeRule.onNodeWithTag("settings.edition.KONKANI")
+            .performScrollTo()
+            .assertIsSelected()
+
+        composeRule.onNodeWithTag("settings.edition.WEBC").performScrollTo().performClick()
+        composeRule.onNodeWithTag("settings.edition.WEBC").assertIsSelected()
+        composeRule.onNodeWithTag("settings.edition.KONKANI").assertIsNotSelected()
+
+        // The selection is read back from the repository, not from a screen
+        // snapshot: leaving and returning must preserve it.
+        composeRule.onNodeWithTag("settings.back").performClick()
+        composeRule.onNodeWithTag("home.bible").assertIsDisplayed()
+        openSettings()
+        composeRule.onNodeWithTag("settings.edition.WEBC")
+            .performScrollTo()
+            .assertIsSelected()
+
+        composeRule.onNodeWithTag("settings.edition.DRA").performScrollTo().performClick()
+        composeRule.onNodeWithTag("settings.edition.DRA").assertIsSelected()
+        composeRule.onNodeWithTag("settings.edition.WEBC").assertIsNotSelected()
+
+        // Restore the shipped edition for the rest of the suite.
+        composeRule.onNodeWithTag("settings.edition.KONKANI").performScrollTo().performClick()
+        composeRule.onNodeWithTag("settings.edition.KONKANI").assertIsSelected()
+    }
+
+    @Test
+    fun bible_translation_rows_announce_full_edition_names() {
+        openSettingsFromHome()
+
+        // The visible label *is* the full name, so TalkBack never has to read
+        // an abbreviation the reader cannot expand.
+        listOf(
+            "settings.edition.KONKANI" to "Konkani (Romi)",
+            "settings.edition.WEBC" to "World English Bible (Catholic)",
+            "settings.edition.DRA" to "Douay-Rheims 1899"
+        ).forEach { (tag, name) ->
+            composeRule.onNodeWithTag(tag)
+                .performScrollTo()
+                .assertIsDisplayed()
+                .assertTextContains(name)
+                .assertHeightIsAtLeast(48.dp)
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton))
+        }
+
+        composeRule.onNodeWithTag("settings.edition.KONKANI")
+            .performScrollTo()
+            .assertIsSelected()
     }
 }

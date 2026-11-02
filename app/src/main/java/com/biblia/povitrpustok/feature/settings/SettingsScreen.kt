@@ -16,12 +16,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -58,6 +60,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.biblia.povitrpustok.R
 import com.biblia.povitrpustok.core.locale.AppLocale
 import com.biblia.povitrpustok.domain.model.AppTheme
+import com.biblia.povitrpustok.domain.model.BibleEditions
 import com.biblia.povitrpustok.domain.model.LineSpacing
 import com.biblia.povitrpustok.domain.model.ReadingPreferences
 import com.biblia.povitrpustok.domain.model.ScriptureFont
@@ -78,13 +81,18 @@ import com.biblia.povitrpustok.ui.theme.scriptureTextStyle
  *
  * The screen is one scrolling editorial column, capped to
  * [ReadingColumnMaxWidth] so it keeps the same measure as Home and the Reader
- * on tablets and in landscape. Three quiet overline sections carry it:
+ * on tablets and in landscape. Four quiet overline sections carry it:
  *
  *  - **READING** — Scripture size (S/M/L/XL), the optional Atkinson Hyperlegible
  *    typeface, a live preview rendered with [scriptureTextStyle], line spacing,
  *    the red-letter switch, and the theme. Every control writes through to the
  *    repository on tap, so the change applies to this screen (and the next one)
  *    without a Save button.
+ *  - **BIBLE TRANSLATION** — which edition the reader opens: the shipped
+ *    Konkani (Romi) text, or one of the two bundled English public-domain
+ *    editions. It is a reading preference, so it sits with the reading controls
+ *    and not with the app language below; the source and licence of each
+ *    edition live on their About pages, never here.
  *  - **APP LANGUAGE** — English or Konkani (Romi), applied immediately through
  *    the AppCompat delegate (F2-14). This is the only control whose value does
  *    not live in the reading preferences: the delegate owns it, and the
@@ -149,6 +157,13 @@ fun SettingsScreen(
                     onRedLetterChange = { viewModel.setRedLetter(it) },
                     onThemeChange = { viewModel.setTheme(it) },
                     onScriptureFontChange = { viewModel.setScriptureFont(it) }
+                )
+
+                Spacer(modifier = Modifier.height(SectionGap))
+
+                BibleTranslationSection(
+                    selectedEditionId = preferences.readingEditionId,
+                    onSelect = { viewModel.setReadingEdition(it) }
                 )
 
                 Spacer(modifier = Modifier.height(SectionGap))
@@ -463,6 +478,173 @@ private fun RedLetterControl(
         Spacer(modifier = Modifier.width(16.dp))
         // The row owns the interaction; the switch is the visual state only.
         Switch(checked = enabled, onCheckedChange = null)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Bible translation
+// ---------------------------------------------------------------------------
+
+/**
+ * Which Bible text the reader opens.
+ *
+ * A reading preference, not an app-language control: the choice changes the
+ * Scripture the reader shows, while the chrome stays in the language picked
+ * below. That is why it sits in the reading hierarchy and why its own overline
+ * names the translation rather than the language.
+ *
+ * The control is a vertical radio list rather than a segmented row. The three
+ * editions are named, not enumerated, and "Douay-Rheims 1899" cannot hold one
+ * legible line inside a ~90 dp segment at 320 dp / 200% font scale.
+ * The list gives every edition its full name at any font scale, keeps the whole
+ * row as the 48 dp target, and puts the mark on the right like the switch rows
+ * above it. TalkBack announces the full name, the role and "selected", so the
+ * abbreviation a reader might not know is never the only label.
+ *
+ * The selection is read from the persisted `readingEditionId` on every
+ * composition; the control never memorises a local choice, so the filled row is
+ * always the edition the reader will open.
+ *
+ * Public because the large-font UI test lays this section out on its own at
+ * 320 dp / 200%, where a single-row control would have clipped.
+ */
+@Composable
+fun BibleTranslationSection(
+    selectedEditionId: String,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val shape = MaterialTheme.shapes.small
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        SectionLabel(text = stringResource(R.string.settings_section_edition))
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .selectableGroup()
+                .clip(shape)
+                .background(colorScheme.surfaceContainerLow)
+                .border(1.dp, colorScheme.outlineVariant, shape)
+        ) {
+            editionOptions(selectedEditionId).forEachIndexed { index, option ->
+                if (index > 0) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 18.dp),
+                        color = colorScheme.outlineVariant
+                    )
+                }
+                EditionRow(option = option, onSelect = onSelect)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            text = stringResource(R.string.settings_edition_caption),
+            style = MaterialTheme.typography.bodySmall,
+            color = colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+private class EditionOption(
+    val id: String,
+    val label: String,
+    val tag: String,
+    val selected: Boolean
+)
+
+/**
+ * The three editions in reading order: the shipped Konkani text first, then the
+ * two English translations.
+ */
+@Composable
+private fun editionOptions(selectedEditionId: String): List<EditionOption> {
+    // Tolerate a stale stored id the way the repository does: the Konkani
+    // edition is what the reader would actually get.
+    val selectedId = BibleEditions.byId(selectedEditionId)?.id ?: BibleEditions.KONKANI_ID
+
+    return listOf(
+        EditionOption(
+            id = BibleEditions.KONKANI_ID,
+            label = stringResource(R.string.settings_edition_konkani),
+            tag = "settings.edition.KONKANI",
+            selected = selectedId == BibleEditions.KONKANI_ID
+        ),
+        EditionOption(
+            id = BibleEditions.WEBC_ID,
+            label = stringResource(R.string.settings_edition_webc),
+            tag = "settings.edition.WEBC",
+            selected = selectedId == BibleEditions.WEBC_ID
+        ),
+        EditionOption(
+            id = BibleEditions.DRA_ID,
+            label = stringResource(R.string.settings_edition_dra),
+            tag = "settings.edition.DRA",
+            selected = selectedId == BibleEditions.DRA_ID
+        )
+    )
+}
+
+/** One edition: the whole row selects it, and the row is one TalkBack node. */
+@Composable
+private fun EditionRow(
+    option: EditionOption,
+    onSelect: (String) -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .testTag(option.tag)
+            .selectable(
+                selected = option.selected,
+                role = Role.RadioButton,
+                onClick = { onSelect(option.id) }
+            )
+            .padding(horizontal = 18.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = option.label,
+            style = MaterialTheme.typography.titleSmall,
+            // The accent ink, not a tinted background: the selected edition is
+            // one solid signal, and the row still reads on AMOLED.
+            color = if (option.selected) colorScheme.primary else colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        EditionMark(selected = option.selected)
+    }
+}
+
+/** Filled ring for the chosen edition, hollow ring for the others. */
+@Composable
+private fun EditionMark(selected: Boolean) {
+    val colorScheme = MaterialTheme.colorScheme
+    val ring = if (selected) colorScheme.primary else colorScheme.outline
+
+    Box(
+        modifier = Modifier
+            .size(20.dp)
+            // The row's selectable semantics already carry the state.
+            .clearAndSetSemantics {}
+            .clip(CircleShape)
+            .border(2.dp, ring, CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        if (selected) {
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .clip(CircleShape)
+                    .background(colorScheme.primary)
+            )
+        }
     }
 }
 

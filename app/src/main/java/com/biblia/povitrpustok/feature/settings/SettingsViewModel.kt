@@ -47,6 +47,12 @@ class SettingsViewModel @Inject constructor(
 
     fun setScriptureFont(font: ScriptureFont) = repository.setScriptureFont(font)
 
+    /**
+     * Selects the reading edition. The reader, Books, Home and Search resolve
+     * it from the same flow, so no other screen needs to be told.
+     */
+    fun setReadingEdition(editionId: String) = repository.setReadingEdition(editionId)
+
     fun setAppLocale(tag: String) {
         AppLocale.setTag(tag)
         // Re-read rather than echo the request: the delegate normalises the tag
