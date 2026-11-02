@@ -44,7 +44,7 @@ class BibleHtmlParser {
                             "stray '<' at offset $i is not a valid tag",
                             i
                         )
-                        stack.last().appendText("<")
+                        stack.last().appendText("<", i, i + 1)
                         i += 1
                     } else {
                         applyTag(tag, stack, diagnostics)
@@ -54,8 +54,9 @@ class BibleHtmlParser {
                 '&' -> {
                     val decoded = BibleHtmlEntities.decode(html, i)
                     if (decoded != null) {
-                        stack.last().appendText(decoded)
-                        i = html.indexOf(';', i) + 1
+                        val end = html.indexOf(';', i) + 1
+                        stack.last().appendText(decoded, i, end)
+                        i = end
                     } else {
                         val semi = html.indexOf(';', i)
                         val looksLikeEntity = semi in (i + 2)..(i + 12) &&
@@ -67,14 +68,14 @@ class BibleHtmlParser {
                                 i
                             )
                         }
-                        stack.last().appendText("&")
+                        stack.last().appendText("&", i, i + 1)
                         i += 1
                     }
                 }
                 else -> {
                     val start = i
                     while (i < html.length && html[i] != '<' && html[i] != '&') i++
-                    stack.last().appendText(html.substring(start, i))
+                    stack.last().appendText(html.substring(start, i), start, i)
                 }
             }
         }
@@ -315,6 +316,9 @@ class BibleHtmlParser {
         private val children = mutableListOf<BibleHtmlNode>()
         private val text = StringBuilder()
 
+        /** One raw-HTML range per character currently in [text]. */
+        private val textSpans = mutableListOf<IntRange>()
+
         /** Appends a built node, flushing any pending text first. */
         fun addChild(node: BibleHtmlNode) {
             flushText()
@@ -324,8 +328,24 @@ class BibleHtmlParser {
             children.add(node)
         }
 
-        fun appendText(piece: String) {
-            text.append(piece)
+        /**
+         * Buffers [piece] with the source range it came from. A one-to-one
+         * piece maps each character to its own offset; a decoded entity (or
+         * any piece whose length differs from the source range) maps every
+         * produced character to the whole source range.
+         */
+        fun appendText(piece: String, sourceStart: Int, sourceEnd: Int) {
+            val perCharacter = piece.length == sourceEnd - sourceStart
+            for (index in piece.indices) {
+                text.append(piece[index])
+                textSpans.add(
+                    if (perCharacter) {
+                        (sourceStart + index)..(sourceStart + index)
+                    } else {
+                        sourceStart until sourceEnd
+                    }
+                )
+            }
         }
 
         /**
@@ -337,17 +357,49 @@ class BibleHtmlParser {
          *    after a line break / block element;
          *  - a trailing space is kept until the container is closed
          *    (trimmed in [build]).
+         *
+         * The source spans are collapsed with the text, so each emitted
+         * character still points at the raw HTML that produced it.
          */
         fun flushText() {
             if (text.isEmpty()) return
-            var cleaned = WHITESPACE_REGEX.replace(text, " ")
+            val cleaned = StringBuilder(text.length)
+            val cleanedSpans = mutableListOf<IntRange>()
+            var index = 0
+            while (index < text.length) {
+                if (text[index].isCollapsibleWhitespace()) {
+                    var end = index
+                    var sourceStart = textSpans[index].first
+                    var sourceEnd = textSpans[index].last
+                    while (end < text.length && text[end].isCollapsibleWhitespace()) {
+                        sourceStart = minOf(sourceStart, textSpans[end].first)
+                        sourceEnd = maxOf(sourceEnd, textSpans[end].last)
+                        end++
+                    }
+                    cleaned.append(' ')
+                    cleanedSpans.add(sourceStart..sourceEnd)
+                    index = end
+                } else {
+                    cleaned.append(text[index])
+                    cleanedSpans.add(textSpans[index])
+                    index++
+                }
+            }
             text.clear()
+            textSpans.clear()
             if (cleaned.isBlank()) return
             val previousInline = children.lastOrNull()?.let { it::class in INLINE_KINDS } ?: false
             if (children.isEmpty() || !previousInline) {
-                cleaned = cleaned.trimStart()
+                // Trimming intentionally uses Kotlin whitespace (as the old
+                // trimStart did), which also removes a leading no-break
+                // space; collapse above keeps NBSP inside a text node.
+                val firstContent = cleaned.indexOfFirst { !it.isWhitespace() }
+                if (firstContent > 0) {
+                    cleaned.delete(0, firstContent)
+                    repeat(firstContent) { cleanedSpans.removeAt(0) }
+                }
             }
-            children.add(BibleHtmlNode.Text(cleaned))
+            children.add(BibleHtmlNode.Text(cleaned.toString(), cleanedSpans.toSpanArray()))
         }
 
         /** Flushes pending text and trims trailing whitespace — for the root. */
@@ -364,7 +416,10 @@ class BibleHtmlParser {
                 if (last is BibleHtmlNode.Text) {
                     val trimmed = last.text.trimEnd()
                     if (trimmed != last.text) {
-                        children[lastIndex] = BibleHtmlNode.Text(trimmed)
+                        children[lastIndex] = BibleHtmlNode.Text(
+                            text = trimmed,
+                            sourceSpans = last.sourceSpans.copyOf(trimmed.length * 2)
+                        )
                     }
                 }
             }
@@ -395,7 +450,6 @@ class BibleHtmlParser {
     )
 
     private companion object {
-        val WHITESPACE_REGEX = Regex("\\s+")
         val STYLE_ALIGN_REGEX = Regex("text-align\\s*:\\s*(left|center|right|justify)", RegexOption.IGNORE_CASE)
         val HEADING_TAGS = setOf("h1", "h2", "h3", "h4", "h5", "h6")
         // Node kinds whose content flows inline; a space before the next text
@@ -408,4 +462,23 @@ class BibleHtmlParser {
             BibleHtmlNode.Unknown::class
         )
     }
+}
+
+/**
+ * The whitespace set the original `\s+` collapse covered. No-break space
+ * (U+00A0) is deliberately excluded: the corpus uses it as meaningful text,
+ * and replacing it changed the rendered verse.
+ */
+private fun Char.isCollapsibleWhitespace(): Boolean =
+    this == ' ' || this == '\t' || this == '\n' || this == '\r' ||
+        this == '\u000B' || this == '\u000C'
+
+/** Flattens one inclusive range per character into start/end pairs. */
+private fun List<IntRange>.toSpanArray(): IntArray {
+    val array = IntArray(size * 2)
+    forEachIndexed { index, range ->
+        array[index * 2] = range.first
+        array[index * 2 + 1] = range.last
+    }
+    return array
 }

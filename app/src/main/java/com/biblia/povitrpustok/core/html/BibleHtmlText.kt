@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import com.biblia.povitrpustok.ui.theme.LocalScripturePalette
@@ -28,17 +29,39 @@ fun BibleHtmlText(
     document: BibleHtmlDocument,
     modifier: Modifier = Modifier,
     style: TextStyle = MaterialTheme.typography.bodyLarge,
-    textAlign: TextAlign? = null
+    textAlign: TextAlign? = null,
+    overlay: RenderedOverlay? = null
 ) {
     // HTML-02: rendering builds an AnnotatedString and walks the node tree;
     // cache it per document so recompositions (scroll, selection, theme
     // changes) do not rebuild unchanged formatted text.
     val rendered = remember(document) { BibleHtmlRenderer.render(document) }
+    BibleHtmlText(rendered, modifier, style, textAlign, overlay)
+}
 
+/**
+ * Renders an already-built [RenderedText] (S1-02). The reader uses this
+ * overload when it owns the offset map — for example to highlight a spoken
+ * word — and the document overload above otherwise.
+ *
+ * [overlay] is in rendered coordinates; an empty overlay leaves the output
+ * exactly as before. Typography, colours and alignment are unchanged.
+ */
+@Composable
+fun BibleHtmlText(
+    rendered: RenderedText,
+    modifier: Modifier = Modifier,
+    style: TextStyle = MaterialTheme.typography.bodyLarge,
+    textAlign: TextAlign? = null,
+    overlay: RenderedOverlay? = null
+) {
     // F-02: the palette is part of the key so a dark/light switch is not
     // served from the previous mapping.
     val palette = LocalScripturePalette.current
-    val annotated = remember(rendered, palette) { mapScriptureColors(rendered, palette) }
+    val annotated = remember(rendered, palette, overlay) {
+        val mapped = mapScriptureColors(rendered.annotated, palette)
+        overlay?.applyTo(mapped) ?: mapped
+    }
 
     Text(
         text = annotated,
@@ -101,6 +124,15 @@ internal fun mapScriptureColors(
             span.copy(color = resolveScriptureColor(span.color, palette))
         }
         builder.addStyle(mapped, range.start, range.end)
+    }
+    // The renderer emits no links today, but a future inline cross-reference
+    // may; dropping them here would silently remove the click behaviour.
+    rendered.getLinkAnnotations(0, rendered.length).forEach { range ->
+        when (val link = range.item) {
+            is LinkAnnotation.Url -> builder.addLink(link, range.start, range.end)
+            is LinkAnnotation.Clickable -> builder.addLink(link, range.start, range.end)
+            else -> Unit
+        }
     }
     return builder.toAnnotatedString()
 }

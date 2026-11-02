@@ -35,10 +35,10 @@ class BibleHtmlRendererTest {
         )
         assertTrue(
             "expected an italic span",
-            rendered.spanStyles.any { it.item.fontStyle == FontStyle.Italic }
+            rendered.annotated.spanStyles.any { it.item.fontStyle == FontStyle.Italic }
         )
         // only the quoted phrase is italic
-        val italicRange = rendered.spanStyles.first { it.item.fontStyle == FontStyle.Italic }
+        val italicRange = rendered.annotated.spanStyles.first { it.item.fontStyle == FontStyle.Italic }
         assertEquals(0, italicRange.start)
         assertEquals("“Tuzo môg kortai tosoch tujea peleacho kôr!”".length, italicRange.end)
     }
@@ -54,11 +54,11 @@ class BibleHtmlRendererTest {
         )
         assertTrue(
             "the continuation must remain italic",
-            rendered.spanStyles.any { it.item.fontStyle == FontStyle.Italic }
+            rendered.annotated.spanStyles.any { it.item.fontStyle == FontStyle.Italic }
         )
         assertTrue(
             "the italic continuation must carry a centered paragraph style",
-            rendered.paragraphStyles.any { it.item.textAlign == TextAlign.Center }
+            rendered.annotated.paragraphStyles.any { it.item.textAlign == TextAlign.Center }
         )
         assertTrue(
             "the full verse text must be present",
@@ -74,7 +74,7 @@ class BibleHtmlRendererTest {
         assertTrue("poetic text must keep line breaks", rendered.text.contains("Ami tuka kiteim sanglear\ntum somzun ghenvxi?"))
         assertTrue(
             "expected a centered paragraph style",
-            rendered.paragraphStyles.any { it.item.textAlign == TextAlign.Center }
+            rendered.annotated.paragraphStyles.any { it.item.textAlign == TextAlign.Center }
         )
     }
 
@@ -83,7 +83,7 @@ class BibleHtmlRendererTest {
         val doc = parser.parse(fixture("esther-intro.html"))
         val rendered = BibleHtmlRenderer.render(doc)
         assertEquals("ESTHER", rendered.text)
-        assertTrue(rendered.paragraphStyles.any { it.item.textAlign == TextAlign.Center })
+        assertTrue(rendered.annotated.paragraphStyles.any { it.item.textAlign == TextAlign.Center })
     }
 
     @Test
@@ -94,9 +94,9 @@ class BibleHtmlRendererTest {
         assertTrue(rendered.text.contains("Hom’-Bhettô"))
         assertTrue(
             "expected a #0000ff color span",
-            rendered.spanStyles.any { it.item.color == Color(0xFF0000FF) }
+            rendered.annotated.spanStyles.any { it.item.color == Color(0xFF0000FF) }
         )
-        assertTrue(rendered.spanStyles.any { it.item.fontStyle == FontStyle.Italic })
+        assertTrue(rendered.annotated.spanStyles.any { it.item.fontStyle == FontStyle.Italic })
     }
 
     @Test
@@ -107,7 +107,7 @@ class BibleHtmlRendererTest {
         assertTrue(rendered.text.contains("Iave (Sorvespora), Tum amcho mogacho Dev."))
         assertTrue(
             "expected a bold span",
-            rendered.spanStyles.any { it.item.fontWeight == FontWeight.Bold }
+            rendered.annotated.spanStyles.any { it.item.fontWeight == FontWeight.Bold }
         )
     }
 
@@ -132,7 +132,7 @@ class BibleHtmlRendererTest {
         val rendered = BibleHtmlRenderer.render(doc)
         assertEquals("xyz", rendered.text)
         // the malformed color must not produce a color span
-        assertTrue(rendered.spanStyles.none { it.item.color != Color.Unspecified })
+        assertTrue(rendered.annotated.spanStyles.none { it.item.color != Color.Unspecified })
     }
 
     @Test

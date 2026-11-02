@@ -57,6 +57,31 @@ step. The generated locale is complete — every default string is emitted, with
 the English text as the explicit fallback — and the worksheet in
 `docs/translations/` is the source of truth.
 
+## Addressable rendering (1.4)
+
+`BibleHtmlParser` records one raw-HTML offset range per character of every
+`BibleHtmlNode.Text`; whitespace collapsing and entity decoding keep the map
+aligned, with a decoded entity or a collapsed run mapping to the whole source
+range that produced it. `BibleHtmlRenderer.render` returns `RenderedText`:
+the `AnnotatedString` plus one source span per rendered character (`null` for
+the newlines the renderer inserts for `<br>` and between blocks).
+`RenderedText.sourceToRendered(IntRange)` resolves a source range to rendered
+coordinates, or returns null when the range contains only dropped markup.
+
+`RenderedOverlay` applies highlight spans and link annotations in rendered
+coordinates on top of the palette-mapped output, so typography, colours and
+alignment never change. Highlight colours must come from a palette surface
+token (`target`, `selection` or `bookmarked`), whose text contrast is verified
+for both themes by `ScripturePaletteTest`; the overlay does not re-check it.
+`BibleHtmlText` exposes both the document and the
+already-rendered overload; the document path remembers the render for that
+composition (the shared cache holds parses, not renders).
+
+The map is the anchor for word-level TTS highlighting, inline cross-references
+and text-range notes. The current reader still renders whole verses, and the
+speech path still reports the spoken word in the bar; wiring the spoken range
+into the overlay belongs to the English-edition work.
+
 ## Room schema v3
 
 `AppDatabase` (`povitr_pustok_app.db`) is version **3** with `exportSchema =

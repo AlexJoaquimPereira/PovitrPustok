@@ -130,7 +130,7 @@ class PsalmRealDataTest {
         // and the renderer emits an explicit centered paragraph for it
         val rendered = com.biblia.povitrpustok.core.html.BibleHtmlRenderer.render(parser.parse(first.html))
         assertTrue(
-            rendered.paragraphStyles.any { it.item.textAlign == androidx.compose.ui.text.style.TextAlign.Center }
+            rendered.annotated.paragraphStyles.any { it.item.textAlign == androidx.compose.ui.text.style.TextAlign.Center }
         )
     }
 }

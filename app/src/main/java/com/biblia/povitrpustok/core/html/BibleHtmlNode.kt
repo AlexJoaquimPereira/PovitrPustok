@@ -12,8 +12,36 @@ package com.biblia.povitrpustok.core.html
  */
 sealed class BibleHtmlNode {
 
-    /** Plain text with whitespace runs collapsed; entities decoded. */
-    data class Text(val text: String) : BibleHtmlNode()
+    /**
+     * Plain text with whitespace runs collapsed; entities decoded.
+     *
+     * [sourceSpans] holds two raw-HTML offsets per character of [text]
+     * (inclusive start, inclusive end), in the same order. A decoded entity
+     * or a collapsed whitespace run maps to the whole source range that
+     * produced it. An empty array means the node was built without source
+     * information (tests, synthetic nodes).
+     *
+     * The compact array is deliberate: the 256-entry document cache keeps
+     * every parsed chapter alive, so per-character objects would multiply.
+     */
+    class Text(
+        val text: String,
+        val sourceSpans: IntArray = IntArray(0)
+    ) : BibleHtmlNode() {
+
+        /** The raw-HTML range for the character at [index], or null. */
+        fun sourceSpanAt(index: Int): IntRange? {
+            if (index !in text.indices || sourceSpans.size < (index + 1) * 2) return null
+            return sourceSpans[index * 2]..sourceSpans[index * 2 + 1]
+        }
+
+        override fun equals(other: Any?): Boolean =
+            other is Text && other.text == text && other.sourceSpans.contentEquals(sourceSpans)
+
+        override fun hashCode(): Int = 31 * text.hashCode() + sourceSpans.contentHashCode()
+
+        override fun toString(): String = "Text(text=$text)"
+    }
 
     /** A line break — `<br>` / `<br/>` — preserves poetic line structure. */
     data object Break : BibleHtmlNode()

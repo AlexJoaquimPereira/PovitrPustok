@@ -151,7 +151,11 @@ class BibleHtmlParserTest {
         assertTrue("expected MALFORMED_TAG, got $kinds", kinds.contains(BibleHtmlDiagnosticKind.MALFORMED_TAG))
 
         val last = doc.children.last()
-        assertEquals("stray '<' must survive as literal text", BibleHtmlNode.Text("<"), last)
+        assertEquals(
+            "stray '<' must survive as literal text",
+            "<",
+            (last as BibleHtmlNode.Text).text
+        )
         // source text remains recoverable
         val text = doc.children.joinToString("") { collectText(it) }
         assertTrue(text.startsWith("Ahishar, Rajmahalacho zobabdar aslo"))
